@@ -11,9 +11,10 @@ const connectionString = process.env.DATABASE_URL ||
 
 console.log('DB connection:', connectionString ? 'OK (variable encontrada)' : 'ERROR: no hay DATABASE_URL ni variables PG_*');
 
+const isInternal = connectionString?.includes('railway.internal');
 const pool = new Pool({
   connectionString,
-  ssl: { rejectUnauthorized: false }
+  ssl: isInternal ? false : { rejectUnauthorized: false }
 });
 
 app.use(cors());
