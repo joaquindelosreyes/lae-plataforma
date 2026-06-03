@@ -48,6 +48,8 @@ function nav(viewId) {
     'cap-matriz': 'Captaciones — Matriz',
     'cap-oficinas': 'Captaciones — Por oficina',
     palancas: 'Palancas — Análisis automático',
+    reuniones: 'Reuniones — Calendario',
+    compromisos: 'Compromisos pendientes',
     aaff: 'AAFF',
     gastos: 'Gastos',
     importar: 'Importar Inmovilla',
@@ -745,4 +747,228 @@ async function loadCaptacionesPorOficina() {
       </tr>`;
     }).join('');
   } catch(e) {}
+}
+
+// ── REUNIONES ─────────────────────────────────────────
+let _calAño = new Date().getFullYear();
+let _calMes  = new Date().getMonth() + 1;
+let _reunionActivaId = null;
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function navMes(delta) {
+  _calMes += delta;
+  if (_calMes > 12) { _calMes = 1; _calAño++; }
+  if (_calMes < 1)  { _calMes = 12; _calAño--; }
+  loadReuniones();
+}
+
+function mostrarFormReunion() {
+  const f = document.getElementById('form-reunion-wrap');
+  if (f) f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+async function guardarReunion() {
+  const fecha = document.getElementById('reu-fecha')?.value;
+  if (!fecha) { alert('Selecciona una fecha'); return; }
+  const payload = {
+    fecha,
+    oficina_id: parseInt(document.getElementById('reu-oficina')?.value) || null,
+    tipo: document.getElementById('reu-tipo')?.value || 'periodica',
+    titulo: document.getElementById('reu-titulo')?.value || null
+  };
+  try {
+    const res = await fetch(`${API}/api/reuniones`, {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    }).then(r => r.json());
+    if (res.success) {
+      document.getElementById('form-reunion-wrap').style.display = 'none';
+      document.getElementById('reu-titulo').value = '';
+      loadReuniones();
+    } else { alert('Error: ' + res.error); }
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function abrirReunion(id) {
+  _reunionActivaId = id;
+  try {
+    const res = await fetch(`${API}/api/reuniones/${id}`).then(r => r.json());
+    if (!res.success) return;
+    const r = res.data;
+    const det = document.getElementById('reunion-detalle');
+    if (det) det.style.display = 'block';
+    const tit = document.getElementById('reunion-detalle-titulo');
+    const fecha = r.fecha ? new Date(r.fecha).toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) : '';
+    const tipoLbl = { periodica:'Periódica', extraordinaria:'Extraordinaria', urgente:'Urgente' };
+    if (tit) tit.textContent = `${tipoLbl[r.tipo]||r.tipo} · ${r.oficina_nombre||'General'} · ${fecha}`;
+    const conc = document.getElementById('reu-conclusiones');
+    if (conc) conc.value = r.conclusiones || '';
+    renderCompromisos(r.compromisos || []);
+    det?.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  } catch(e) { console.warn(e); }
+}
+
+function renderCompromisos(compromisos) {
+  const list = document.getElementById('complist-api');
+  if (!list) return;
+  if (!compromisos.length) {
+    list.innerHTML = '<p style="font-size:12px;color:var(--muted);font-style:italic">Sin compromisos. Añade con "+ Compromiso".</p>';
+    return;
+  }
+  list.innerHTML = compromisos.map(c => `
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div onclick="toggleComp(${c.id})" style="width:18px;height:18px;border-radius:3px;border:2px solid ${c.completado?'var(--green)':'var(--border)'};background:${c.completado?'var(--green)':'transparent'};cursor:pointer;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center">
+        ${c.completado ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+      </div>
+      <div style="flex:1">
+        <div style="font-size:13px;color:var(--text);${c.completado?'text-decoration:line-through;color:var(--muted)':''}">${c.descripcion}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">
+          ${c.responsable||'—'} · ${c.plazo ? new Date(c.plazo).toLocaleDateString('es-ES') : 'Sin plazo'}
+        </div>
+      </div>
+      <button onclick="eliminarComp(${c.id})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:0">✕</button>
+    </div>`).join('');
+}
+
+async function guardarConclusiones() {
+  if (!_reunionActivaId) return;
+  const conclusiones = document.getElementById('reu-conclusiones')?.value;
+  const res = await fetch(`${API}/api/reuniones/${_reunionActivaId}/conclusiones`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ conclusiones })
+  }).then(r => r.json());
+  if (res.success) showAlert('reu-alert', '✓ Conclusiones guardadas', 'success');
+}
+
+async function addCompromiso() {
+  if (!_reunionActivaId) { alert('Abre primero una reunión del calendario'); return; }
+  const desc = prompt('Compromiso:');
+  if (!desc) return;
+  const responsable = prompt('Responsable (ej: Rodrigo, Jorge):') || '';
+  const plazo = prompt('Plazo (YYYY-MM-DD):') || null;
+  const res = await fetch(`${API}/api/reuniones/${_reunionActivaId}/compromisos`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ descripcion: desc, responsable, plazo })
+  }).then(r => r.json());
+  if (res.success) abrirReunion(_reunionActivaId);
+}
+
+async function toggleComp(id) {
+  await fetch(`${API}/api/reuniones/compromisos/${id}/toggle`, { method: 'PATCH' });
+  abrirReunion(_reunionActivaId);
+}
+
+async function eliminarComp(id) {
+  if (!confirm('¿Eliminar compromiso?')) return;
+  await fetch(`${API}/api/reuniones/compromisos/${id}`, { method: 'DELETE' });
+  abrirReunion(_reunionActivaId);
+}
+
+async function loadCompromisosPendientes() {
+  const list = document.getElementById('compromisos-pendientes');
+  if (!list) return;
+  try {
+    const res = await fetch(`${API}/api/reuniones/compromisos-abiertos`).then(r => r.json());
+    const data = res.data || res;
+    if (!Array.isArray(data) || !data.length) {
+      list.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon">✓</div><h3>Sin compromisos pendientes</h3></div>';
+      return;
+    }
+    list.innerHTML = data.map(c => {
+      const vencido = c.plazo && new Date(c.plazo) < new Date();
+      return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div onclick="toggleCompGlobal(${c.id})" style="width:18px;height:18px;border-radius:3px;border:2px solid var(--border);cursor:pointer;flex-shrink:0;margin-top:1px"></div>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:500;color:var(--text)">${c.descripcion}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${c.oficina_nombre||'General'} · ${c.responsable||'—'}</div>
+          <div style="font-size:11px;color:${vencido?'var(--red)':'var(--muted)'};margin-top:1px">
+            ${c.plazo ? (vencido?'⚠ Vencido: ':'Plazo: ') + new Date(c.plazo).toLocaleDateString('es-ES') : 'Sin plazo'}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    const cnt = document.getElementById('compromisos-cnt');
+    if (cnt) cnt.textContent = data.length + ' pendientes';
+  } catch(e) {}
+}
+
+async function toggleCompGlobal(id) {
+  await fetch(`${API}/api/reuniones/compromisos/${id}/toggle`, { method: 'PATCH' });
+  loadCompromisosPendientes();
+}
+
+async function loadReuniones() {
+  const lbl = MESES[_calMes - 1] + ' ' + _calAño;
+  const el = id => document.getElementById(id);
+  if (el('cal-titulo')) el('cal-titulo').textContent = lbl;
+  if (el('cal-panel-titulo')) el('cal-panel-titulo').textContent = 'Calendario — ' + lbl;
+
+  // Cargar oficinas en select si vacío
+  const selOf = el('reu-oficina');
+  if (selOf && selOf.options.length <= 1) {
+    try {
+      const of = await fetch(`${API}/api/oficinas`).then(r => r.json());
+      const lista = of.data || of;
+      if (Array.isArray(lista)) {
+        selOf.innerHTML = '<option value="">General (todas)</option>' +
+          lista.map(o => `<option value="${o.id}">${o.nombre}</option>`).join('');
+      }
+    } catch(e) {}
+  }
+
+  try {
+    const res = await fetch(`${API}/api/reuniones?año=${_calAño}&mes=${_calMes}`).then(r => r.json());
+    const reuniones = res.data || res;
+    if (!Array.isArray(reuniones)) return;
+
+    // Construir calendario
+    const grid = el('cal-grid');
+    if (!grid) return;
+    const primerDia = new Date(_calAño, _calMes - 1, 1).getDay();
+    const diasMes   = new Date(_calAño, _calMes, 0).getDate();
+    const offset    = primerDia === 0 ? 6 : primerDia - 1;
+    const hoy       = new Date();
+
+    const porDia = {};
+    reuniones.forEach(r => {
+      const d = new Date(r.fecha).getUTCDate();
+      if (!porDia[d]) porDia[d] = [];
+      porDia[d].push(r);
+    });
+
+    const tipoCss = {
+      periodica:     'background:#1B2A4A;color:#fff',
+      extraordinaria:'background:#C9A84C;color:#1B2A4A',
+      urgente:       'background:#dc2626;color:#fff'
+    };
+
+    let html = '<div class="cal-day-hd">L</div><div class="cal-day-hd">M</div><div class="cal-day-hd">X</div><div class="cal-day-hd">J</div><div class="cal-day-hd">V</div><div class="cal-day-hd">S</div><div class="cal-day-hd">D</div>';
+    for (let i = 0; i < offset; i++) html += '<div class="cal-day"></div>';
+
+    for (let d = 1; d <= diasMes; d++) {
+      const esHoy = hoy.getFullYear()===_calAño && hoy.getMonth()+1===_calMes && hoy.getDate()===d;
+      const tieneReu = !!porDia[d]?.length;
+      let pills = '';
+      if (porDia[d]) {
+        pills = porDia[d].map(r => {
+          const css = tipoCss[r.tipo] || tipoCss.periodica;
+          const lbl2 = (r.oficina_nombre||r.titulo||'Reunión').split(' ')[0];
+          return `<div onclick="abrirReunion(${r.id})" style="font-size:9px;padding:2px 5px;border-radius:3px;margin-top:2px;cursor:pointer;${css};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${lbl2}</div>`;
+        }).join('');
+      }
+      html += `<div class="cal-day${tieneReu?' has-reu':''}${esHoy?' hoy':''}">
+        <div class="cal-day-num" ${esHoy?'style="font-weight:700;color:var(--navy)"':''}>${d}</div>
+        ${pills}
+      </div>`;
+    }
+    grid.innerHTML = html;
+
+    // Expbar
+    const abiertos = reuniones.reduce((a,r) => a + parseInt(r.compromisos_abiertos||0), 0);
+    if (el('reu-expbar')) el('reu-expbar').textContent = `${lbl} · ${reuniones.length} reuniones · ${abiertos} compromisos abiertos`;
+
+    // Abrir reunión de hoy automáticamente
+    if (!_reunionActivaId) {
+      const hoyReu = reuniones.find(r => new Date(r.fecha).getUTCDate()===hoy.getDate() && _calMes===hoy.getMonth()+1 && _calAño===hoy.getFullYear());
+      if (hoyReu) abrirReunion(hoyReu.id);
+    }
+  } catch(e) { console.warn('Error reuniones:', e.message); }
 }
