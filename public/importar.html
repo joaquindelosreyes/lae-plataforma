@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>LAE HOMES · Importar Inmovilla</title>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Jost',sans-serif;background:#F8F4EE;color:#1a1a1a;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:#fff;border-radius:12px;border:1px solid #EDE8DF;padding:32px;max-width:560px;width:100%;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.logo{font-size:11px;font-weight:600;letter-spacing:.15em;color:#a08535;text-transform:uppercase;margin-bottom:8px}
+h1{font-size:22px;font-weight:500;color:#1B2A4A;margin-bottom:6px}
+p{font-size:13px;color:#6b7280;margin-bottom:24px;line-height:1.5}
+.steps{background:#F8F4EE;border-radius:8px;padding:16px;margin-bottom:24px}
+.step{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;font-size:12px;color:#374151}
+.step:last-child{margin-bottom:0}
+.step-num{width:20px;height:20px;border-radius:50%;background:#1B2A4A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;margin-top:1px}
+.drop-zone{border:2px dashed #EDE8DF;border-radius:8px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px}
+.drop-zone:hover,.drop-zone.drag{border-color:#C9A84C;background:#fffdf7}
+.drop-zone input{display:none}
+.drop-icon{font-size:32px;margin-bottom:8px}
+.drop-lbl{font-size:13px;font-weight:500;color:#1B2A4A;margin-bottom:4px}
+.drop-sub{font-size:11px;color:#6b7280}
+.file-sel{font-size:12px;color:#1B2A4A;font-weight:500;margin-top:8px;display:none}
+.btn{width:100%;padding:12px;border-radius:6px;border:none;font-family:'Jost',sans-serif;font-size:14px;font-weight:600;cursor:pointer;background:#C9A84C;color:#1B2A4A;transition:all .2s}
+.btn:hover{background:#a08535;color:#fff}
+.btn:disabled{background:#EDE8DF;color:#9ca3af;cursor:not-allowed}
+.progress{display:none;margin-top:16px}
+.prog-bar{height:6px;background:#EDE8DF;border-radius:3px;overflow:hidden;margin-bottom:8px}
+.prog-fill{height:100%;background:#C9A84C;border-radius:3px;width:0;transition:width .3s}
+.prog-txt{font-size:12px;color:#6b7280;text-align:center}
+.result{display:none;margin-top:16px;padding:16px;border-radius:8px}
+.result.ok{background:#ECFDF5;border:1px solid #6EE7B7}
+.result.err{background:#FEE2E2;border:1px solid #FCA5A5}
+.result h3{font-size:14px;font-weight:600;margin-bottom:10px}
+.result h3.ok-h{color:#065F46}
+.result h3.err-h{color:#991B1B}
+.stat{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.06)}
+.stat:last-child{border-bottom:none}
+.stat-v{font-weight:600;color:#1B2A4A}
+.back{display:block;text-align:center;margin-top:16px;font-size:12px;color:#6b7280;text-decoration:none}
+.back:hover{color:#1B2A4A}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">LAE HOMES · Plataforma</div>
+  <h1>Importar desde Inmovilla</h1>
+  <p>Sube el CSV de propiedades exportado desde Inmovilla. Se importarán automáticamente las captaciones activas y las operaciones cerradas.</p>
+
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><span>En Inmovilla → <strong>Propiedades</strong> → Exportar listado → CSV</span></div>
+    <div class="step"><div class="step-num">2</div><span>Sube el archivo aquí. No hace falta limpiar nada.</span></div>
+    <div class="step"><div class="step-num">3</div><span>El dashboard se actualizará solo con los datos importados.</span></div>
+  </div>
+
+  <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+    <input type="file" id="fileInput" accept=".csv" onchange="onFileSelect(this)">
+    <div class="drop-icon">📄</div>
+    <div class="drop-lbl">Arrastra el CSV aquí o haz clic para seleccionar</div>
+    <div class="drop-sub">Formato: listado Inmovilla · separador punto y coma</div>
+    <div class="file-sel" id="fileSel"></div>
+  </div>
+
+  <button class="btn" id="btnImport" onclick="importar()" disabled>Importar</button>
+
+  <div class="progress" id="progress">
+    <div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
+    <div class="prog-txt" id="progTxt">Procesando...</div>
+  </div>
+
+  <div class="result" id="result"></div>
+
+  <a href="/" class="back">← Volver al dashboard</a>
+</div>
+
+<script>
+const API = '';  // mismo origen
+
+let selectedFile = null;
+
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) setFile(f);
+});
+
+function onFileSelect(input) {
+  if (input.files[0]) setFile(input.files[0]);
+}
+
+function setFile(f) {
+  selectedFile = f;
+  const sel = document.getElementById('fileSel');
+  sel.style.display = 'block';
+  sel.textContent = '✓ ' + f.name + ' (' + (f.size/1024).toFixed(0) + ' KB)';
+  document.getElementById('btnImport').disabled = false;
+}
+
+async function importar() {
+  if (!selectedFile) return;
+  const btn = document.getElementById('btnImport');
+  const prog = document.getElementById('progress');
+  const result = document.getElementById('result');
+
+  btn.disabled = true;
+  btn.textContent = 'Importando...';
+  prog.style.display = 'block';
+  result.style.display = 'none';
+
+  // Simular progreso visual
+  let pct = 0;
+  const progFill = document.getElementById('progFill');
+  const progTxt = document.getElementById('progTxt');
+  const interval = setInterval(() => {
+    pct = Math.min(pct + 8, 85);
+    progFill.style.width = pct + '%';
+  }, 300);
+
+  try {
+    const fd = new FormData();
+    fd.append('archivo', selectedFile);
+    const resp = await fetch('/api/import/inmovilla', { method: 'POST', body: fd });
+    const data = await resp.json();
+
+    clearInterval(interval);
+    progFill.style.width = '100%';
+    progTxt.textContent = 'Completado';
+
+    result.style.display = 'block';
+    if (data.success) {
+      const s = data.stats;
+      result.className = 'result ok';
+      result.innerHTML = `
+        <h3 class="ok-h">✓ Importación completada</h3>
+        <div class="stat"><span>Captaciones importadas</span><span class="stat-v">${s.captaciones_nuevas}</span></div>
+        <div class="stat"><span>Operaciones cerradas importadas</span><span class="stat-v">${s.operaciones_nuevas}</span></div>
+        <div class="stat"><span>Registros ignorados (sin oficina LAE)</span><span class="stat-v">${s.ignoradas}</span></div>
+        ${s.errores > 0 ? `<div class="stat"><span>Errores</span><span class="stat-v" style="color:#dc2626">${s.errores}</span></div>` : ''}
+        <div style="margin-top:12px;font-size:12px;color:#065F46">El dashboard ya muestra los datos actualizados.</div>
+      `;
+    } else {
+      result.className = 'result err';
+      result.innerHTML = `<h3 class="err-h">Error en la importación</h3><p style="font-size:12px">${data.error}</p>`;
+    }
+  } catch (e) {
+    clearInterval(interval);
+    result.style.display = 'block';
+    result.className = 'result err';
+    result.innerHTML = `<h3 class="err-h">Error de conexión</h3><p style="font-size:12px">${e.message}</p>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Importar otro archivo';
+}
+</script>
+</body>
+</html>
