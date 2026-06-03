@@ -49,6 +49,7 @@ function nav(viewId) {
     'cap-oficinas': 'Captaciones — Por oficina',
     palancas: 'Palancas — Análisis automático',
     reuniones: 'Reuniones — Calendario',
+    actas: 'Actas de reuniones',
     compromisos: 'Compromisos pendientes',
     aaff: 'AAFF',
     gastos: 'Gastos',
@@ -66,6 +67,8 @@ function nav(viewId) {
   if (viewId === 'palancas')         loadPalancas();
   if (viewId === 'aaff')             loadAAFF();
   if (viewId === 'gastos')           loadGastos();
+  if (viewId === 'reuniones')        { loadReuniones(); loadPlantillas(); }
+  if (viewId === 'actas')            loadActas();
 }
 
 // ── FILTRO FECHAS ────────────────────────────────────
@@ -1346,4 +1349,92 @@ function renderCapOf(data) {
       </td>
     </tr>`;
   }).join('');
+}
+
+// ── PLANTILLAS DE REUNIÓN ─────────────────────────────
+async function loadPlantillas() {
+  const grid = document.getElementById('plantillas-grid');
+  if (!grid) return;
+  try {
+    const res = await fetch(`${API}/api/reuniones/plantillas`).then(r => r.json());
+    const lista = res.data || [];
+    const iconos = { semanal:'📅', quincenal:'🗓️', trimestral:'📊' };
+    const colores = { semanal:'#1B2A4A', quincenal:'#C9A84C', trimestral:'#16a34a' };
+    grid.innerHTML = lista.map(p => `
+      <div class="panel" style="cursor:pointer;border-top:3px solid ${colores[p.frecuencia]||'var(--border)'}" onclick="usarPlantilla(${p.id})">
+        <div class="panel-body">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-size:20px">${iconos[p.frecuencia]||'📋'}</span>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--navy)">${p.nombre}</div>
+              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">${p.frecuencia}</div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${p.participantes}</div>
+          <button class="btn btn-primary btn-sm" style="width:100%">+ Nueva reunión con esta plantilla</button>
+        </div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+let _plantillaActual = null;
+
+async function usarPlantilla(id) {
+  try {
+    const res = await fetch(`${API}/api/reuniones/plantillas`).then(r => r.json());
+    _plantillaActual = (res.data||[]).find(p => p.id === id);
+    if (!_plantillaActual) return;
+    mostrarFormReunion();
+    // Pre-rellenar el formulario
+    const titulo = document.getElementById('reu-titulo');
+    if (titulo) titulo.value = _plantillaActual.nombre;
+    // Mostrar orden del día en el área de conclusiones al abrir
+    document.getElementById('form-reunion-wrap').scrollIntoView({ behavior:'smooth' });
+    // Mostrar orden del día como referencia
+    const odDiv = document.getElementById('orden-dia-preview');
+    if (odDiv) {
+      odDiv.style.display = 'block';
+      odDiv.innerHTML = `<div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Orden del día — ${_plantillaActual.nombre}</div>
+        <pre style="font-size:12px;color:var(--text);white-space:pre-wrap;font-family:inherit">${_plantillaActual.orden_dia}</pre>`;
+    }
+  } catch(e) {}
+}
+
+// ── ACTAS ─────────────────────────────────────────────
+async function loadActas() {
+  const el = document.getElementById('actas-list');
+  if (!el) return;
+  el.innerHTML = '<div class="loading">Cargando actas...</div>';
+  try {
+    const res = await fetch(`${API}/api/reuniones/actas`).then(r => r.json());
+    const lista = res.data || [];
+    if (!lista.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><h3>Sin actas todavía</h3><p>Las actas aparecen aquí cuando guardas conclusiones en una reunión.</p></div>';
+      return;
+    }
+    const tipoLbl = { periodica:'Periódica', extraordinaria:'Extraordinaria', urgente:'Urgente' };
+    const tipoCls = { periodica:'badge-gray', extraordinaria:'badge-amber', urgente:'badge-red' };
+    el.innerHTML = lista.map(r => {
+      const fecha = fmtFecha(r.fecha);
+      const comp = parseInt(r.total_compromisos)||0;
+      const abiertos = parseInt(r.compromisos_abiertos)||0;
+      return `<div class="panel" style="margin-bottom:12px">
+        <div class="panel-header" style="cursor:pointer" onclick="abrirReunion(${r.id});nav('reuniones');loadReuniones()">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:13px;font-weight:600;color:var(--navy)">${r.titulo||r.oficina_nombre||'Reunión general'}</span>
+            <span class="badge ${tipoCls[r.tipo]||'badge-gray'}">${tipoLbl[r.tipo]||r.tipo}</span>
+            ${r.plantilla ? `<span class="badge badge-blue">${r.plantilla}</span>` : ''}
+          </div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:11px;color:var(--muted)">${fecha}</span>
+            ${comp > 0 ? `<span class="badge ${abiertos>0?'badge-amber':'badge-green'}">${abiertos>0?abiertos+' abiertos':'✓ todo cerrado'}</span>` : ''}
+          </div>
+        </div>
+        ${r.conclusiones ? `<div class="panel-body" style="padding:12px 16px">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Conclusiones</div>
+          <div style="font-size:12px;color:var(--text);white-space:pre-wrap">${r.conclusiones.slice(0,300)}${r.conclusiones.length>300?'…':''}</div>
+        </div>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML = `<div class="loading">Error: ${e.message}</div>`; }
 }
