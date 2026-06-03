@@ -515,23 +515,23 @@ table.t tr:hover td{background:var(--cream)}
 <div class="view" id="view-cap-resumen">
 <div class="scroll">
   <div class="pot-box">
-    <div class="pot-item"><div class="pot-val">87</div><div class="pot-lbl">Total captaciones</div></div>
+    <div class="pot-item"><div class="pot-val" id="cap-total">—</div><div class="pot-lbl">Total captaciones</div></div>
     <div class="pot-div"></div>
-    <div class="pot-item"><div class="pot-val">59</div><div class="pot-lbl">Exclusivas</div></div>
+    <div class="pot-item"><div class="pot-val" id="cap-excl">—</div><div class="pot-lbl">Exclusivas</div></div>
     <div class="pot-div"></div>
-    <div class="pot-item"><div class="pot-val">28</div><div class="pot-lbl">Notas encargo</div></div>
+    <div class="pot-item"><div class="pot-val" id="cap-ne">—</div><div class="pot-lbl">Notas encargo</div></div>
     <div class="pot-div"></div>
-    <div class="pot-item"><div class="pot-val" style="color:var(--gl)">38,4M€</div><div class="pot-lbl">Valor cartera</div></div>
+    <div class="pot-item"><div class="pot-val" style="color:var(--gl)" id="cap-valor">—</div><div class="pot-lbl">Valor cartera</div></div>
     <div class="pot-div"></div>
-    <div class="pot-item"><div class="pot-val" style="color:var(--gl)">1,92M€</div><div class="pot-lbl">Honor. potenciales</div></div>
+    <div class="pot-item"><div class="pot-val" style="color:var(--gl)" id="cap-honor">—</div><div class="pot-lbl">Honor. potenciales</div></div>
   </div>
   <div class="kgrid" style="grid-template-columns:repeat(6,1fr)">
-    <div class="kc hi"><div class="kl">Viviendas captadas</div><div class="kv">64</div><div class="ks">74% total cartera</div></div>
-    <div class="kc"><div class="kl">Viviendas exclusiva</div><div class="kv blue">43</div><div class="ks">honor. pot. 910k€</div></div>
-    <div class="kc"><div class="kl">Viviendas NE</div><div class="kv" style="color:var(--pu)">21</div><div class="ks">honor. pot. 215k€</div></div>
-    <div class="kc"><div class="kl">Excl. bloqueadas +7m</div><div class="kv red">3</div><div class="ks">acción urgente</div></div>
-    <div class="kc"><div class="kl">En revisión 5-7m</div><div class="kv am">8</div></div>
-    <div class="kc"><div class="kl">Precio medio excl.</div><div class="kv">418k€</div><div class="ks">viviendas excl.</div></div>
+    <div class="kc hi"><div class="kl">Viviendas captadas</div><div class="kv" id="cap-viv">—</div></div>
+    <div class="kc"><div class="kl">Viviendas exclusiva</div><div class="kv blue" id="cap-viv-excl">—</div></div>
+    <div class="kc"><div class="kl">Viviendas NE</div><div class="kv" style="color:var(--pu)" id="cap-viv-ne">—</div></div>
+    <div class="kc"><div class="kl">Excl. bloqueadas +7m</div><div class="kv red" id="cap-bloqueadas">—</div><div class="ks">acción urgente</div></div>
+    <div class="kc"><div class="kl">En revisión 5-7m</div><div class="kv am" id="cap-revision">—</div></div>
+    <div class="kc"><div class="kl">Total activas</div><div class="kv" id="cap-activas">—</div></div>
   </div>
   <div class="ssep">Por mandato y tipología</div>
   <div class="g2">
@@ -668,9 +668,10 @@ table.t tr:hover td{background:var(--cream)}
     <button class="fbtn" onclick="setFbtn(this,'fc')">+7m</button>
     <select class="sel" style="width:auto;margin-left:4px"><option>Todas las oficinas</option><option>Alicante</option><option>Barcelona</option><option>Castellón</option><option>Jaén</option><option>Madrid</option><option>Málaga</option><option>Marbella</option><option>San Sebastián</option><option>Sevilla</option><option>Valencia</option></select>
   </div>
-  <div class="panel"><div class="ph"><span class="pt">Captaciones activas — 87 total</span></div>
+  <div class="panel"><div class="ph"><span class="pt" id="cap-listado-titulo">Captaciones activas</span></div>
   <table class="t"><thead><tr><th>Ref.</th><th>Oficina</th><th>Dirección</th><th>Mandato</th><th>Tipología</th><th>Tipo op.</th><th>Consultor</th><th>Precio</th><th>Honor. pot.</th><th>Antigüedad</th></tr></thead>
-  <tbody><tr><td style="font-size:9px;color:var(--mu);font-family:monospace">CAP-001</td><td>Madrid</td><td style="max-width:150px;font-size:11px">C/ Velázquez 12</td><td><span class="tag" style="background:#EFF6FF;color:#1E40AF">Excl.</span></td><td><span class="tag tg">Vivienda</span></td><td><span class="tag tb">CV</span></td><td>Jorge P.</td><td class="nr">380.000€</td><td class="nr" style="color:var(--gr)">19.000€</td><td class="nr" style="color:#16a34a;font-weight:600">2m</td></tr><tr><td style="font-size:9px;color:var(--mu);font-family:monospace">CAP-002</td><td>Marbella</td><td style="max-width:150px;font-size:11px">Urb. Los Pinos 3</td><td><span class="tag" style="background:#EFF6FF;color:#1E40AF">Excl.</span></td><td><span class="tag tg">Vivienda</span></td><td><span class="tag tb">CV</span></td><td>Cristina V.</td><td class="nr">520.000€</td><td class="nr" style="color:var(--gr)">26.000€</td><td class="nr" style="color:#16a34a;font-weight:600">1m</td></tr><tr><td style="font-size:9px;color:var(--mu);font-family:monospace">CAP-003</td><td>Jaén</td><td style="max-width:150px;font-size:11px">C/ Bailén 14</td><td><span class="tag" style="background:#EFF6FF;color:#1E40AF">Excl.</span></td><td><span class="tag tg">Vivienda</span></td><td><span class="tag tb">CV</span></td><td>Pedro M.</td><td class="nr">185.000€</td><td class="nr" style="color:var(--gr)">9.250€</td><td class="nr" style="color:#dc2626;font-weight:600">9m</td></tr><tr><td style="font-size:9px;color:var(--mu);font-family:monospace">CAP-004</td><td>Sevilla</td><td style="max-width:150px;font-size:11px">Av. Constitución 8</td><td><span class="tag" style="background:#EFF6FF;color:#1E40AF">Excl.</span></td><td><span class="tag tg">Vivienda</span></td><td><span class="tag tb">CV</span></td><td>Maribel C.</td><td class="nr">220.000€</td><td class="nr" style="color:var(--gr)">11.000€</td><td class="nr" style="color:#dc2626;font-weight:600">8m</td></tr><tr><td style="font-size:9px;color:var(--mu);font-family:monospace">CAP-005</td><td>Barcelona</td><td style="max-width:150px;font-size:11px">Av. Diagonal 88</td><td><span class="tag" style="background:#EFF6FF;color:#1E40AF">Excl.</span></td><td><span class="tag tg">Vivienda</span></td><td><span class="tag tb">CV</span></td><td>Ana M.</td><td class="nr">450.000€</td><td class="nr" style="color:var(--gr)">22.500€</td><td class="nr" style="color:#16a34a;font-weight:600">1m</td></tr><tr><td style="font-size:9px;color:var(--mu);font-family:monospace">CAP-006</td><td>Málaga</td><td style="max-width:150px;font-size:11px">C/ Larios 7</td><td><span class="tag" style="background:var(--pub);color:var(--pu)">NE</span></td><td><span class="tag tg">Vivienda</span></td><td><span class="tag tb">CV</span></td><td>Carlos R.</td><td class="nr">195.000€</td><td class="nr" style="color:var(--gr)">4.875€</td><td class="nr" style="color:#d97706;font-weight:600">6m</td></tr><tr><td style="font-size:9px;color:var(--mu);font-family:monospace">CAP-007</td><td>Valencia</td><td style="max-width:150px;font-size:11px">Av. Blasco Ibáñez</td><td><span class="tag" style="background:#EFF6FF;color:#1E40AF">Excl.</span></td><td><span class="tag tc">Solar</span></td><td><span class="tag tb">CV</span></td><td>Luis R.</td><td class="nr">320.000€</td><td class="nr" style="color:var(--gr)">12.800€</td><td class="nr" style="color:#16a34a;font-weight:600">3m</td></tr><tr><td colspan="10" style="text-align:center;color:var(--mu);font-size:11px;font-style:italic;padding:12px">+ 80 captaciones más · usa los filtros para segmentar</td></tr>
+  <tbody id="cap-listado-tbody">
+    <tr><td colspan="10" style="text-align:center;color:var(--mu);font-style:italic;padding:16px">Cargando captaciones...</td></tr>
   </tbody></table></div>
   <div class="ssep">Viviendas exclusiva — análisis por antigüedad</div>
   <div class="panel"><div class="ph"><span class="pt">Potencial económico por tramo</span></div>
@@ -714,12 +715,12 @@ table.t tr:hover td{background:var(--cream)}
   </div>
   <div class="step s3">
     <div class="stitle"><span class="snum" style="background:var(--gr)">3</span>Datos del inmueble</div>
-    <div class="fr fr3"><div style="grid-column:1/3"><div class="flbl">Dirección completa</div><input class="inp" type="text" placeholder="Calle, número, piso..."></div><div><div class="flbl">Código postal</div><input class="inp" type="text"></div></div>
+    <div class="fr fr3"><div style="grid-column:1/3"><div class="flbl">Dirección completa</div><input class="inp" type="text" id="cap-direccion" placeholder="Calle, número, piso..."></div><div><div class="flbl">Código postal</div><input class="inp" type="text" id="cap-cp"></div></div>
     <div class="fr fr4">
-      <div><div class="flbl">Municipio</div><input class="inp" type="text"></div>
-      <div><div class="flbl">Provincia / Oficina LAE</div><select class="sel"><option>Alicante</option><option>Barcelona</option><option>Castellón</option><option>Jaén</option><option>Madrid</option><option>Málaga</option><option>Marbella</option><option>San Sebastián</option><option>Sevilla</option><option>Valencia</option></select></div>
-      <div><div class="flbl">Superficie (m²)</div><input class="inp" type="text" placeholder="120 m²"></div>
-      <div><div class="flbl">Tipo operación</div><select class="sel"><option>Compraventa</option><option>Alquiler</option></select></div>
+      <div><div class="flbl">Municipio</div><input class="inp" type="text" id="cap-municipio"></div>
+      <div><div class="flbl">Oficina LAE</div><select class="sel" id="cap-oficina"><option value="">Selecciona...</option></select></div>
+      <div><div class="flbl">Superficie (m²)</div><input class="inp" type="text" id="cap-superficie" placeholder="120 m²"></div>
+      <div><div class="flbl">Tipo operación</div><select class="sel" id="cap-tipo-op"><option value="cv">Compraventa</option><option value="alquiler">Alquiler</option></select></div>
     </div>
   </div>
   <div class="step s4">
@@ -736,7 +737,7 @@ table.t tr:hover td{background:var(--cream)}
       <div><div class="flbl">Precio captación</div><input class="inp" type="text" placeholder="335.000 €" id="precio-cap" oninput="calcHonCap()"></div>
       <div><div class="flbl">% Honorarios pactado</div><input class="inp" type="text" value="5" id="pct-hon-cap" oninput="calcHonCap()"></div>
       <div><div class="flbl">Honorarios potenciales (auto)</div><input class="inp" readonly id="hon-cap-val"></div>
-      <div><div class="flbl">Consultor captador</div><select class="sel"><option value="">-- seleccionar --</option><option>Ana Martínez</option><option>Jorge Pérez</option><option>Eva López</option><option>Eduardo Ruiz</option><option>Sandra Flores</option><option>Carlos Ramírez</option><option>Pedro Morales</option><option>Maribel Chazarri</option><option>Cristina Vázquez</option><option>Luis Ramírez</option><option>Elena Barrera</option><option>Marina Pareja</option></select></div>
+      <div><div class="flbl">Consultor captador</div><select class="sel" id="cap-consultor"><option value="">-- seleccionar --</option></select></div>
     </div>
     <div class="fr fr2" style="margin-top:4px">
       <div><div class="flbl">Canal captación</div><select class="sel"><option>Prospección directa</option><option>Recomendación cliente</option><option>AAFF</option><option>Prescriptor</option><option>Portal</option><option>Redes sociales</option></select></div>
@@ -748,7 +749,7 @@ table.t tr:hover td{background:var(--cream)}
       <div style="text-align:right"><div style="font-size:9px;color:rgba(255,255,255,.5)">Precio captación</div>
       <div style="font-size:13px;font-weight:500;color:#fff" id="precio-cap-show">—</div></div>
     </div>
-    <div style="margin-top:7px"><div class="flbl">Observaciones</div><textarea class="ta2" placeholder="Estado inmueble, situación propietario..."></textarea></div>
+    <div style="margin-top:7px"><div class="flbl">Observaciones</div><textarea class="ta2" id="cap-observaciones" placeholder="Estado inmueble, situación propietario..."></textarea></div>
   </div>
 </div>
 <div class="expbar"><div class="exptxt">Nueva captación · completa todos los campos</div><div><button class="expbtn prim" onclick="guardarCap()">Guardar captación</button></div></div>
@@ -1321,10 +1322,110 @@ function addProp() {
   l.appendChild(d);
 }
 
-function guardarCap() {
-  const ref = 'CAP-'+Math.floor(Math.random()*9000+1000)+'-2026';
-  const el = document.getElementById('ref-cap'); if(el)el.textContent='Captación guardada · Ref: '+ref;
-  alert('Captación guardada · Ref: '+ref);
+async function guardarCap() {
+  const fecha = document.getElementById('fecha-cap')?.value;
+  const direccion = document.getElementById('cap-direccion')?.value?.trim();
+  if (!fecha || !direccion) { alert('Introduce fecha y dirección'); return; }
+
+  const mandato = document.querySelector('#rg-mand .rbtn.active')?.textContent?.includes('Nota') ? 'nota_encargo' : 'exclusiva';
+  const tipoCapTxt = document.querySelector('#rg-tipo-cap .rbtn.active')?.textContent || 'Vivienda';
+  const tipMap = {'🏠 Vivienda':'vivienda','🏗️ Solar':'solar','🏪 Local':'local','🅿️ Garaje':'garaje','📦 Trastero':'trastero','🏢 Oficina':'oficina','🏭 Nave':'nave','🌳 Finca':'finca','🔨 Obra nueva':'obra_nueva'};
+  const tipologia = tipMap[tipoCapTxt] || 'vivienda';
+
+  const precioRaw = (document.getElementById('precio-cap')?.value||'0').replace(/[^0-9.,]/g,'').replace(',','.');
+  const precio = parseFloat(precioRaw) || 0;
+  const pct = parseFloat(document.getElementById('pct-hon-cap')?.value) || 5;
+
+  const payload = {
+    fecha_captacion: fecha,
+    direccion,
+    municipio: document.getElementById('cap-municipio')?.value || null,
+    oficina_id: parseInt(document.getElementById('cap-oficina')?.value) || null,
+    consultor_id: parseInt(document.getElementById('cap-consultor')?.value) || null,
+    mandato, tipologia,
+    tipo_operacion: document.getElementById('cap-tipo-op')?.value || 'cv',
+    precio_captacion: precio,
+    pct_honorarios: pct,
+    superficie: parseFloat(document.getElementById('cap-superficie')?.value) || null,
+    observaciones: document.getElementById('cap-observaciones')?.value || null
+  };
+
+  try {
+    const resp = await fetch(API + '/api/captaciones', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    const result = await resp.json();
+    if (result.success) {
+      const el = document.getElementById('ref-cap');
+      if (el) el.textContent = 'Captación guardada · Ref: ' + result.data.ref;
+      loadCaptaciones();
+    } else {
+      alert('Error: ' + result.error);
+    }
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function loadCaptaciones() {
+  try {
+    const [sumRes, listRes] = await Promise.all([
+      fetch(API + '/api/captaciones/resumen').then(r => r.json()),
+      fetch(API + '/api/captaciones?estado=activa').then(r => r.json())
+    ]);
+
+    // KPIs banner
+    if (sumRes.success) {
+      const s = sumRes.data;
+      const el = id => document.getElementById(id);
+      const fmtM = n => { const v = parseFloat(n); return v >= 1000000 ? (v/1000000).toFixed(1).replace('.',',')+'M€' : Math.round(v/1000)+'k€'; };
+      if (el('cap-total'))     el('cap-total').textContent     = s.total;
+      if (el('cap-excl'))      el('cap-excl').textContent      = s.exclusivas;
+      if (el('cap-ne'))        el('cap-ne').textContent        = s.notas_encargo;
+      if (el('cap-valor'))     el('cap-valor').textContent     = fmtM(s.valor_cartera);
+      if (el('cap-honor'))     el('cap-honor').textContent     = fmtM(s.honorarios_potenciales);
+      if (el('cap-viv'))       el('cap-viv').textContent       = s.viviendas;
+      if (el('cap-viv-excl'))  el('cap-viv-excl').textContent  = s.viviendas_excl;
+      if (el('cap-viv-ne'))    el('cap-viv-ne').textContent    = s.viviendas_ne;
+      if (el('cap-bloqueadas')) el('cap-bloqueadas').textContent = s.bloqueadas;
+      if (el('cap-revision'))  el('cap-revision').textContent  = s.en_revision;
+      if (el('cap-activas'))   el('cap-activas').textContent   = s.total;
+    }
+
+    // Listado
+    const tbody = document.getElementById('cap-listado-tbody');
+    const titulo = document.getElementById('cap-listado-titulo');
+    if (!tbody) return;
+
+    if (!listRes.success || !listRes.data.length) {
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--mu);font-style:italic;padding:16px">Sin captaciones · usa "Nueva captación" para añadir</td></tr>';
+      return;
+    }
+
+    if (titulo) titulo.textContent = `Captaciones activas — ${listRes.data.length} total`;
+
+    tbody.innerHTML = listRes.data.map(c => {
+      const meses = Math.round(parseFloat(c.meses_activa)||0);
+      const mesesCol = meses >= 7 ? '#dc2626' : meses >= 5 ? '#d97706' : '#16a34a';
+      const mandatoTag = c.mandato === 'exclusiva'
+        ? `<span class="tag" style="background:#EFF6FF;color:#1E40AF">Excl.</span>`
+        : `<span class="tag" style="background:var(--pub);color:var(--pu)">NE</span>`;
+      const precio = parseFloat(c.precio_captacion) > 0 ? parseFloat(c.precio_captacion).toLocaleString('es-ES',{maximumFractionDigits:0})+'€' : '—';
+      const honor  = parseFloat(c.honorarios_potenciales) > 0 ? parseFloat(c.honorarios_potenciales).toLocaleString('es-ES',{maximumFractionDigits:0})+'€' : '—';
+      const tipoOp = c.tipo_operacion === 'alquiler' ? 'Alquiler' : 'CV';
+      return `<tr>
+        <td style="font-size:9px;color:var(--mu);font-family:monospace">${c.ref||'—'}</td>
+        <td>${c.oficina_nombre||'—'}</td>
+        <td style="max-width:150px;font-size:11px">${c.direccion||'—'}</td>
+        <td>${mandatoTag}</td>
+        <td><span class="tag tg">${c.tipologia||'—'}</span></td>
+        <td><span class="tag tb">${tipoOp}</span></td>
+        <td>${c.consultor_nombre||'—'}</td>
+        <td class="nr">${precio}</td>
+        <td class="nr" style="color:var(--gr)">${honor}</td>
+        <td class="nr" style="color:${mesesCol};font-weight:600">${meses}m</td>
+      </tr>`;
+    }).join('');
+
+  } catch(e) { console.warn('Error cargando captaciones:', e.message); }
 }
 
 function tChk(el) {
@@ -1385,6 +1486,15 @@ async function loadSelectsFormulario() {
     // Select oficina del formulario AAFF
     const selAAFFOf = document.getElementById('aaff-oficina');
     if (selAAFFOf) selAAFFOf.innerHTML = '<option value="">Selecciona oficina...</option>' + optsOf;
+
+    // Select oficina y consultor del formulario de captaciones
+    const selCapOf = document.getElementById('cap-oficina');
+    if (selCapOf) selCapOf.innerHTML = '<option value="">Selecciona oficina...</option>' + optsOf;
+    const selCapCons = document.getElementById('cap-consultor');
+    if (selCapCons && consRes.success) {
+      selCapCons.innerHTML = '<option value="">-- seleccionar --</option>' +
+        consRes.data.map(c => `<option value="${c.id}">${c.nombre} (${c.oficina_nombre})</option>`).join('');
+    }
 
     // Select consultor del formulario AAFF
     const selAAFFCons = document.getElementById('aaff-consultor');
@@ -2099,6 +2209,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadAAFF();
   loadReuniones();
   loadPalancas();
+  loadCaptaciones();
 });
 </script>
 </body>
