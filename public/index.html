@@ -872,47 +872,42 @@ table.t tr:hover td{background:var(--cream)}
   <div class="ssep">Filtrar por oficina</div>
   <div class="chips-wrap" id="chips-aaff"><button class="chip chip-all active" onclick="toggleChip(this,'all')">Todas</button><button class="chip" onclick="toggleChip(this,'Alicante')">Alicante</button><button class="chip" onclick="toggleChip(this,'Barcelona')">Barcelona</button><button class="chip" onclick="toggleChip(this,'Castellón')">Castellón</button><button class="chip" onclick="toggleChip(this,'Jaén')">Jaén</button><button class="chip" onclick="toggleChip(this,'Madrid')">Madrid</button><button class="chip" onclick="toggleChip(this,'Málaga')">Málaga</button><button class="chip" onclick="toggleChip(this,'Marbella')">Marbella</button><button class="chip" onclick="toggleChip(this,'San Sebastián')">San Sebastián</button><button class="chip" onclick="toggleChip(this,'Sevilla')">Sevilla</button><button class="chip" onclick="toggleChip(this,'Valencia')">Valencia</button></div>
   <div class="kgrid" style="grid-template-columns:repeat(5,1fr)">
-    <div class="kc hi"><div class="kl">AAFF activos/total</div><div class="kv">31<span style="font-size:13px;color:var(--mu);font-weight:400">/46</span></div><div class="ks">67% activos</div></div>
-    <div class="kc"><div class="kl">Captaciones AAFF</div><div class="kv">23</div><div class="ks">período seleccionado</div></div>
-    <div class="kc"><div class="kl">Cierres AAFF</div><div class="kv">11</div></div>
-    <div class="kc"><div class="kl">Facturación AAFF</div><div class="kv gold">148.000€</div><div class="ks">honorarios LAE</div></div>
-    <div class="kc"><div class="kl">Reactivar / rescindir</div><div class="kv am">15</div></div>
+    <div class="kc hi"><div class="kl">AAFF activos/total</div><div class="kv" id="aaff-kpi-activos">—</div><div class="ks" id="aaff-kpi-pct">—</div></div>
+    <div class="kc"><div class="kl">Captaciones AAFF</div><div class="kv" id="aaff-kpi-captaciones">—</div></div>
+    <div class="kc"><div class="kl">Cierres AAFF</div><div class="kv" id="aaff-kpi-cierres">—</div></div>
+    <div class="kc"><div class="kl">Facturación AAFF</div><div class="kv gold" id="aaff-kpi-facturacion">—</div></div>
+    <div class="kc"><div class="kl">Reactivar / rescindir</div><div class="kv am" id="aaff-kpi-accion">—</div></div>
   </div>
   <div class="ssep">Estado de despachos</div>
-  <div class="panel"><div class="ph"><span class="pt">Kanban de despachos AAFF</span><button class="pa">Exportar PDF →</button></div><div class="pb">
-    <div class="kanban">
-      <div>
-        <div class="k-col-head" style="color:#16a34a"><span class="k-cnt kc-g">31</span>Activos</div>
-        <div class="k-chip"><div class="k-name">Gesmax Marbella</div><div class="k-meta">Resp: Cristina V. · 3 capt. · 1 cierre · 5 días</div></div>
-        <div class="k-chip"><div class="k-name">Inmovida Madrid</div><div class="k-meta">Resp: Jorge P. · 2 capt. · 2 cierres · 3 días</div></div>
-        <div class="k-chip"><div class="k-name">Realpro BCN</div><div class="k-meta">Resp: Ana M. · 1 capt. · 0 cierres · 12 días</div></div>
-        <div class="k-chip" style="text-align:center;color:var(--mu);font-size:10px;border-style:dashed">+28 más</div>
-      </div>
-      <div>
-        <div class="k-col-head" style="color:#d97706"><span class="k-cnt kc-a">11</span>Reactivar</div>
-        <div class="k-chip"><div class="k-name">Inmogrup Castellón</div><div class="k-meta">Resp: Elena B. · 90 días sin actividad</div></div>
-        <div class="k-chip"><div class="k-name">Casas&Más Sevilla</div><div class="k-meta">Resp: Maribel C. · 75 días · 0 capt.</div></div>
-        <div class="k-chip" style="text-align:center;color:var(--mu);font-size:10px;border-style:dashed">+9 más</div>
-      </div>
-      <div>
-        <div class="k-col-head" style="color:#dc2626"><span class="k-cnt kc-r">4</span>Rescindir</div>
-        <div class="k-chip"><div class="k-name">Selectiva Jaén</div><div class="k-meta">Resp: Pedro M. · +6 meses · 0 capt.</div></div>
-        <div class="k-chip"><div class="k-name">Habita Sev.</div><div class="k-meta">Resp: Maribel C. · +5 meses · 0 capt.</div></div>
-        <div class="k-chip"><div class="k-name">PropiedadesYA</div><div class="k-meta">Resp: Luis R. · contrato caducado</div></div>
-        <div class="k-chip"><div class="k-name">MegaInmo Jaén</div><div class="k-meta">Resp: Pedro M. · +4 meses sin respuesta</div></div>
-      </div>
+  <div class="panel"><div class="ph"><span class="pt">Kanban de despachos AAFF</span><button class="pa" onclick="mostrarFormAAFF()">+ Nuevo despacho</button></div>
+  <div id="form-aaff" style="display:none;padding:12px 14px;border-bottom:1px solid var(--cd);background:var(--cream)">
+    <div class="fr fr4">
+      <div><div class="flbl">Nombre despacho</div><input class="inp" type="text" id="aaff-nombre" placeholder="Nombre del despacho..."></div>
+      <div><div class="flbl">Oficina LAE</div><select class="sel" id="aaff-oficina"><option value="">Selecciona...</option></select></div>
+      <div><div class="flbl">Consultor responsable</div><select class="sel" id="aaff-consultor"><option value="">Selecciona...</option></select></div>
+      <div><div class="flbl">% Comisión</div><input class="inp" type="text" id="aaff-pct" value="10" placeholder="10"></div>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <button class="btn bn" onclick="guardarAAFF()">Guardar despacho</button>
+      <button class="btn bo" onclick="document.getElementById('form-aaff').style.display='none'">Cancelar</button>
+    </div>
+    <div id="aaff-msg" style="display:none;margin-top:6px;font-size:11px;padding:5px 9px;border-radius:4px"></div>
+  </div>
+  <div class="pb">
+    <div class="kanban" id="aaff-kanban">
+      <div><div class="k-col-head" style="color:#16a34a"><span class="k-cnt kc-g" id="cnt-activos">—</span>Activos</div><div id="col-activos"></div></div>
+      <div><div class="k-col-head" style="color:#d97706"><span class="k-cnt kc-a" id="cnt-reactivar">—</span>Reactivar</div><div id="col-reactivar"></div></div>
+      <div><div class="k-col-head" style="color:#dc2626"><span class="k-cnt kc-r" id="cnt-rescindir">—</span>Rescindir</div><div id="col-rescindir"></div></div>
     </div>
   </div></div>
   <div class="ssep">Ranking AAFF — período seleccionado</div>
   <div class="panel"><div class="ph"><span class="pt">Rendimiento por despacho</span><button class="pa">Exportar →</button></div>
   <table class="t"><thead><tr><th>Despacho</th><th>Oficina</th><th>Resp. LAE</th><th>Captac.</th><th>Cierres</th><th>Honor. capt.</th><th>Honor. cierres</th><th>% comisión</th><th>A facturar</th><th>Últ. contacto</th><th>Estado</th></tr></thead>
-  <tbody>
-    <tr><td><strong>Inmovida Madrid</strong></td><td>Madrid</td><td>Jorge P.</td><td class="nr">5</td><td class="nr">3</td><td class="nr">62.000€</td><td class="nr">40.350€</td><td class="nr">20%</td><td class="nr" style="color:var(--am)">20.470€</td><td>hace 3 días</td><td><span class="pill pg">Activo</span></td></tr>
-    <tr><td><strong>Gesmax Marbella</strong></td><td>Marbella</td><td>Cristina V.</td><td class="nr">4</td><td class="nr">2</td><td class="nr">48.000€</td><td class="nr">26.900€</td><td class="nr">15%</td><td class="nr" style="color:var(--am)">11.235€</td><td>hace 5 días</td><td><span class="pill pg">Activo</span></td></tr>
-    <tr><td><strong>Inmogrup Castellón</strong></td><td>Castellón</td><td>Elena B.</td><td class="nr">0</td><td class="nr">0</td><td class="nr">—</td><td class="nr">—</td><td class="nr">—</td><td class="nr">—</td><td>hace 90 días</td><td><span class="pill pa2">Reactivar</span></td></tr>
+  <tbody id="aaff-tabla-tbody">
+    <tr><td colspan="11" style="text-align:center;color:var(--mu);font-style:italic;padding:16px">Cargando despachos...</td></tr>
   </tbody></table></div>
 </div>
-<div class="expbar"><div class="exptxt">46 despachos · <strong>148.000€</strong> facturación</div><div><button class="expbtn">Panel Inés</button><button class="expbtn prim">Exportar informe</button></div></div>
+<div class="expbar"><div class="exptxt" id="aaff-expbar-txt">— despachos</div><div><button class="expbtn">Panel Inés</button><button class="expbtn prim">Exportar informe</button></div></div>
 </div>
 <div class="view" id="view-reuniones">
 <div class="scroll">
@@ -1393,6 +1388,17 @@ async function loadSelectsFormulario() {
     const selGastoOf = document.getElementById('gasto-oficina');
     if (selGastoOf) selGastoOf.innerHTML = '<option value="">Central (÷ todas)</option>' + optsOf;
 
+    // Select oficina del formulario AAFF
+    const selAAFFOf = document.getElementById('aaff-oficina');
+    if (selAAFFOf) selAAFFOf.innerHTML = '<option value="">Selecciona oficina...</option>' + optsOf;
+
+    // Select consultor del formulario AAFF
+    const selAAFFCons = document.getElementById('aaff-consultor');
+    if (selAAFFCons && consRes.success) {
+      selAAFFCons.innerHTML = '<option value="">Selecciona consultor...</option>' +
+        consRes.data.map(c => `<option value="${c.id}">${c.nombre} (${c.oficina_nombre})</option>`).join('');
+    }
+
     // Actualizar todos los selects de consultores (ag-nom)
     if (consRes.success) {
       const opts = '<option value="">-- seleccionar --</option>' +
@@ -1463,6 +1469,156 @@ async function cambiarEstado(id, estadoActual) {
     loadListadoOps();
     loadDashboard();
   } catch(e) { alert('Error: ' + e.message); }
+}
+
+// ── AAFF ─────────────────────────────────────────────
+function mostrarFormAAFF() {
+  const f = document.getElementById('form-aaff');
+  if (f) f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+async function guardarAAFF() {
+  const nombre = document.getElementById('aaff-nombre')?.value?.trim();
+  if (!nombre) { alert('Introduce el nombre del despacho'); return; }
+  const payload = {
+    nombre,
+    oficina_id: parseInt(document.getElementById('aaff-oficina')?.value) || null,
+    consultor_responsable_id: parseInt(document.getElementById('aaff-consultor')?.value) || null,
+    pct_comision: parseFloat(document.getElementById('aaff-pct')?.value) || 10,
+    estado: 'activo'
+  };
+  const msg = document.getElementById('aaff-msg');
+  try {
+    const resp = await fetch(API + '/api/aaff', {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    const result = await resp.json();
+    if (result.success) {
+      if (msg) { msg.style.display='block'; msg.style.background='#ECFDF5'; msg.style.color='#065F46'; msg.textContent='✓ Despacho añadido'; }
+      document.getElementById('aaff-nombre').value = '';
+      loadAAFF();
+    } else {
+      if (msg) { msg.style.display='block'; msg.style.background='#FEE2E2'; msg.style.color='#991B1B'; msg.textContent='Error: '+result.error; }
+    }
+  } catch(e) {
+    if (msg) { msg.style.display='block'; msg.style.background='#FEE2E2'; msg.style.color='#991B1B'; msg.textContent='Error: '+e.message; }
+  }
+}
+
+async function cambiarEstadoAAFF(id, estadoActual) {
+  const estados = ['activo','reactivar','rescindir'];
+  const lbls    = ['Activo','Reactivar','Rescindir'];
+  const siguiente = estados[(estados.indexOf(estadoActual)+1) % estados.length];
+  if (!confirm(`Cambiar estado a "${lbls[estados.indexOf(siguiente)]}"?`)) return;
+  await fetch(`${API}/api/aaff/${id}/estado`, {
+    method:'PATCH', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ estado: siguiente })
+  });
+  loadAAFF();
+}
+
+async function registrarContactoAAFF(id) {
+  await fetch(`${API}/api/aaff/${id}/contacto`, { method:'PATCH' });
+  loadAAFF();
+}
+
+async function loadAAFF() {
+  try {
+    const [listRes, sumRes] = await Promise.all([
+      fetch(API + '/api/aaff').then(r => r.json()),
+      fetch(API + '/api/aaff/resumen').then(r => r.json())
+    ]);
+
+    // KPIs
+    if (sumRes.success) {
+      const s = sumRes.data;
+      const el = id => document.getElementById(id);
+      const total = parseInt(s.total) || 0;
+      const activos = parseInt(s.activos) || 0;
+      if (el('aaff-kpi-activos')) el('aaff-kpi-activos').innerHTML = `${activos}<span style="font-size:13px;color:var(--mu);font-weight:400">/${total}</span>`;
+      if (el('aaff-kpi-pct')) el('aaff-kpi-pct').textContent = (s.pct_activos || 0) + '% activos';
+      if (el('aaff-kpi-accion')) el('aaff-kpi-accion').textContent = (parseInt(s.reactivar)||0) + (parseInt(s.rescindir)||0);
+    }
+
+    if (!listRes.success) return;
+    const despachos = listRes.data;
+
+    // Calcular totales de captaciones, cierres, facturación
+    const totCapt = despachos.reduce((a,d) => a + (parseInt(d.total_captaciones)||0), 0);
+    const totCierres = despachos.reduce((a,d) => a + (parseInt(d.total_cierres)||0), 0);
+    const totFact = despachos.reduce((a,d) => a + (parseFloat(d.honorarios_cierres)||0), 0);
+    const el = id => document.getElementById(id);
+    if (el('aaff-kpi-captaciones')) el('aaff-kpi-captaciones').textContent = totCapt;
+    if (el('aaff-kpi-cierres'))     el('aaff-kpi-cierres').textContent = totCierres;
+    if (el('aaff-kpi-facturacion')) el('aaff-kpi-facturacion').textContent = fmt(totFact);
+
+    // Kanban
+    const activos = despachos.filter(d => d.estado === 'activo');
+    const reactivar = despachos.filter(d => d.estado === 'reactivar');
+    const rescindir = despachos.filter(d => d.estado === 'rescindir');
+
+    const chipHTML = (d) => {
+      const dias = d.dias_sin_actividad != null ? `· ${d.dias_sin_actividad}d` : '';
+      const capt = parseInt(d.total_captaciones)||0;
+      const cierres = parseInt(d.total_cierres)||0;
+      return `<div class="k-chip" onclick="cambiarEstadoAAFF(${d.id},'${d.estado}')" title="Clic para cambiar estado">
+        <div class="k-name">${d.nombre}</div>
+        <div class="k-meta">Resp: ${d.consultor_nombre||'—'} · ${capt} capt. · ${cierres} cierres${dias}</div>
+      </div>`;
+    };
+
+    ['activos','reactivar','rescindir'].forEach((key, i) => {
+      const col = document.getElementById('col-' + key);
+      const cnt = document.getElementById('cnt-' + key);
+      const arr = [activos, reactivar, rescindir][i];
+      if (cnt) cnt.textContent = arr.length;
+      if (col) col.innerHTML = arr.length
+        ? arr.map(chipHTML).join('')
+        : `<div style="text-align:center;color:var(--mu);font-size:10px;padding:8px;border:1px dashed var(--cd);border-radius:6px">Sin despachos</div>`;
+    });
+
+    // Tabla ranking
+    const tbody = document.getElementById('aaff-tabla-tbody');
+    if (tbody) {
+      if (!despachos.length) {
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--mu);font-style:italic;padding:16px">Sin despachos — añade el primero con "+ Nuevo despacho"</td></tr>';
+      } else {
+        const estadoPill = { activo:'pg', reactivar:'pa2', rescindir:'pr2' };
+        const estadoLbl  = { activo:'Activo', reactivar:'Reactivar', rescindir:'Rescindir' };
+        tbody.innerHTML = despachos.map(d => {
+          const capt    = parseInt(d.total_captaciones)||0;
+          const cierres = parseInt(d.total_cierres)||0;
+          const hCierres = parseFloat(d.honorarios_cierres)||0;
+          const hPipe    = parseFloat(d.honorarios_pipeline)||0;
+          const facturar = hCierres * (d.pct_comision||10) / 100;
+          const dias = d.dias_sin_actividad != null
+            ? (d.dias_sin_actividad < 14 ? `hace ${d.dias_sin_actividad}d` : `<strong style="color:#dc2626">${d.dias_sin_actividad}d sin contacto</strong>`)
+            : '—';
+          return `<tr>
+            <td><strong>${d.nombre}</strong></td>
+            <td>${d.oficina_nombre||'—'}</td>
+            <td>${d.consultor_nombre||'—'}</td>
+            <td class="nr">${capt}</td>
+            <td class="nr">${cierres}</td>
+            <td class="nr">${capt > 0 ? fmt(hCierres + hPipe) : '—'}</td>
+            <td class="nr">${cierres > 0 ? fmt(hCierres) : '—'}</td>
+            <td class="nr">${d.pct_comision||'—'}%</td>
+            <td class="nr" style="color:var(--am)">${facturar > 0 ? fmt(facturar) : '—'}</td>
+            <td>${dias}</td>
+            <td>
+              <span class="pill ${estadoPill[d.estado]||'pg'}" style="cursor:pointer" onclick="cambiarEstadoAAFF(${d.id},'${d.estado}')">${estadoLbl[d.estado]||d.estado}</span>
+              <button class="br2" style="margin-left:4px" onclick="registrarContactoAAFF(${d.id})" title="Registrar contacto hoy">📞</button>
+            </td>
+          </tr>`;
+        }).join('');
+      }
+    }
+
+    // Barra inferior
+    const expTxt = document.getElementById('aaff-expbar-txt');
+    if (expTxt) expTxt.innerHTML = `${despachos.length} despachos · <strong>${fmt(totFact)}</strong> facturación`;
+
+  } catch(e) { console.warn('Error cargando AAFF:', e.message); }
 }
 
 // ── GASTOS ────────────────────────────────────────────
@@ -1674,6 +1830,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSelectsFormulario();
   loadListadoOps();
   loadGastos();
+  loadAAFF();
 });
 </script>
 </body>

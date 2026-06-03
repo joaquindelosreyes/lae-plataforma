@@ -17,6 +17,7 @@ app.use('/api/oficinas',    require('../routes/oficinas'));
 app.use('/api/operaciones', require('../routes/operaciones'));
 app.use('/api/consultores', require('../routes/consultores'));
 app.use('/api/gastos',      require('../routes/gastos'));
+app.use('/api/aaff',        require('../routes/aaff'));
 
 // Mantener compatibilidad con endpoints legacy del dashboard
 const pool = require('../db/pool');
