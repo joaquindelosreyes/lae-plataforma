@@ -189,14 +189,14 @@
           <table>
             <thead>
               <tr>
-                <th>Ref.</th>
-                <th>Fecha</th>
-                <th>Oficina</th>
-                <th>Dirección</th>
-                <th>Tipo</th>
-                <th>Precio</th>
-                <th>Honor. LAE</th>
-                <th>Estado</th>
+                <th onclick="sortOps('ref')"     style="cursor:pointer;user-select:none">Ref. <span id="ops-sort-ref"></span></th>
+                <th onclick="sortOps('fecha')"   style="cursor:pointer;user-select:none">Fecha <span id="ops-sort-fecha"></span></th>
+                <th onclick="sortOps('oficina')" style="cursor:pointer;user-select:none">Oficina <span id="ops-sort-oficina"></span></th>
+                <th onclick="sortOps('direccion')" style="cursor:pointer;user-select:none">Dirección <span id="ops-sort-direccion"></span></th>
+                <th onclick="sortOps('tipo')"    style="cursor:pointer;user-select:none">Tipo <span id="ops-sort-tipo"></span></th>
+                <th onclick="sortOps('precio')"  style="cursor:pointer;user-select:none">Precio <span id="ops-sort-precio"></span></th>
+                <th onclick="sortOps('honor')"   style="cursor:pointer;user-select:none">Honor. LAE <span id="ops-sort-honor"></span></th>
+                <th onclick="sortOps('estado')"  style="cursor:pointer;user-select:none">Estado <span id="ops-sort-estado"></span></th>
               </tr>
             </thead>
             <tbody id="ops-tbody">

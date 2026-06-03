@@ -200,39 +200,75 @@ function set(id, val) {
 }
 
 // ── OPERACIONES ──────────────────────────────────────
+let _opsData = [], _opsSortCol = 'fecha', _opsSortAsc = false;
+
 async function loadOperaciones() {
   const tbody = document.getElementById('ops-tbody');
   const counter = document.getElementById('ops-count');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="10" class="loading">Cargando...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8" class="loading">Cargando...</td></tr>';
   try {
-    const año = new Date().getFullYear();
-    const res = await fetch(`${API}/api/operaciones?limit=200&desde=${año}-01-01`).then(r => r.json());
-    const ops = res.data || res;
-    if (!Array.isArray(ops) || !ops.length) {
-      tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-state-icon">📋</div><h3>Sin operaciones</h3><p>Las operaciones importadas de Inmovilla aparecerán aquí.<br>También puedes añadir una manualmente.</p></div></td></tr>`;
+    const { desde, hasta } = getDateRange();
+    const res = await fetch(`${API}/api/operaciones?limit=500&desde=${desde}&hasta=${hasta}`).then(r => r.json());
+    _opsData = res.data || res;
+    if (!Array.isArray(_opsData) || !_opsData.length) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">📋</div><h3>Sin operaciones</h3><p>Las operaciones importadas de Inmovilla aparecerán aquí.<br>También puedes añadir una manualmente.</p></div></td></tr>`;
       return;
     }
-    if (counter) counter.textContent = ops.length + ' operaciones';
-    const estadoBadge = { cobrada: 'badge-green', pipeline: 'badge-blue', pendiente_escritura: 'badge-amber', cancelada: 'badge-gray' };
-    const estadoLbl   = { cobrada: 'Cobrada', pipeline: 'Pipeline', pendiente_escritura: 'Pend. escritura', cancelada: 'Cancelada' };
-    tbody.innerHTML = ops.map(op => {
-      const est = op.estado || 'pipeline';
-      const fecha = fmtFecha(op.fecha);
-      const precio = parseFloat(op.precio_inmueble) > 0 ? fmtK(op.precio_inmueble) : '—';
-      const honor  = parseFloat(op.honorarios_lae) > 0 ? fmt(op.honorarios_lae) : '—';
-      return `<tr>
-        <td style="font-size:10px;color:var(--muted);font-family:monospace">${op.ref || '—'}</td>
-        <td>${fecha}</td>
-        <td>${op.oficina_nombre || '—'}</td>
-        <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${op.direccion || '—'}</td>
-        <td><span class="badge badge-gray">${op.tipo_operacion === 'cv' ? 'C-V' : op.tipo_operacion || '—'}</span></td>
-        <td class="td-right">${precio}</td>
-        <td class="td-right" style="color:var(--green);font-weight:500">${honor}</td>
-        <td><span class="badge ${estadoBadge[est]||'badge-gray'}" style="cursor:pointer" onclick="cambiarEstadoOp(${op.id},'${est}')">${estadoLbl[est]||est}</span></td>
-      </tr>`;
-    }).join('');
-  } catch(e) { tbody.innerHTML = `<tr><td colspan="10" class="loading">Error: ${e.message}</td></tr>`; }
+    if (counter) counter.textContent = _opsData.length + ' operaciones';
+    renderOps();
+  } catch(e) { tbody.innerHTML = `<tr><td colspan="8" class="loading">Error: ${e.message}</td></tr>`; }
+}
+
+function sortOps(col) {
+  if (_opsSortCol === col) {
+    _opsSortAsc = !_opsSortAsc;
+  } else {
+    _opsSortCol = col;
+    _opsSortAsc = ['ref','oficina','direccion','tipo','estado'].includes(col);
+  }
+  ['ref','fecha','oficina','direccion','tipo','precio','honor','estado'].forEach(c => {
+    const el = document.getElementById('ops-sort-' + c);
+    if (el) el.textContent = c === col ? (_opsSortAsc ? ' ↑' : ' ↓') : '';
+  });
+  renderOps();
+}
+
+function renderOps() {
+  const tbody = document.getElementById('ops-tbody');
+  if (!tbody || !_opsData.length) return;
+
+  const sorted = [..._opsData].sort((a, b) => {
+    let va, vb;
+    if      (_opsSortCol === 'ref')       { va = a.ref||''; vb = b.ref||''; }
+    else if (_opsSortCol === 'fecha')     { va = a.fecha||''; vb = b.fecha||''; }
+    else if (_opsSortCol === 'oficina')   { va = a.oficina_nombre||''; vb = b.oficina_nombre||''; }
+    else if (_opsSortCol === 'direccion') { va = a.direccion||''; vb = b.direccion||''; }
+    else if (_opsSortCol === 'tipo')      { va = a.tipo_operacion||''; vb = b.tipo_operacion||''; }
+    else if (_opsSortCol === 'precio')    { va = parseFloat(a.precio_inmueble)||0; vb = parseFloat(b.precio_inmueble)||0; }
+    else if (_opsSortCol === 'honor')     { va = parseFloat(a.honorarios_lae)||0; vb = parseFloat(b.honorarios_lae)||0; }
+    else if (_opsSortCol === 'estado')    { va = a.estado||''; vb = b.estado||''; }
+    if (typeof va === 'string') return _opsSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _opsSortAsc ? va - vb : vb - va;
+  });
+
+  const estadoBadge = { cobrada:'badge-green', pipeline:'badge-blue', pendiente_escritura:'badge-amber', cancelada:'badge-gray' };
+  const estadoLbl   = { cobrada:'Cobrada', pipeline:'Pipeline', pendiente_escritura:'Pend. escritura', cancelada:'Cancelada' };
+  tbody.innerHTML = sorted.map(op => {
+    const est   = op.estado || 'pipeline';
+    const precio = parseFloat(op.precio_inmueble) > 0 ? fmtK(op.precio_inmueble) : '—';
+    const honor  = parseFloat(op.honorarios_lae)  > 0 ? fmt(op.honorarios_lae)   : '—';
+    return `<tr>
+      <td style="font-size:10px;color:var(--muted);font-family:monospace">${op.ref||'—'}</td>
+      <td>${fmtFecha(op.fecha)}</td>
+      <td>${op.oficina_nombre||'—'}</td>
+      <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${op.direccion||'—'}</td>
+      <td><span class="badge badge-gray">${op.tipo_operacion==='cv'?'C-V':op.tipo_operacion||'—'}</span></td>
+      <td class="td-right">${precio}</td>
+      <td class="td-right" style="color:var(--green);font-weight:500">${honor}</td>
+      <td><span class="badge ${estadoBadge[est]||'badge-gray'}" style="cursor:pointer" onclick="cambiarEstadoOp(${op.id},'${est}')">${estadoLbl[est]||est}</span></td>
+    </tr>`;
+  }).join('');
 }
 
 async function cambiarEstadoOp(id, estadoActual) {
