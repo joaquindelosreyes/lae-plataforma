@@ -43,21 +43,26 @@ function nav(viewId) {
     dashboard: 'Dashboard General',
     operaciones: 'Operaciones',
     'nueva-op': 'Nueva operación',
-    captaciones: 'Captaciones',
+    'ingresos-resumen': 'Ingresos — Resumen',
+    captaciones: 'Captaciones — Listado',
+    'cap-matriz': 'Captaciones — Matriz',
+    'cap-oficinas': 'Captaciones — Por oficina',
+    palancas: 'Palancas — Análisis automático',
     aaff: 'AAFF',
     gastos: 'Gastos',
-    reuniones: 'Reuniones',
     importar: 'Importar Inmovilla',
-    ajustes: 'Ajustes'
   };
   const title = document.getElementById('page-title');
   if (title) title.textContent = titles[viewId] || viewId;
-  // Cargar datos de la vista
-  if (viewId === 'dashboard') loadDashboard();
-  if (viewId === 'operaciones') loadOperaciones();
-  if (viewId === 'captaciones') loadCaptaciones();
-  if (viewId === 'aaff') loadAAFF();
-  if (viewId === 'gastos') loadGastos();
+  if (viewId === 'dashboard')        loadDashboard();
+  if (viewId === 'operaciones')      loadOperaciones();
+  if (viewId === 'captaciones')      loadCaptaciones();
+  if (viewId === 'cap-matriz')       loadCaptacionesMatriz();
+  if (viewId === 'cap-oficinas')     loadCaptacionesPorOficina();
+  if (viewId === 'ingresos-resumen') loadIngresosResumen();
+  if (viewId === 'palancas')         loadPalancas();
+  if (viewId === 'aaff')             loadAAFF();
+  if (viewId === 'gastos')           loadGastos();
 }
 
 // ── DASHBOARD ────────────────────────────────────────
@@ -573,3 +578,171 @@ document.addEventListener('DOMContentLoaded', () => {
     dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); if (e.dataTransfer.files[0]) setImportFile(e.dataTransfer.files[0]); });
   }
 });
+
+// ── PALANCAS ─────────────────────────────────────────
+async function loadPalancas() {
+  try {
+    const año = new Date().getFullYear();
+    const res = await fetch(`${API}/api/palancas?año=${año}`).then(r => r.json());
+    if (!res.success) return;
+    const d = res.data;
+    const el = id => document.getElementById(id);
+    const bg  = { verde:'#f0faf3', ambar:'#fffbeb', rojo:'#fff5f5', sin_datos:'transparent' };
+    const col = { verde:'#16a34a', ambar:'#d97706', rojo:'#dc2626', sin_datos:'#9ca3af' };
+    const palancaKeys = ['honor_lae','captaciones','cierres','aaff_activos','cartera_excl'];
+    const lbl = { honor_lae:'Honor. LAE', captaciones:'Captaciones', cierres:'Cierres', aaff_activos:'AAFF activos', cartera_excl:'Cartera excl.' };
+
+    if (el('palanca-ritmo')) el('palanca-ritmo').textContent = d.ritmo_esperado + '%';
+    if (el('palanca-cnt-verde')) el('palanca-cnt-verde').textContent = d.contadores.verde;
+    if (el('palanca-cnt-ambar')) el('palanca-cnt-ambar').textContent = d.contadores.ambar;
+    if (el('palanca-cnt-rojo'))  el('palanca-cnt-rojo').textContent  = d.contadores.rojo;
+
+    const tbody = el('palanca-tbody');
+    if (tbody) {
+      tbody.innerHTML = d.oficinas.map(o => {
+        const celdas = palancaKeys.map(k => {
+          const p = o.palancas[k];
+          const txt = p.sem === 'sin_datos' ? '—' : `${p.pct}% ${p.icono}`;
+          return `<td class="td-right" style="background:${bg[p.sem]}"><span style="color:${col[p.sem]};font-weight:600">${txt}</span></td>`;
+        }).join('');
+        return `<tr><td style="font-weight:500;color:var(--navy);white-space:nowrap">${o.nombre}</td>${celdas}</tr>`;
+      }).join('');
+    }
+
+    const resDiv = el('palanca-resumen');
+    if (resDiv) {
+      resDiv.innerHTML = palancaKeys.map(k => {
+        const r = d.resumen_palancas[k];
+        const c = col[r.sem] || col.rojo;
+        const dir = r.sem === 'verde' ? '↑ por encima' : r.sem === 'ambar' ? '→ en ritmo' : '↓ por debajo';
+        return `<div class="kpi-card"><div class="kpi-label">${lbl[k]}</div><div class="kpi-value" style="color:${c}">${r.media}%</div><div class="kpi-sub">ritmo esp. ${d.ritmo_esperado}% · ${dir}</div></div>`;
+      }).join('');
+    }
+
+    const alertDiv = el('palanca-alertas');
+    if (alertDiv) {
+      if (!d.alertas.length) {
+        alertDiv.innerHTML = '<div class="alert alert-success">✓ Ninguna oficina requiere atención urgente</div>';
+      } else {
+        alertDiv.innerHTML = d.alertas.map(a => {
+          const borderCol = a.rojas >= 3 ? '#dc2626' : '#d97706';
+          const txtCol = a.rojas >= 3 ? '#dc2626' : '#d97706';
+          const barras = palancaKeys.map(k => {
+            const p = a.palancas[k];
+            if (p.sem === 'sin_datos') return '';
+            const w = Math.min(p.pct, 100);
+            return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+              <span style="width:90px;font-size:11px;color:var(--muted)">${lbl[k]}</span>
+              <div style="flex:1;height:5px;background:var(--border);border-radius:2px"><div style="width:${w}%;height:100%;background:${col[p.sem]};border-radius:2px"></div></div>
+              <span style="font-size:11px;font-weight:600;color:${col[p.sem]};width:36px">${p.pct}%</span>
+            </div>`;
+          }).filter(Boolean).join('');
+          const accion = a.rojas >= 3 ? 'Acción urgente: reunión esta semana · plan específico' : 'Seguimiento quincenal · reforzar AAFF';
+          return `<div class="panel" style="border-left:3px solid ${borderCol};margin-bottom:12px">
+            <div class="panel-header"><span class="panel-title" style="color:${txtCol}">${a.nombre} — ${a.rojas} palancas por debajo</span></div>
+            <div class="panel-body">${barras}<div class="alert" style="background:${a.rojas>=3?'#FEF2F2':'#FFFBEB'};color:${txtCol};border:none;margin:8px 0 0;padding:8px 12px">${accion}</div></div>
+          </div>`;
+        }).join('');
+      }
+    }
+  } catch(e) { console.warn('Error palancas:', e.message); }
+}
+
+// ── INGRESOS RESUMEN ──────────────────────────────────
+async function loadIngresosResumen() {
+  try {
+    const año = new Date().getFullYear();
+    const res = await fetch(`${API}/api/operaciones/resumen?año=${año}`).then(r => r.json());
+    if (!res.success) return;
+    const s = res.data;
+    const el = id => document.getElementById(id);
+    if (el('ir-cobrado'))    el('ir-cobrado').textContent    = fmtK(s.cobrado);
+    if (el('ir-pipeline'))   el('ir-pipeline').textContent   = fmtK(s.pipeline);
+    if (el('ir-pendiente'))  el('ir-pendiente').textContent  = fmtK(s.pendiente_escritura);
+    if (el('ir-ops-inmob'))  el('ir-ops-inmob').textContent  = s.ops_inmobiliarias || 0;
+    if (el('ir-ops-atip'))   el('ir-ops-atip').textContent   = s.ops_atipicas || 0;
+    // Barras por canal
+    const total = parseFloat(s.cobrado) || 1;
+    const canales = [
+      { lbl:'Directa', val: s.cobrado_directa, color:'var(--navy)' },
+      { lbl:'AAFF',    val: s.cobrado_aaff,    color:'var(--gold)' },
+      { lbl:'Prescriptor', val: s.cobrado_prescriptor, color:'#7C3AED' },
+      { lbl:'Compartida',  val: s.cobrado_compartida,  color:'#d97706' },
+    ];
+    const barDiv = el('ir-canales');
+    if (barDiv) {
+      barDiv.innerHTML = canales.map(c => {
+        const v = parseFloat(c.val) || 0;
+        const w = Math.round(v / total * 100);
+        return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <span style="width:80px;font-size:11px;color:var(--muted)">${c.lbl}</span>
+          <div style="flex:1;height:14px;background:var(--border);border-radius:3px;overflow:hidden">
+            <div style="width:${w}%;height:100%;background:${c.color};border-radius:3px"></div>
+          </div>
+          <span style="font-size:11px;font-weight:500;color:var(--text);width:70px;text-align:right">${fmtK(v)}</span>
+        </div>`;
+      }).join('');
+    }
+  } catch(e) { console.warn('Error ingresos resumen:', e.message); }
+}
+
+// ── CAPTACIONES MATRIZ ────────────────────────────────
+async function loadCaptacionesMatriz() {
+  const el = id => document.getElementById(id);
+  try {
+    const res = await fetch(`${API}/api/captaciones/matriz`).then(r => r.json());
+    const lista = res.data || res;
+    if (!Array.isArray(lista)) return;
+
+    const tipologias = [...new Set(lista.map(r => r.tipologia))].sort();
+    const matrix = {};
+    lista.forEach(r => {
+      if (!matrix[r.tipologia]) matrix[r.tipologia] = { exclusiva:{num:0,valor:0,honor:0}, nota_encargo:{num:0,valor:0,honor:0} };
+      matrix[r.tipologia][r.mandato] = { num: parseInt(r.num), valor: parseFloat(r.valor), honor: parseFloat(r.honorarios) };
+    });
+
+    const tbody = el('matriz-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = tipologias.map(tip => {
+      const e = matrix[tip]?.exclusiva || {num:0,valor:0,honor:0};
+      const n = matrix[tip]?.nota_encargo || {num:0,valor:0,honor:0};
+      const total = e.num + n.num;
+      return `<tr>
+        <td style="font-weight:500;color:var(--navy)">${tip === 'vivienda' ? '⭐ Vivienda' : tip}</td>
+        <td class="td-right" style="background:#EFF6FF"><strong style="color:#1E40AF">${e.num}</strong></td>
+        <td class="td-right" style="background:#EFF6FF"><span style="color:var(--green);font-size:11px">${fmtK(e.honor)}</span></td>
+        <td class="td-right" style="background:#F5F3FF"><strong style="color:#7C3AED">${n.num}</strong></td>
+        <td class="td-right" style="background:#F5F3FF"><span style="color:var(--green);font-size:11px">${fmtK(n.honor)}</span></td>
+        <td class="td-right"><strong>${total}</strong></td>
+        <td class="td-right" style="color:var(--green);font-size:11px">${fmtK(e.honor + n.honor)}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) { console.warn('Error matriz:', e.message); }
+}
+
+// ── CAPTACIONES POR OFICINA ───────────────────────────
+async function loadCaptacionesPorOficina() {
+  try {
+    const res = await fetch(`${API}/api/captaciones/por-oficina`).then(r => r.json());
+    const lista = res.data || res;
+    if (!Array.isArray(lista)) return;
+    const tbody = document.getElementById('cap-oficinas-tbody');
+    if (!tbody) return;
+    const maxTotal = Math.max(...lista.map(o => parseInt(o.total) || 0), 1);
+    tbody.innerHTML = lista.map(o => {
+      const w = Math.round((parseInt(o.total)||0) / maxTotal * 100);
+      return `<tr>
+        <td><strong>${o.nombre}</strong></td>
+        <td class="td-right" style="color:#1E40AF;font-weight:600">${o.exclusivas||0}</td>
+        <td class="td-right" style="color:#7C3AED">${o.notas_encargo||0}</td>
+        <td class="td-right"><strong>${o.total||0}</strong></td>
+        <td class="td-right" style="color:var(--green)">${fmtK(o.honorarios||0)}</td>
+        <td style="width:120px">
+          <div style="height:5px;background:var(--border);border-radius:2px">
+            <div style="width:${w}%;height:100%;background:var(--navy);border-radius:2px"></div>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {}
+}
