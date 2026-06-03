@@ -912,36 +912,40 @@ table.t tr:hover td{background:var(--cream)}
 <div class="view" id="view-reuniones">
 <div class="scroll">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;flex-wrap:wrap;gap:8px">
-    <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--navy)">Junio 2026</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--navy)" id="cal-titulo">Junio 2026</div>
     <div style="display:flex;gap:6px">
-      <button class="btn bo">← Mayo</button>
-      <button class="btn bo">Julio →</button>
-      <button class="btn bn" onclick="alert('Nueva reunión')">+ Nueva reunión</button>
+      <button class="btn bo" onclick="navMes(-1)">← Anterior</button>
+      <button class="btn bo" onclick="navMes(1)">Siguiente →</button>
+      <button class="btn bn" onclick="mostrarFormReunion()">+ Nueva reunión</button>
     </div>
   </div>
-  <div class="panel"><div class="ph"><span class="pt">Calendario — junio 2026</span></div><div class="pb">
-    <div class="cal-grid">
+
+  <!-- Formulario nueva reunión -->
+  <div id="form-reunion" style="display:none;margin-bottom:11px">
+    <div class="panel"><div class="ph"><span class="pt">Nueva reunión</span></div><div class="pb">
+      <div class="fr fr4">
+        <div><div class="flbl">Fecha</div><input class="inp" type="date" id="reu-fecha"></div>
+        <div><div class="flbl">Oficina</div><select class="sel" id="reu-oficina"><option value="">Selecciona...</option></select></div>
+        <div><div class="flbl">Tipo</div>
+          <select class="sel" id="reu-tipo">
+            <option value="periodica">Periódica</option>
+            <option value="extraordinaria">Extraordinaria</option>
+            <option value="urgente">Urgente</option>
+          </select>
+        </div>
+        <div><div class="flbl">Título (opcional)</div><input class="inp" type="text" id="reu-titulo" placeholder="Ej: Revisión Q2..."></div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="btn bn" onclick="guardarReunion()">Guardar</button>
+        <button class="btn bo" onclick="document.getElementById('form-reunion').style.display='none'">Cancelar</button>
+      </div>
+      <div id="reu-msg" style="display:none;margin-top:6px;font-size:11px;padding:5px 9px;border-radius:4px"></div>
+    </div></div>
+  </div>
+
+  <div class="panel"><div class="ph"><span class="pt" id="cal-panel-titulo">Calendario — junio 2026</span></div><div class="pb">
+    <div class="cal-grid" id="cal-grid">
       <div class="cal-day-hd">L</div><div class="cal-day-hd">M</div><div class="cal-day-hd">X</div><div class="cal-day-hd">J</div><div class="cal-day-hd">V</div><div class="cal-day-hd">S</div><div class="cal-day-hd">D</div>
-      <div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div><div class="cal-day"></div>
-      <div class="cal-day"><div class="cal-day-num">1</div></div>
-      <div class="cal-day has-reu"><div class="cal-day-num">2</div><div class="cal-pill">Sevilla · 10h</div></div>
-      <div class="cal-day has-reu"><div class="cal-day-num">3</div><div class="cal-pill">Barcelona · 11h</div></div>
-      <div class="cal-day has-reu hoy"><div class="cal-day-num" style="font-weight:600;color:var(--navy)">4</div><div class="cal-pill gold">Madrid · 12h</div></div>
-      <div class="cal-day"><div class="cal-day-num">5</div></div>
-      <div class="cal-day has-reu"><div class="cal-day-num">6</div><div class="cal-pill red">Jaén · 9h ⚠</div></div>
-      <div class="cal-day"></div><div class="cal-day"></div>
-      <div class="cal-day"><div class="cal-day-num">8</div></div>
-      <div class="cal-day has-reu"><div class="cal-day-num">9</div><div class="cal-pill">Sevilla · 10h</div></div>
-      <div class="cal-day has-reu"><div class="cal-day-num">10</div><div class="cal-pill">San Seb. · 11h</div></div>
-      <div class="cal-day has-reu"><div class="cal-day-num">11</div><div class="cal-pill">Málaga · 10h</div><div class="cal-pill gold">Extra</div></div>
-      <div class="cal-day"><div class="cal-day-num">12</div></div>
-      <div class="cal-day"><div class="cal-day-num">13</div></div>
-      <div class="cal-day"></div>
-      <div class="cal-day"><div class="cal-day-num">15</div></div>
-      <div class="cal-day has-reu"><div class="cal-day-num">16</div><div class="cal-pill">Sevilla · 10h</div></div>
-      <div class="cal-day has-reu"><div class="cal-day-num">17</div><div class="cal-pill">BCN · 11h</div></div>
-      <div class="cal-day"><div class="cal-day-num">18</div></div>
-      <div class="cal-day"><div class="cal-day-num">19</div></div>
     </div>
     <div style="display:flex;gap:12px;font-size:10px;color:var(--mu);margin-top:4px">
       <div><span style="display:inline-block;width:9px;height:9px;background:var(--navy);border-radius:2px;margin-right:4px"></span>Periódica</div>
@@ -949,19 +953,18 @@ table.t tr:hover td{background:var(--cream)}
       <div><span style="display:inline-block;width:9px;height:9px;background:#dc2626;border-radius:2px;margin-right:4px"></span>Urgente</div>
     </div>
   </div></div>
-  <div class="ssep">Reunión activa — Madrid · miércoles 4 junio · 12:00</div>
-  <div class="g2">
-    <div class="panel"><div class="ph"><span class="pt">Conclusiones</span></div>
-    <div class="pb"><textarea class="ta2" style="min-height:82px">Madrid en 94% de cumplimiento. Jorge Pérez lidera. Pendiente mejorar ritmo de captaciones Q3.</textarea></div></div>
-    <div class="panel"><div class="ph"><span class="pt">Compromisos</span><button class="pa" onclick="addComp()">+ Añadir</button></div>
-    <div class="pb" id="complist">
-      <div class="comprow"><div class="chk" onclick="tChk(this)"></div><div><div class="ct2">Abrir 2 nuevas captaciones zona norte</div><div class="cm3">Plazo: 15 jun · Jorge P.</div></div></div>
-      <div class="comprow"><div class="chk done" onclick="tChk(this)"></div><div><div class="ct2 dt">Revisión precio C/ Velázquez 12</div><div class="cm3">Completado · 28 may</div></div></div>
-      <div class="comprow"><div class="chk" onclick="tChk(this)"></div><div><div class="ct2">Reunión reactivación AAFF Inmovida</div><div class="cm3">Plazo: 10 jun · Rodrigo</div></div></div>
-    </div></div>
+
+  <div id="reunion-detalle" style="display:none">
+    <div class="ssep" id="reunion-detalle-titulo">Reunión seleccionada</div>
+    <div class="g2">
+      <div class="panel"><div class="ph"><span class="pt">Conclusiones</span><button class="pa" onclick="guardarConclusiones()">Guardar</button></div>
+      <div class="pb"><textarea class="ta2" style="min-height:82px" id="reu-conclusiones" placeholder="Escribe las conclusiones de la reunión..."></textarea></div></div>
+      <div class="panel"><div class="ph"><span class="pt">Compromisos</span><button class="pa" onclick="addCompAPI()">+ Añadir</button></div>
+      <div class="pb" id="complist-api"></div></div>
+    </div>
   </div>
 </div>
-<div class="expbar"><div class="exptxt">Junio 2026 · 12 reuniones · 3 compromisos abiertos</div><div><button class="expbtn">Acta PDF</button><button class="expbtn prim">Nueva reunión periódica</button></div></div>
+<div class="expbar"><div class="exptxt" id="reu-expbar-txt">— reuniones este mes</div><div><button class="expbtn prim" onclick="mostrarFormReunion()">+ Nueva reunión</button></div></div>
 </div>
 <div class="view" id="view-palancas">
 <div class="scroll">
@@ -1471,6 +1474,195 @@ async function cambiarEstado(id, estadoActual) {
   } catch(e) { alert('Error: ' + e.message); }
 }
 
+// ── REUNIONES ────────────────────────────────────────
+let _calAño = new Date().getFullYear();
+let _calMes  = new Date().getMonth() + 1;
+let _reunionActivaId = null;
+
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function mostrarFormReunion() {
+  const f = document.getElementById('form-reunion');
+  if (f) f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+function navMes(delta) {
+  _calMes += delta;
+  if (_calMes > 12) { _calMes = 1; _calAño++; }
+  if (_calMes < 1)  { _calMes = 12; _calAño--; }
+  loadReuniones();
+}
+
+async function guardarReunion() {
+  const fecha = document.getElementById('reu-fecha')?.value;
+  if (!fecha) { alert('Selecciona una fecha'); return; }
+  const payload = {
+    fecha,
+    oficina_id: parseInt(document.getElementById('reu-oficina')?.value) || null,
+    tipo: document.getElementById('reu-tipo')?.value || 'periodica',
+    titulo: document.getElementById('reu-titulo')?.value || null
+  };
+  const msg = document.getElementById('reu-msg');
+  try {
+    const resp = await fetch(API + '/api/reuniones', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    const result = await resp.json();
+    if (result.success) {
+      if (msg) { msg.style.display='block'; msg.style.background='#ECFDF5'; msg.style.color='#065F46'; msg.textContent='✓ Reunión guardada'; }
+      document.getElementById('form-reunion').style.display = 'none';
+      loadReuniones();
+    } else {
+      if (msg) { msg.style.display='block'; msg.style.background='#FEE2E2'; msg.style.color='#991B1B'; msg.textContent='Error: '+result.error; }
+    }
+  } catch(e) {
+    if (msg) { msg.style.display='block'; msg.style.background='#FEE2E2'; msg.style.color='#991B1B'; msg.textContent='Error: '+e.message; }
+  }
+}
+
+async function abrirReunion(id) {
+  _reunionActivaId = id;
+  try {
+    const res = await fetch(`${API}/api/reuniones/${id}`).then(r => r.json());
+    if (!res.success) return;
+    const r = res.data;
+    const det = document.getElementById('reunion-detalle');
+    const tit = document.getElementById('reunion-detalle-titulo');
+    const conc = document.getElementById('reu-conclusiones');
+    const complist = document.getElementById('complist-api');
+    if (det) det.style.display = 'block';
+    const fecha = r.fecha ? new Date(r.fecha).toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'}) : '';
+    if (tit) tit.textContent = `${r.oficina_nombre||'—'} · ${fecha}`;
+    if (conc) conc.value = r.conclusiones || '';
+
+    // Compromisos
+    if (complist) {
+      complist.innerHTML = r.compromisos?.length
+        ? r.compromisos.map(c => `
+          <div class="comprow">
+            <div class="chk${c.completado?' done':''}" onclick="toggleCompAPI(${c.id})"></div>
+            <div style="flex:1">
+              <div class="ct2${c.completado?' dt':''}">${c.descripcion}</div>
+              <div class="cm3">Plazo: ${c.plazo ? new Date(c.plazo).toLocaleDateString('es-ES') : 'Sin plazo'} · ${c.responsable||'—'}</div>
+            </div>
+            <button class="br2" onclick="eliminarCompAPI(${c.id})" style="margin-left:6px">✕</button>
+          </div>`).join('')
+        : '<p style="font-size:11px;color:var(--mu);font-style:italic">Sin compromisos — añade con "+ Añadir"</p>';
+    }
+    det.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  } catch(e) { console.warn(e); }
+}
+
+async function guardarConclusiones() {
+  if (!_reunionActivaId) return;
+  const conclusiones = document.getElementById('reu-conclusiones')?.value;
+  await fetch(`${API}/api/reuniones/${_reunionActivaId}/conclusiones`, {
+    method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ conclusiones })
+  });
+}
+
+async function addCompAPI() {
+  if (!_reunionActivaId) { alert('Abre primero una reunión'); return; }
+  const desc = prompt('Descripción del compromiso:');
+  if (!desc) return;
+  const responsable = prompt('Responsable (ej: Rodrigo, Jorge...):') || '';
+  const plazo = prompt('Plazo (YYYY-MM-DD, ej: 2026-06-30):') || null;
+  await fetch(`${API}/api/reuniones/${_reunionActivaId}/compromisos`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ descripcion: desc, responsable, plazo })
+  });
+  abrirReunion(_reunionActivaId);
+}
+
+async function toggleCompAPI(id) {
+  await fetch(`${API}/api/reuniones/compromisos/${id}/toggle`, { method:'PATCH' });
+  abrirReunion(_reunionActivaId);
+}
+
+async function eliminarCompAPI(id) {
+  if (!confirm('¿Eliminar este compromiso?')) return;
+  await fetch(`${API}/api/reuniones/compromisos/${id}`, { method:'DELETE' });
+  abrirReunion(_reunionActivaId);
+}
+
+async function loadReuniones() {
+  const lbl  = MESES[_calMes - 1] + ' ' + _calAño;
+  const el   = id => document.getElementById(id);
+  if (el('cal-titulo'))       el('cal-titulo').textContent = lbl;
+  if (el('cal-panel-titulo')) el('cal-panel-titulo').textContent = 'Calendario — ' + lbl;
+
+  // Llenar select oficina del formulario si está vacío
+  const selOf = document.getElementById('reu-oficina');
+  if (selOf && selOf.options.length <= 1) {
+    try {
+      const of = await fetch(API + '/api/oficinas').then(r => r.json());
+      if (of.success) selOf.innerHTML = '<option value="">Selecciona oficina...</option>' +
+        of.data.map(o => `<option value="${o.id}">${o.nombre}</option>`).join('');
+    } catch(e) {}
+  }
+
+  try {
+    const res = await fetch(`${API}/api/reuniones?año=${_calAño}&mes=${_calMes}`).then(r => r.json());
+    if (!res.success) return;
+    const reuniones = res.data;
+
+    // Construir calendario
+    const grid = document.getElementById('cal-grid');
+    if (!grid) return;
+
+    // Días del mes
+    const primerDia = new Date(_calAño, _calMes - 1, 1).getDay(); // 0=dom
+    const diasMes   = new Date(_calAño, _calMes, 0).getDate();
+    const offset    = primerDia === 0 ? 6 : primerDia - 1; // lunes=0
+    const hoy       = new Date();
+
+    // Agrupar reuniones por día
+    const porDia = {};
+    reuniones.forEach(r => {
+      const d = new Date(r.fecha).getUTCDate();
+      if (!porDia[d]) porDia[d] = [];
+      porDia[d].push(r);
+    });
+
+    // Cabeceras
+    let html = '<div class="cal-day-hd">L</div><div class="cal-day-hd">M</div><div class="cal-day-hd">X</div><div class="cal-day-hd">J</div><div class="cal-day-hd">V</div><div class="cal-day-hd">S</div><div class="cal-day-hd">D</div>';
+
+    // Celdas vacías iniciales
+    for (let i = 0; i < offset; i++) html += '<div class="cal-day"></div>';
+
+    // Días del mes
+    const tipoCls = { periodica:'', extraordinaria:' gold', urgente:' red' };
+    for (let d = 1; d <= diasMes; d++) {
+      const esHoy = hoy.getFullYear() === _calAño && hoy.getMonth() + 1 === _calMes && hoy.getDate() === d;
+      const tieneReu = porDia[d]?.length > 0;
+      const clsDia = `cal-day${tieneReu ? ' has-reu' : ''}${esHoy ? ' hoy' : ''}`;
+      const numStyle = esHoy ? ' style="font-weight:600;color:var(--navy)"' : '';
+      let pills = '';
+      if (porDia[d]) {
+        pills = porDia[d].map(r => {
+          const cls = tipoCls[r.tipo] || '';
+          const lbl = (r.oficina_nombre || r.titulo || 'Reunión').split(' ')[0];
+          return `<div class="cal-pill${cls}" onclick="abrirReunion(${r.id})" style="cursor:pointer" title="${r.oficina_nombre||''}">${lbl}</div>`;
+        }).join('');
+      }
+      html += `<div class="${clsDia}"><div class="cal-day-num"${numStyle}>${d}</div>${pills}</div>`;
+    }
+
+    grid.innerHTML = html;
+
+    // Expbar
+    if (el('reu-expbar-txt')) {
+      const abiertos = reuniones.reduce((a,r) => a + parseInt(r.compromisos_abiertos||0), 0);
+      el('reu-expbar-txt').textContent = `${lbl} · ${reuniones.length} reuniones · ${abiertos} compromisos abiertos`;
+    }
+
+    // Abrir automáticamente la reunión de hoy si existe
+    const reunionHoy = reuniones.find(r => new Date(r.fecha).getUTCDate() === hoy.getDate() && _calMes === hoy.getMonth()+1 && _calAño === hoy.getFullYear());
+    if (reunionHoy && !_reunionActivaId) abrirReunion(reunionHoy.id);
+
+  } catch(e) { console.warn('Error cargando reuniones:', e.message); }
+}
+
 // ── AAFF ─────────────────────────────────────────────
 function mostrarFormAAFF() {
   const f = document.getElementById('form-aaff');
@@ -1831,6 +2023,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadListadoOps();
   loadGastos();
   loadAAFF();
+  loadReuniones();
 });
 </script>
 </body>
