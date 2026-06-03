@@ -91,26 +91,40 @@
     <span class="topbar-title" id="page-title">Dashboard General</span>
     <div class="topbar-actions" id="date-filter-wrap">
       <div style="display:flex;align-items:center;gap:6px;background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:4px 8px;flex-wrap:wrap">
-        <input type="date" id="date-from" class="form-input" style="width:120px;padding:3px 6px;font-size:11px;border:none;background:transparent" onchange="onDateChange()">
-        <span style="font-size:11px;color:var(--muted)">→</span>
-        <input type="date" id="date-to" class="form-input" style="width:120px;padding:3px 6px;font-size:11px;border:none;background:transparent" onchange="onDateChange()">
-        <div style="width:1px;height:16px;background:var(--border);margin:0 2px"></div>
-        <div style="display:flex;gap:3px" id="date-shortcuts">
-          <button class="dsc" onclick="setDR('1t')">1T</button>
-          <button class="dsc" onclick="setDR('2t')">2T</button>
-          <button class="dsc" onclick="setDR('3t')">3T</button>
-          <button class="dsc" onclick="setDR('4t')">4T</button>
-          <div style="width:1px;height:12px;background:var(--border);margin:0 1px;align-self:center"></div>
-          <button class="dsc" onclick="setDR('ytd')">2026</button>
-          <button class="dsc" onclick="setDR('2025')">2025</button>
-          <div style="width:1px;height:12px;background:var(--border);margin:0 1px;align-self:center"></div>
-          <button class="dsc" onclick="setDR('m1')">Ene</button>
-          <button class="dsc" onclick="setDR('m2')">Feb</button>
-          <button class="dsc" onclick="setDR('m3')">Mar</button>
-          <button class="dsc" onclick="setDR('m4')">Abr</button>
-          <button class="dsc" onclick="setDR('m5')">May</button>
-          <button class="dsc" onclick="setDR('m6')">Jun</button>
+        <!-- Año -->
+        <div style="display:flex;gap:3px">
+          <button class="dsc" id="yr-2024" onclick="setAño(2024)">2024</button>
+          <button class="dsc" id="yr-2025" onclick="setAño(2025)">2025</button>
+          <button class="dsc active" id="yr-2026" onclick="setAño(2026)">2026</button>
         </div>
+        <div style="width:1px;height:16px;background:var(--border)"></div>
+        <!-- Período -->
+        <div style="display:flex;gap:3px" id="period-btns">
+          <button class="dsc active" id="p-year" onclick="setPeriodo('year')">Año</button>
+          <button class="dsc" id="p-1t" onclick="setPeriodo('1t')">1T</button>
+          <button class="dsc" id="p-2t" onclick="setPeriodo('2t')">2T</button>
+          <button class="dsc" id="p-3t" onclick="setPeriodo('3t')">3T</button>
+          <button class="dsc" id="p-4t" onclick="setPeriodo('4t')">4T</button>
+        </div>
+        <div style="width:1px;height:16px;background:var(--border)"></div>
+        <!-- Meses -->
+        <div style="display:flex;gap:3px">
+          <button class="dsc" id="p-m1" onclick="setPeriodo('m1')">Ene</button>
+          <button class="dsc" id="p-m2" onclick="setPeriodo('m2')">Feb</button>
+          <button class="dsc" id="p-m3" onclick="setPeriodo('m3')">Mar</button>
+          <button class="dsc" id="p-m4" onclick="setPeriodo('m4')">Abr</button>
+          <button class="dsc" id="p-m5" onclick="setPeriodo('m5')">May</button>
+          <button class="dsc" id="p-m6" onclick="setPeriodo('m6')">Jun</button>
+          <button class="dsc" id="p-m7" onclick="setPeriodo('m7')">Jul</button>
+          <button class="dsc" id="p-m8" onclick="setPeriodo('m8')">Ago</button>
+          <button class="dsc" id="p-m9" onclick="setPeriodo('m9')">Sep</button>
+          <button class="dsc" id="p-m10" onclick="setPeriodo('m10')">Oct</button>
+          <button class="dsc" id="p-m11" onclick="setPeriodo('m11')">Nov</button>
+          <button class="dsc" id="p-m12" onclick="setPeriodo('m12')">Dic</button>
+        </div>
+        <!-- Inputs ocultos para rango libre -->
+        <input type="hidden" id="date-from" value="2026-01-01">
+        <input type="hidden" id="date-to"   value="2026-12-31">
       </div>
     </div>
   </div>

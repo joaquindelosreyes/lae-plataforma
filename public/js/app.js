@@ -68,35 +68,53 @@ function nav(viewId) {
 }
 
 // ── FILTRO FECHAS ────────────────────────────────────
-const DR = {
-  'm1':   ['2026-01-01','2026-01-31'],
-  'm2':   ['2026-02-01','2026-02-28'],
-  'm3':   ['2026-03-01','2026-03-31'],
-  '1t':   ['2026-01-01','2026-03-31'],
-  '2t':   ['2026-04-01','2026-06-30'],
-  '3t':   ['2026-07-01','2026-09-30'],
-  '4t':   ['2026-10-01','2026-12-31'],
-  'ytd':  ['2026-01-01','2026-12-31'],
-  '2025': ['2025-01-01','2025-12-31'],
-  'm4':   ['2026-04-01','2026-04-30'],
-  'm5':   ['2026-05-01','2026-05-31'],
-  'm6':   ['2026-06-01','2026-06-30'],
-};
+let _año = 2026, _periodo = 'year';
 
-function setDR(k) {
-  document.querySelectorAll('.dsc').forEach(b => b.classList.remove('active'));
-  const btn = document.querySelector(`[onclick="setDR('${k}')"]`);
-  if (btn) btn.classList.add('active');
-  const [from, to] = DR[k] || [];
-  if (from) document.getElementById('date-from').value = from;
-  if (to)   document.getElementById('date-to').value   = to;
+const DIAS_MES = [31,28,31,30,31,30,31,31,30,31,30,31];
+function diasMes(m, a) { return (m===2 && a%4===0) ? 29 : DIAS_MES[m-1]; }
+function pad(n) { return String(n).padStart(2,'0'); }
+
+function setAño(a) {
+  _año = a;
+  // Marcar año activo
+  [2024,2025,2026].forEach(y => {
+    const el = document.getElementById('yr-' + y);
+    if (el) el.classList.toggle('active', y === a);
+  });
+  aplicarFiltro();
+}
+
+function setPeriodo(p) {
+  _periodo = p;
+  // Marcar período activo
+  ['year','1t','2t','3t','4t','m1','m2','m3','m4','m5','m6','m7','m8','m9','m10','m11','m12'].forEach(k => {
+    const el = document.getElementById('p-' + k);
+    if (el) el.classList.toggle('active', k === p);
+  });
+  aplicarFiltro();
+}
+
+function aplicarFiltro() {
+  const a = _año;
+  let desde, hasta;
+  if (_periodo === 'year')    { desde = `${a}-01-01`; hasta = `${a}-12-31`; }
+  else if (_periodo === '1t') { desde = `${a}-01-01`; hasta = `${a}-03-31`; }
+  else if (_periodo === '2t') { desde = `${a}-04-01`; hasta = `${a}-06-30`; }
+  else if (_periodo === '3t') { desde = `${a}-07-01`; hasta = `${a}-09-30`; }
+  else if (_periodo === '4t') { desde = `${a}-10-01`; hasta = `${a}-12-31`; }
+  else {
+    const m = parseInt(_periodo.replace('m',''));
+    desde = `${a}-${pad(m)}-01`;
+    hasta = `${a}-${pad(m)}-${diasMes(m,a)}`;
+  }
+  document.getElementById('date-from').value = desde;
+  document.getElementById('date-to').value   = hasta;
   recargarVistaActiva();
 }
 
-function onDateChange() {
-  document.querySelectorAll('.dsc').forEach(b => b.classList.remove('active'));
-  recargarVistaActiva();
-}
+// Compatibilidad legacy
+function setDR(k) { setPeriodo(k); }
+function onDateChange() { recargarVistaActiva(); }
 
 function recargarVistaActiva() {
   const active = document.querySelector('.view.active');
@@ -680,7 +698,7 @@ async function loadSelectsGlobales() {
 
 // ── INIT ──────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  setDR('ytd'); // Arranca mostrando todo 2026
+  setAño(2026); // Arranca en 2026 año completo
   nav('dashboard');
   loadSelectsGlobales();
   // Drag & drop para importar
