@@ -90,12 +90,26 @@ function setDR(k) {
   const [from, to] = DR[k] || [];
   if (from) document.getElementById('date-from').value = from;
   if (to)   document.getElementById('date-to').value   = to;
-  loadDashboard();
+  recargarVistaActiva();
 }
 
 function onDateChange() {
   document.querySelectorAll('.dsc').forEach(b => b.classList.remove('active'));
-  loadDashboard();
+  recargarVistaActiva();
+}
+
+function recargarVistaActiva() {
+  const active = document.querySelector('.view.active');
+  if (!active) return;
+  const id = active.id.replace('view-', '');
+  if (id === 'dashboard')        loadDashboard();
+  if (id === 'operaciones')      loadOperaciones();
+  if (id === 'ingresos-resumen') loadIngresosResumen();
+  if (id === 'captaciones')      loadCaptaciones();
+  if (id === 'cap-oficinas')     loadCaptacionesPorOficina();
+  if (id === 'palancas')         loadPalancas();
+  // Si no hay vista específica, al menos recarga el dashboard
+  if (!['dashboard','operaciones','ingresos-resumen','captaciones','cap-oficinas','palancas'].includes(id)) loadDashboard();
 }
 
 function getDateRange() {
