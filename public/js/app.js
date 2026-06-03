@@ -253,6 +253,40 @@ function calcNuevaOp() {
   if (elLae)   elLae.value   = lae > 0   ? lae.toLocaleString('es-ES', {maximumFractionDigits:0}) + ' €' : '';
   const compRow = document.getElementById('nop-comp-row');
   if (compRow) compRow.style.display = comp ? 'grid' : 'none';
+
+  // Reparto detallado
+  if (lae <= 0) {
+    const prev = document.getElementById('nop-reparto-preview');
+    if (prev) prev.style.display = 'none';
+    return;
+  }
+  const agentes = [
+    { rol:'Captador',            selId:'nop-captador',     pctId:'nop-pct-cap',  def:15  },
+    { rol:'Vendedor',            selId:'nop-vendedor',     pctId:'nop-pct-ven',  def:15  },
+    { rol:'Coordinadora',        selId:'nop-coordinadora', pctId:'nop-pct-coor', def:1   },
+    { rol:'Director de oficina', selId:'nop-director',     pctId:'nop-pct-dir',  def:1.5 },
+  ];
+  let totalRepartos = 0;
+  const rows = agentes.map(a => {
+    const sel = document.getElementById(a.selId);
+    const nombre = sel?.options[sel.selectedIndex]?.text || '';
+    if (!nombre || nombre.includes('seleccionar') || nombre.includes('—')) return null;
+    const p   = parseFloat(document.getElementById(a.pctId)?.value || a.def) || 0;
+    const imp = lae * p / 100;
+    totalRepartos += imp;
+    return `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0">
+      <span style="color:var(--muted)">${a.rol} · ${nombre.split('(')[0].trim()}</span>
+      <span style="font-weight:500">${p}% = ${imp.toLocaleString('es-ES',{maximumFractionDigits:0})}€</span>
+    </div>`;
+  }).filter(Boolean);
+
+  const neto = lae - totalRepartos;
+  const prev = document.getElementById('nop-reparto-preview');
+  const rowsEl = document.getElementById('nop-reparto-rows');
+  const netoEl = document.getElementById('nop-neto');
+  if (prev) prev.style.display = rows.length ? 'block' : 'none';
+  if (rowsEl) rowsEl.innerHTML = rows.join('');
+  if (netoEl) netoEl.textContent = neto.toLocaleString('es-ES',{maximumFractionDigits:0}) + '€';
 }
 
 async function guardarNuevaOp() {
@@ -600,7 +634,7 @@ async function loadSelectsGlobales() {
       const s = document.getElementById(id);
       if (s) s.innerHTML = optsOf;
     });
-    ['nop-captador','nop-vendedor','aaff-consultor-sel'].forEach(id => {
+    ['nop-captador','nop-vendedor','nop-coordinadora','nop-director','aaff-consultor-sel'].forEach(id => {
       const s = document.getElementById(id);
       if (s) s.innerHTML = optsCons;
     });
