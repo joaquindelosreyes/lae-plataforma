@@ -375,12 +375,12 @@ table.t tr:hover td{background:var(--cream)}
   </div>
   <div class="step s2">
     <div class="stitle"><span class="snum" style="background:var(--gd)">2</span>Propiedad</div>
-    <div class="fr fr3"><div style="grid-column:1/3"><div class="flbl">Dirección</div><input class="inp" type="text" placeholder="Calle, número..."></div><div><div class="flbl">C.P.</div><input class="inp" type="text"></div></div>
+    <div class="fr fr3"><div style="grid-column:1/3"><div class="flbl">Dirección</div><input class="inp" type="text" placeholder="Calle, número..." id="op-direccion"></div><div><div class="flbl">C.P.</div><input class="inp" type="text" id="op-cp"></div></div>
     <div class="fr fr4">
-      <div><div class="flbl">Provincia</div><select class="sel"><option>Alicante</option><option>Barcelona</option><option>Castellón</option><option>Jaén</option><option>Madrid</option><option>Málaga</option><option>Marbella</option><option>San Sebastián</option><option>Sevilla</option><option>Valencia</option></select></div>
-      <div><div class="flbl">Municipio</div><input class="inp" type="text"></div>
+      <div><div class="flbl">Provincia</div><select class="sel" id="op-provincia"><option>Alicante</option><option>Barcelona</option><option>Castellón</option><option>Jaén</option><option>Madrid</option><option>Málaga</option><option>Marbella</option><option>San Sebastián</option><option>Sevilla</option><option>Valencia</option></select></div>
+      <div><div class="flbl">Municipio</div><input class="inp" type="text" id="op-municipio"></div>
       <div><div class="flbl">Precio inmueble</div><input class="inp" type="text" placeholder="335.000 €" id="precio-eco2" oninput="recalc()"></div>
-      <div><div class="flbl">Oficina LAE</div><select class="sel"><option>Alicante</option><option>Barcelona</option><option>Castellón</option><option>Jaén</option><option>Madrid</option><option>Málaga</option><option>Marbella</option><option>San Sebastián</option><option>Sevilla</option><option>Valencia</option></select></div>
+      <div><div class="flbl">Oficina LAE</div><select class="sel" id="op-oficina"><option value="">Selecciona...</option></select></div>
     </div>
   </div>
   <div class="step s3">
@@ -408,10 +408,10 @@ table.t tr:hover td{background:var(--cream)}
       <div style="display:flex;align-items:center;padding-top:17px"><label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px"><input type="checkbox" id="chk-comp" onchange="toggleComp()"> Compartida</label></div>
     </div>
     <div id="comp-ext" style="display:none;margin-top:5px"><div class="fr fr2">
-      <div><div class="flbl">Agencia externa</div><input class="inp" type="text" placeholder="Nombre de la agencia..."></div>
+      <div><div class="flbl">Agencia externa</div><input class="inp" type="text" placeholder="Nombre de la agencia..." id="op-agencia-ext"></div>
       <div><div class="flbl">% para LAE HOMES</div><input class="inp" type="text" value="50" id="split-pct" oninput="recalc()"></div>
     </div></div>
-    <div style="margin-top:7px"><div class="flbl">Observación</div><textarea class="ta2" placeholder="Ej: operación con administrador José María al 50%..."></textarea></div>
+    <div style="margin-top:7px"><div class="flbl">Observación</div><textarea class="ta2" id="op-observaciones" placeholder="Ej: operación con administrador José María al 50%..."></textarea></div>
   </div>
   <div class="step s6">
     <div class="stitle"><span class="snum" style="background:var(--pu)">6</span>Agentes intervinientes + % comisión</div>
@@ -1194,7 +1194,7 @@ function recalc() {
 function addAg(rol) {
   const tb = document.getElementById('agentes-tbody');
   if (!tb) return;
-  const opts  = CONS.map(c=>`<option>${c}</option>`).join('');
+  const opts  = window._consultoresOpts || CONS.map(c=>`<option>${c}</option>`).join('');
   const roles = ['Responsable','Captador','Vendedor','AAFF','Prescriptor','Colaborador'];
   const tr = document.createElement('tr');
   tr.innerHTML = `<td><select class="sel ag-rol" style="min-width:108px" onchange="recalc()">${roles.map(r=>`<option${r===rol?' selected':''}>${r}</option>`).join('')}</select></td><td><select class="sel ag-nom" style="min-width:158px"><option value="">-- seleccionar --</option>${opts}</select></td><td><input class="inp ag-pct" type="text" value="15" style="width:56px" oninput="recalc()"></td><td class="nr"><span class="ag-imp" style="font-weight:500;color:var(--navy)">—</span></td><td><select class="sel ag-dest" style="min-width:115px"><option>Nómina</option><option>Factura AAFF</option><option>Factura prescriptor</option><option>Empresa</option></select></td><td><button class="br2" onclick="this.closest('tr').remove();recalc()">✕</button></td>`;
@@ -1210,11 +1210,86 @@ function addRow(listId, cls) {
 }
 
 function validarOp() { const b=document.getElementById('estado-badge'); if(b){b.textContent='Validada';b.className='be be-g';} }
-function guardarOp() {
-  const ref = 'OP-'+Math.floor(Math.random()*9000+1000)+'-2026';
-  const el = document.getElementById('ref-disp'); if(el)el.textContent='Ref: '+ref;
-  const b = document.getElementById('estado-badge'); if(b){b.textContent='Guardada';b.className='be be-g';}
-  recalc();
+async function guardarOp() {
+  const badge = document.getElementById('estado-badge');
+
+  // Recoger tipo de ingreso y operación
+  const tipoIngreso = document.querySelector('#rg-tipo-ingreso .rbtn.active')?.textContent?.includes('atípico') ? 'atipico' : 'inmobiliaria';
+  const tipoOpTxt = document.querySelector('#rg-tipo-ing .rbtn.active')?.textContent || 'Compra-Venta';
+  const tipoOpMap = {'Compra-Venta':'cv','Alquiler':'alquiler','Traspaso':'traspaso','Alq. opción compra':'alq_opcion_compra'};
+
+  // Recoger precio
+  const precioRaw = (document.getElementById('precio-eco2b')?.value || document.getElementById('precio-eco2')?.value || '0')
+    .replace(/[^0-9.,]/g,'').replace(',','.');
+  const precio = parseFloat(precioRaw) || 0;
+  const pctCom = parseFloat(document.getElementById('pct-com')?.value) || 4;
+  const compartida = document.getElementById('chk-comp')?.checked || false;
+  const splitPct = parseFloat(document.getElementById('split-pct')?.value) || 50;
+  const comisionBruta = precio * pctCom / 100;
+  const honorariosLae = compartida ? comisionBruta * splitPct / 100 : comisionBruta;
+
+  // Recoger canal desde los agentes
+  const tieneAAFF = Array.from(document.querySelectorAll('.ag-rol')).some(s => s.value === 'AAFF');
+  const tienePrescriptor = Array.from(document.querySelectorAll('.ag-rol')).some(s => s.value === 'Prescriptor');
+  const canal = tieneAAFF ? 'aaff' : tienePrescriptor ? 'prescriptor' : compartida ? 'compartida' : 'directa';
+
+  // Captador y vendedor
+  const agentes = Array.from(document.querySelectorAll('#agentes-tbody tr'));
+  let captadorNombre = '', vendedorNombre = '', pctCaptador = 0, pctVendedor = 0;
+  agentes.forEach(tr => {
+    const rol = tr.querySelector('.ag-rol')?.value || '';
+    const nom = tr.querySelector('.ag-nom')?.value || '';
+    const pct = parseFloat(tr.querySelector('.ag-pct')?.value) || 0;
+    if (rol === 'Captador' && !captadorNombre) { captadorNombre = nom; pctCaptador = pct; }
+    if (rol === 'Vendedor' && !vendedorNombre) { vendedorNombre = nom; pctVendedor = pct; }
+  });
+
+  const payload = {
+    fecha: document.getElementById('fecha-op')?.value || new Date().toISOString().split('T')[0],
+    tipo_ingreso: tipoIngreso,
+    tipo_operacion: tipoOpMap[tipoOpTxt] || 'cv',
+    oficina_id: parseInt(document.getElementById('op-oficina')?.value) || null,
+    direccion: document.getElementById('op-direccion')?.value || '',
+    municipio: document.getElementById('op-municipio')?.value || document.getElementById('op-provincia')?.value || '',
+    precio_inmueble: precio,
+    pct_comision: pctCom,
+    comision_bruta: comisionBruta,
+    honorarios_lae: honorariosLae,
+    canal,
+    compartida,
+    agencia_externa: document.getElementById('op-agencia-ext')?.value || null,
+    split_pct: splitPct,
+    pct_captador: pctCaptador,
+    pct_vendedor: pctVendedor,
+    estado: 'pipeline',
+    observaciones: document.getElementById('op-observaciones')?.value || null
+  };
+
+  try {
+    if (badge) { badge.textContent = 'Guardando...'; badge.className = 'be be-a'; }
+    const resp = await fetch(API + '/api/operaciones', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await resp.json();
+    if (result.success) {
+      const ref = result.data.ref;
+      const el = document.getElementById('ref-disp');
+      if (el) el.textContent = 'Ref: ' + ref + ' · Guardada ✓';
+      if (badge) { badge.textContent = 'Guardada'; badge.className = 'be be-g'; }
+      // Recargar listado y dashboard
+      loadListadoOps();
+      loadDashboard();
+      recalc();
+    } else {
+      if (badge) { badge.textContent = 'Error'; badge.className = 'be be-b'; }
+      alert('Error al guardar: ' + result.error);
+    }
+  } catch (e) {
+    if (badge) { badge.textContent = 'Error red'; badge.className = 'be be-b'; }
+    alert('Error de conexión: ' + e.message);
+  }
 }
 
 function setMand(el, val) {
@@ -1297,6 +1372,93 @@ function colorPct(pct) {
   if (pct >= 90) return '#16a34a';
   if (pct >= 60) return '#d97706';
   return '#dc2626';
+}
+
+// Cargar oficinas y consultores reales en los selects
+async function loadSelectsFormulario() {
+  try {
+    const [ofRes, consRes] = await Promise.all([
+      fetch(API + '/api/oficinas').then(r => r.json()),
+      fetch(API + '/api/consultores').then(r => r.json())
+    ]);
+
+    // Select oficina del formulario
+    const selOf = document.getElementById('op-oficina');
+    if (selOf && ofRes.success) {
+      selOf.innerHTML = '<option value="">Selecciona oficina...</option>' +
+        ofRes.data.map(o => `<option value="${o.id}">${o.nombre}</option>`).join('');
+    }
+
+    // Actualizar todos los selects de consultores (ag-nom)
+    if (consRes.success) {
+      const opts = '<option value="">-- seleccionar --</option>' +
+        consRes.data.map(c => `<option value="${c.id}">${c.nombre} (${c.oficina_nombre})</option>`).join('');
+      document.querySelectorAll('.ag-nom').forEach(sel => { sel.innerHTML = opts; });
+      // Guardar para futuros addAg()
+      window._consultoresOpts = opts;
+    }
+  } catch(e) {
+    console.warn('No se pudieron cargar selects:', e.message);
+  }
+}
+
+// Cargar listado de operaciones desde la API
+async function loadListadoOps() {
+  const tbody = document.querySelector('#view-ing-listado .panel tbody');
+  const counter = document.querySelector('#view-ing-listado .panel .ph span:last-child');
+  if (!tbody) return;
+  try {
+    const res = await fetch(API + '/api/operaciones?limit=50').then(r => r.json());
+    if (!res.success || !res.data.length) {
+      tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--mu);font-style:italic;padding:16px">Sin operaciones registradas — usa "Nueva formalización" para añadir</td></tr>';
+      return;
+    }
+    if (counter) counter.textContent = res.data.length + ' operaciones';
+    const estadoTag = { cobrada: 'be-g', pipeline: 'be-b', pendiente_escritura: 'be-a', cancelada: 'be-b' };
+    const estadoLbl = { cobrada: 'Cobrada', pipeline: 'Pipeline', pendiente_escritura: 'Pend. escritura', cancelada: 'Cancelada' };
+    const canalTag  = { directa: 'tc', aaff: 'ta', prescriptor: 'tp', compartida: 'tb' };
+    tbody.innerHTML = res.data.map(op => {
+      const fecha = op.fecha ? op.fecha.split('T')[0].split('-').reverse().join('/') : '—';
+      const precio = op.precio_inmueble > 0 ? parseFloat(op.precio_inmueble).toLocaleString('es-ES',{maximumFractionDigits:0}) + '€' : '—';
+      const hLae  = op.honorarios_lae > 0 ? parseFloat(op.honorarios_lae).toLocaleString('es-ES',{maximumFractionDigits:0}) + '€' : '—';
+      const est   = op.estado || 'pipeline';
+      const can   = op.canal || 'directa';
+      const comp  = op.compartida ? `<span class="tag tg">${100 - (op.split_pct||50)}/${op.split_pct||50}%</span>` : '<span class="tag tc">100%</span>';
+      return `<tr>
+        <td style="font-size:9px;color:var(--mu);font-family:monospace">${op.ref || '—'}</td>
+        <td>${fecha}</td>
+        <td style="max-width:160px;font-size:11px">${op.direccion || '—'}</td>
+        <td><span class="tag tg">${op.tipo_operacion === 'cv' ? 'C-V' : op.tipo_operacion || '—'}</span></td>
+        <td><span class="tag ${canalTag[can]||'tc'}">${can.charAt(0).toUpperCase()+can.slice(1)}</span></td>
+        <td>${comp}</td>
+        <td>${op.captador_nombre || '—'}</td>
+        <td class="nr" style="color:var(--gr)">${op.pct_captador > 0 ? op.pct_captador+'%' : '—'}</td>
+        <td>${op.vendedor_nombre || '—'}</td>
+        <td class="nr" style="color:var(--pu)">${op.pct_vendedor > 0 ? op.pct_vendedor+'%' : '—'}</td>
+        <td class="nr">${precio}</td>
+        <td class="nr">${hLae}</td>
+        <td><span class="be ${estadoTag[est]||'be-b'}" style="cursor:pointer" onclick="cambiarEstado(${op.id},'${est}')">${estadoLbl[est]||est}</span></td>
+      </tr>`;
+    }).join('');
+  } catch(e) { console.warn('Error cargando listado:', e.message); }
+}
+
+// Cambiar estado de una operación directamente desde la tabla
+async function cambiarEstado(id, estadoActual) {
+  const estados = ['pipeline', 'pendiente_escritura', 'cobrada', 'cancelada'];
+  const lbls    = ['Pipeline', 'Pend. escritura', 'Cobrada', 'Cancelada'];
+  const idx = estados.indexOf(estadoActual);
+  const siguiente = estados[(idx + 1) % estados.length];
+  if (!confirm(`Cambiar estado a "${lbls[(idx+1)%estados.length]}"?`)) return;
+  try {
+    await fetch(`${API}/api/operaciones/${id}/estado`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estado: siguiente })
+    });
+    loadListadoOps();
+    loadDashboard();
+  } catch(e) { alert('Error: ' + e.message); }
 }
 
 async function loadDashboard() {
@@ -1386,6 +1548,8 @@ document.addEventListener('DOMContentLoaded', () => {
   recalc();
   calcHonCap();
   loadDashboard();
+  loadSelectsFormulario();
+  loadListadoOps();
 });
 </script>
 </body>
