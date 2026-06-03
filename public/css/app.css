@@ -230,3 +230,12 @@ tr:hover td { background: var(--cream); }
 }
 .dsc:hover { background: var(--navy); color: #fff; }
 .dsc.active { background: var(--navy); color: #fff; }
+
+/* Alinear cabeceras numéricas igual que sus datos */
+th.td-right { text-align: right; }
+/* Cabeceras con onclick heredan alineación del atributo data */
+th[onclick] { white-space: nowrap; }
+
+/* Cabeceras de columnas numéricas alineadas a la derecha */
+th.nr { text-align: right; }
+th[onclick] { white-space: nowrap; }

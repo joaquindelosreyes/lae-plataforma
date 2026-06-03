@@ -173,11 +173,11 @@
               <tr>
                 <th></th>
                 <th onclick="sortDash('nombre')"    style="cursor:pointer;user-select:none">Oficina <span id="sort-nombre"></span></th>
-                <th onclick="sortDash('objetivo')"  style="cursor:pointer;user-select:none">Objetivo <span id="sort-objetivo"></span></th>
-                <th onclick="sortDash('cobrado')"   style="cursor:pointer;user-select:none">Cobrado <span id="sort-cobrado"></span></th>
-                <th onclick="sortDash('pct')"       style="cursor:pointer;user-select:none;min-width:160px">Progreso <span id="sort-pct"></span></th>
-                <th onclick="sortDash('cierres')"   style="cursor:pointer;user-select:none">Cierres <span id="sort-cierres"></span></th>
-                <th onclick="sortDash('captaciones')" style="cursor:pointer;user-select:none">Captaciones <span id="sort-captaciones"></span></th>
+                <th class="nr" onclick="sortDash('objetivo')" class="td-right" style="cursor:pointer;user-select:none">Objetivo <span id="sort-objetivo"></span></th>
+                <th class="nr" onclick="sortDash('cobrado')" class="td-right" style="cursor:pointer;user-select:none">Cobrado <span id="sort-cobrado"></span></th>
+                <th class="nr" onclick="sortDash('pct')" class="td-right" style="cursor:pointer;user-select:none;min-width:160px">Progreso <span id="sort-pct"></span></th>
+                <th class="nr" onclick="sortDash('cierres')" class="td-right" style="cursor:pointer;user-select:none">Cierres <span id="sort-cierres"></span></th>
+                <th class="nr" onclick="sortDash('captaciones')" class="td-right" style="cursor:pointer;user-select:none">Captaciones <span id="sort-captaciones"></span></th>
               </tr>
             </thead>
             <tbody id="dash-tbody">
@@ -207,8 +207,8 @@
                 <th onclick="sortOps('oficina')" style="cursor:pointer;user-select:none">Oficina <span id="ops-sort-oficina"></span></th>
                 <th onclick="sortOps('direccion')" style="cursor:pointer;user-select:none">Dirección <span id="ops-sort-direccion"></span></th>
                 <th onclick="sortOps('tipo')"    style="cursor:pointer;user-select:none">Tipo <span id="ops-sort-tipo"></span></th>
-                <th onclick="sortOps('precio')"  style="cursor:pointer;user-select:none">Precio <span id="ops-sort-precio"></span></th>
-                <th onclick="sortOps('honor')"   style="cursor:pointer;user-select:none">Honor. LAE <span id="ops-sort-honor"></span></th>
+                <th class="nr" onclick="sortOps('precio')"  style="cursor:pointer;user-select:none">Precio <span id="ops-sort-precio"></span></th>
+                <th class="nr" onclick="sortOps('honor')"   style="cursor:pointer;user-select:none">Honor. LAE <span id="ops-sort-honor"></span></th>
                 <th onclick="sortOps('estado')"  style="cursor:pointer;user-select:none">Estado <span id="ops-sort-estado"></span></th>
               </tr>
             </thead>
@@ -400,9 +400,9 @@
                 <th onclick="sortCap('mandato')"  style="cursor:pointer;user-select:none">Mandato <span id="cap-sort-mandato"></span></th>
                 <th onclick="sortCap('tipologia')" style="cursor:pointer;user-select:none">Tipo <span id="cap-sort-tipologia"></span></th>
                 <th onclick="sortCap('tipo_op')"  style="cursor:pointer;user-select:none">Op. <span id="cap-sort-tipo_op"></span></th>
-                <th onclick="sortCap('precio')"   style="cursor:pointer;user-select:none">Precio <span id="cap-sort-precio"></span></th>
-                <th onclick="sortCap('honor')"    style="cursor:pointer;user-select:none">Honor. pot. <span id="cap-sort-honor"></span></th>
-                <th onclick="sortCap('meses')"    style="cursor:pointer;user-select:none">Antigüedad <span id="cap-sort-meses"></span></th>
+                <th class="nr" onclick="sortCap('precio')"   style="cursor:pointer;user-select:none">Precio <span id="cap-sort-precio"></span></th>
+                <th class="nr" onclick="sortCap('honor')"    style="cursor:pointer;user-select:none">Honor. pot. <span id="cap-sort-honor"></span></th>
+                <th class="nr" onclick="sortCap('meses')"    style="cursor:pointer;user-select:none">Antigüedad <span id="cap-sort-meses"></span></th>
               </tr>
             </thead>
             <tbody id="cap-tbody">
@@ -494,10 +494,10 @@
                 <th onclick="sortAAFF('nombre')"   style="cursor:pointer;user-select:none">Despacho <span id="aaff-sort-nombre"></span></th>
                 <th onclick="sortAAFF('oficina')"  style="cursor:pointer;user-select:none">Oficina <span id="aaff-sort-oficina"></span></th>
                 <th onclick="sortAAFF('consultor')" style="cursor:pointer;user-select:none">Responsable <span id="aaff-sort-consultor"></span></th>
-                <th onclick="sortAAFF('captac')"   style="cursor:pointer;user-select:none">Captac. <span id="aaff-sort-captac"></span></th>
-                <th onclick="sortAAFF('cierres')"  style="cursor:pointer;user-select:none">Cierres <span id="aaff-sort-cierres"></span></th>
-                <th onclick="sortAAFF('honor')"    style="cursor:pointer;user-select:none">Honorarios <span id="aaff-sort-honor"></span></th>
-                <th onclick="sortAAFF('dias')"     style="cursor:pointer;user-select:none">Últ. contacto <span id="aaff-sort-dias"></span></th>
+                <th class="nr" onclick="sortAAFF('captac')"   style="cursor:pointer;user-select:none">Captac. <span id="aaff-sort-captac"></span></th>
+                <th class="nr" onclick="sortAAFF('cierres')"  style="cursor:pointer;user-select:none">Cierres <span id="aaff-sort-cierres"></span></th>
+                <th class="nr" onclick="sortAAFF('honor')"    style="cursor:pointer;user-select:none">Honorarios <span id="aaff-sort-honor"></span></th>
+                <th class="nr" onclick="sortAAFF('dias')"     style="cursor:pointer;user-select:none">Últ. contacto <span id="aaff-sort-dias"></span></th>
                 <th onclick="sortAAFF('estado')"   style="cursor:pointer;user-select:none">Estado <span id="aaff-sort-estado"></span></th>
               </tr>
             </thead>
@@ -610,8 +610,8 @@
                 <th onclick="sortGastos('categoria')" style="cursor:pointer;user-select:none">Categoría <span id="g-sort-categoria"></span></th>
                 <th onclick="sortGastos('oficina')"   style="cursor:pointer;user-select:none">Oficina <span id="g-sort-oficina"></span></th>
                 <th onclick="sortGastos('periodo')"   style="cursor:pointer;user-select:none">Periodicidad <span id="g-sort-periodo"></span></th>
-                <th onclick="sortGastos('base')"      style="cursor:pointer;user-select:none">Base <span id="g-sort-base"></span></th>
-                <th onclick="sortGastos('total')"     style="cursor:pointer;user-select:none">Total <span id="g-sort-total"></span></th>
+                <th class="nr" onclick="sortGastos('base')"      style="cursor:pointer;user-select:none">Base <span id="g-sort-base"></span></th>
+                <th class="nr" onclick="sortGastos('total')"     style="cursor:pointer;user-select:none">Total <span id="g-sort-total"></span></th>
                 <th onclick="sortGastos('vencimiento')" style="cursor:pointer;user-select:none">Vencimiento <span id="g-sort-vencimiento"></span></th>
                 <th></th>
               </tr>
@@ -788,10 +788,10 @@
             <thead>
               <tr>
                 <th onclick="sortCapOf('nombre')"  style="cursor:pointer;user-select:none">Oficina <span id="cof-sort-nombre"></span></th>
-                <th onclick="sortCapOf('excl')"    style="cursor:pointer;user-select:none">Exclusivas <span id="cof-sort-excl"></span></th>
-                <th onclick="sortCapOf('ne')"      style="cursor:pointer;user-select:none">Notas encargo <span id="cof-sort-ne"></span></th>
-                <th onclick="sortCapOf('total')"   style="cursor:pointer;user-select:none">Total <span id="cof-sort-total"></span></th>
-                <th onclick="sortCapOf('honor')"   style="cursor:pointer;user-select:none">Honor. pot. <span id="cof-sort-honor"></span></th>
+                <th class="nr" onclick="sortCapOf('excl')"    style="cursor:pointer;user-select:none">Exclusivas <span id="cof-sort-excl"></span></th>
+                <th class="nr" onclick="sortCapOf('ne')"      style="cursor:pointer;user-select:none">Notas encargo <span id="cof-sort-ne"></span></th>
+                <th class="nr" onclick="sortCapOf('total')"   style="cursor:pointer;user-select:none">Total <span id="cof-sort-total"></span></th>
+                <th class="nr" onclick="sortCapOf('honor')"   style="cursor:pointer;user-select:none">Honor. pot. <span id="cof-sort-honor"></span></th>
                 <th style="min-width:120px">Peso relativo</th>
               </tr>
             </thead>
