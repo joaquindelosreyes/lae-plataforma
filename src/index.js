@@ -6,7 +6,15 @@ const { Pool } = require('pg');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+const connectionString = process.env.DATABASE_URL ||
+  (process.env.PGHOST ? `postgresql://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT}/${process.env.PGDATABASE}` : null);
+
+console.log('DB connection:', connectionString ? 'OK (variable encontrada)' : 'ERROR: no hay DATABASE_URL ni variables PG_*');
+
+const pool = new Pool({
+  connectionString,
+  ssl: process.env.PGHOST?.includes('railway') ? { rejectUnauthorized: false } : false
+});
 
 app.use(cors());
 app.use(express.json());
@@ -30,7 +38,7 @@ app.get('/api/oficinas', async (req, res) => {
       GROUP BY o.id ORDER BY total_cobrado DESC
     `);
     res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error('DB error:', e); res.status(500).json({ error: e.message || String(e) }); }
 });
 
 // GET seguimiento trimestral de una oficina
@@ -41,7 +49,7 @@ app.get('/api/oficinas/:id/seguimiento', async (req, res) => {
       [req.params.id]
     );
     res.json(rows);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error('DB error:', e); res.status(500).json({ error: e.message || String(e) }); }
 });
 
 // POST / PUT datos de seguimiento trimestral
@@ -56,7 +64,7 @@ app.post('/api/seguimiento', async (req, res) => {
       RETURNING *
     `, [oficina_id, año, trimestre, cobrado, generado, captaciones, cierres, aaff_activos]);
     res.json(rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error('DB error:', e); res.status(500).json({ error: e.message || String(e) }); }
 });
 
 // GET resumen red completa
@@ -73,7 +81,7 @@ app.get('/api/resumen', async (req, res) => {
       FROM oficinas o LEFT JOIN seguimiento s ON s.oficina_id = o.id
     `);
     res.json(rows[0]);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { console.error('DB error:', e); res.status(500).json({ error: e.message || String(e) }); }
 });
 
 app.listen(PORT, () => console.log(`LAE Plataforma corriendo en puerto ${PORT}`));
