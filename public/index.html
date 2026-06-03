@@ -756,10 +756,10 @@ table.t tr:hover td{background:var(--cream)}
 <div class="view" id="view-gastos">
 <div class="scroll">
   <div class="kgrid" style="grid-template-columns:repeat(4,1fr)">
-    <div class="kc hi"><div class="kl">Total gastos período</div><div class="kv red">38.420€</div></div>
-    <div class="kc"><div class="kl">Gastos periódicos</div><div class="kv">22.100€</div><div class="ks">mensual + trimestral + anual</div></div>
-    <div class="kc"><div class="kl">Gastos variables</div><div class="kv">16.320€</div></div>
-    <div class="kc"><div class="kl">Margen bruto red</div><div class="kv gr">808.780€</div></div>
+    <div class="kc hi"><div class="kl">Total gastos período</div><div class="kv red" id="gasto-kpi-total">—</div></div>
+    <div class="kc"><div class="kl">Gastos periódicos</div><div class="kv" id="gasto-kpi-periodicos">—</div><div class="ks">mensual + trimestral + anual</div></div>
+    <div class="kc"><div class="kl">Gastos puntuales</div><div class="kv" id="gasto-kpi-variables">—</div></div>
+    <div class="kc"><div class="kl">Nº gastos registrados</div><div class="kv gr" id="gasto-kpi-num">—</div></div>
   </div>
   <div class="ssep">Registrar nuevo gasto</div>
   <div class="panel"><div class="ph"><span class="pt">Nuevo gasto</span></div><div class="pb">
@@ -775,32 +775,30 @@ table.t tr:hover td{background:var(--cream)}
       <button class="gasto-tag" onclick="setGT(this)">Otros</button>
     </div></div>
     <div class="fr fr4">
-      <div><div class="flbl">Concepto (libre)</div><input class="inp" type="text" placeholder="Fotocasa, Inmovilla, alquiler..."></div>
-      <div><div class="flbl">Oficina/s</div><select class="sel"><option>Central (÷ todas)</option><option>Subconjunto de oficinas</option><option>Alicante</option><option>Barcelona</option><option>Castellón</option><option>Jaén</option><option>Madrid</option><option>Málaga</option><option>Marbella</option><option>San Sebastián</option><option>Sevilla</option><option>Valencia</option></select></div>
-      <div><div class="flbl">Fecha</div><input class="inp" type="date"></div>
-      <div><div class="flbl">Periodicidad</div><select class="sel"><option>Puntual</option><option>Mensual</option><option>Trimestral</option><option>Anual</option></select></div>
+      <div><div class="flbl">Concepto (libre)</div><input class="inp" type="text" placeholder="Fotocasa, Inmovilla, alquiler..." id="gasto-concepto"></div>
+      <div><div class="flbl">Oficina/s</div><select class="sel" id="gasto-oficina"><option value="">Central (÷ todas)</option></select></div>
+      <div><div class="flbl">Fecha</div><input class="inp" type="date" id="gasto-fecha"></div>
+      <div><div class="flbl">Periodicidad</div><select class="sel" id="gasto-periodicidad"><option value="puntual">Puntual</option><option value="mensual">Mensual</option><option value="trimestral">Trimestral</option><option value="anual">Anual</option></select></div>
     </div>
     <div class="fr fr4">
       <div><div class="flbl">Base imponible</div><input class="inp" type="text" placeholder="1.000 €" id="gasto-base" oninput="calcGasto()"></div>
-      <div><div class="flbl">Tipo impuesto (libre)</div><input class="inp" type="text" placeholder="IVA 21%, IRPF -15%, exento..."></div>
+      <div><div class="flbl">Tipo impuesto (libre)</div><input class="inp" type="text" placeholder="IVA 21%, IRPF -15%, exento..." id="gasto-imp-desc"></div>
       <div><div class="flbl">% impuesto</div><input class="inp" type="text" placeholder="21" id="gasto-imp-pct" oninput="calcGasto()"></div>
       <div><div class="flbl">Total (auto)</div><input class="inp" readonly id="gasto-total"></div>
     </div>
     <div class="fr fr2">
-      <div><div class="flbl">Vencimiento contrato (opcional)</div><input class="inp" type="date"></div>
+      <div><div class="flbl">Vencimiento contrato (opcional)</div><input class="inp" type="date" id="gasto-vencimiento"></div>
       <div style="display:flex;align-items:center;gap:10px;padding-top:17px"><div class="toggle" id="tog-ren" onclick="this.classList.toggle('on')"></div><span style="font-size:11px;color:var(--mu)">Alerta de autorenovación</span></div>
     </div>
-    <div style="margin-bottom:9px"><div class="flbl">Nota</div><input class="inp" type="text" placeholder="Descripción adicional..."></div>
-    <div style="display:flex;gap:6px"><button class="btn bn">Guardar gasto</button><button class="btn bo">Cancelar</button></div>
+    <div style="margin-bottom:9px"><div class="flbl">Nota</div><input class="inp" type="text" placeholder="Descripción adicional..." id="gasto-nota"></div>
+    <div style="display:flex;gap:6px"><button class="btn bn" onclick="guardarGasto()">Guardar gasto</button><button class="btn bo" onclick="limpiarGasto()">Cancelar</button></div>
+    <div id="gasto-msg" style="display:none;margin-top:8px;font-size:11px;padding:6px 10px;border-radius:4px"></div>
   </div></div>
   <div class="ssep">Gastos registrados — período seleccionado</div>
   <div class="panel"><div class="ph"><span class="pt">Listado de gastos</span><button class="pa">Exportar →</button></div>
-  <table class="t"><thead><tr><th>Fecha</th><th>Concepto</th><th>Cat.</th><th>Oficina</th><th>Periodicidad</th><th>Base imp.</th><th>Impuesto</th><th>Total</th><th>Vencimiento</th></tr></thead>
-  <tbody>
-    <tr><td>01/05</td><td>Fotocasa Premium</td><td><span class="tag tc">Portales</span></td><td>Central</td><td><span class="tag tb">Mensual</span></td><td class="nr">3.200€</td><td class="nr">IVA 21%</td><td class="nr">3.872€</td><td style="color:var(--mu);font-size:10px">—</td></tr>
-    <tr><td>01/05</td><td>Inmovilla CRM</td><td><span class="tag tc">Tecnología</span></td><td>Central</td><td><span class="tag tb">Mensual</span></td><td class="nr">890€</td><td class="nr">IVA 21%</td><td class="nr">1.077€</td><td style="color:var(--mu);font-size:10px">—</td></tr>
-    <tr><td>01/05</td><td>Alquiler oficina BCN</td><td><span class="tag tc">Instalaciones</span></td><td>Barcelona</td><td><span class="tag tb">Mensual</span></td><td class="nr">1.800€</td><td class="nr">IVA 21%</td><td class="nr">2.178€</td><td style="color:#d97706;font-size:10px;font-weight:600">31/12/2026 ⚠</td></tr>
-    <tr><td>12/05</td><td>Mudanza mobiliario</td><td><span class="tag tc">Instalaciones</span></td><td>Sevilla</td><td><span class="tag" style="background:var(--cd);color:var(--mu)">Puntual</span></td><td class="nr">2.400€</td><td class="nr">IVA 21%</td><td class="nr">2.904€</td><td style="color:var(--mu);font-size:10px">—</td></tr>
+  <table class="t"><thead><tr><th>Fecha</th><th>Concepto</th><th>Cat.</th><th>Oficina</th><th>Periodicidad</th><th>Base imp.</th><th>Impuesto</th><th>Total</th><th>Vencimiento</th><th></th></tr></thead>
+  <tbody id="gastos-tbody">
+    <tr><td colspan="9" style="text-align:center;color:var(--mu);font-style:italic;padding:16px">Cargando gastos...</td></tr>
   </tbody></table></div>
 </div>
 <div class="expbar"><div class="exptxt">Total período · <strong>38.420€</strong> · Margen bruto <strong>808.780€</strong></div><div><button class="expbtn">CSV</button><button class="expbtn prim">Cuenta de resultados</button></div></div>
@@ -1382,12 +1380,18 @@ async function loadSelectsFormulario() {
       fetch(API + '/api/consultores').then(r => r.json())
     ]);
 
-    // Select oficina del formulario
+    // Opciones de oficinas (reutilizable)
+    const optsOf = ofRes.success
+      ? ofRes.data.map(o => `<option value="${o.id}">${o.nombre}</option>`).join('')
+      : '';
+
+    // Select oficina del formulario de operaciones
     const selOf = document.getElementById('op-oficina');
-    if (selOf && ofRes.success) {
-      selOf.innerHTML = '<option value="">Selecciona oficina...</option>' +
-        ofRes.data.map(o => `<option value="${o.id}">${o.nombre}</option>`).join('');
-    }
+    if (selOf) selOf.innerHTML = '<option value="">Selecciona oficina...</option>' + optsOf;
+
+    // Select oficina del formulario de gastos
+    const selGastoOf = document.getElementById('gasto-oficina');
+    if (selGastoOf) selGastoOf.innerHTML = '<option value="">Central (÷ todas)</option>' + optsOf;
 
     // Actualizar todos los selects de consultores (ag-nom)
     if (consRes.success) {
@@ -1458,6 +1462,125 @@ async function cambiarEstado(id, estadoActual) {
     });
     loadListadoOps();
     loadDashboard();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+// ── GASTOS ────────────────────────────────────────────
+async function guardarGasto() {
+  const concepto = document.getElementById('gasto-concepto')?.value?.trim();
+  if (!concepto) { alert('Introduce el concepto del gasto'); return; }
+
+  const base = parseFloat((document.getElementById('gasto-base')?.value || '0').replace(/[^0-9.,]/g,'').replace(',','.')) || 0;
+  const pct  = parseFloat(document.getElementById('gasto-imp-pct')?.value || '0') || 0;
+  const categoria = document.querySelector('.gasto-tag.active')?.textContent || 'Otros';
+  const oficina_id = document.getElementById('gasto-oficina')?.value || null;
+
+  const payload = {
+    concepto,
+    categoria,
+    fecha: document.getElementById('gasto-fecha')?.value || new Date().toISOString().split('T')[0],
+    periodicidad: document.getElementById('gasto-periodicidad')?.value || 'puntual',
+    base_imponible: base,
+    tipo_impuesto_desc: document.getElementById('gasto-imp-desc')?.value || 'IVA 21%',
+    pct_impuesto: pct,
+    fecha_vencimiento_contrato: document.getElementById('gasto-vencimiento')?.value || null,
+    alerta_renovacion: document.getElementById('tog-ren')?.classList.contains('on') || false,
+    nota: document.getElementById('gasto-nota')?.value || null,
+    oficina_ids: oficina_id ? [parseInt(oficina_id)] : []
+  };
+
+  const msg = document.getElementById('gasto-msg');
+  try {
+    const resp = await fetch(API + '/api/gastos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await resp.json();
+    if (result.success) {
+      if (msg) { msg.style.display='block'; msg.style.background='#ECFDF5'; msg.style.color='#065F46'; msg.textContent='✓ Gasto guardado correctamente'; }
+      limpiarGasto();
+      loadGastos();
+    } else {
+      if (msg) { msg.style.display='block'; msg.style.background='#FEE2E2'; msg.style.color='#991B1B'; msg.textContent='Error: '+result.error; }
+    }
+  } catch(e) {
+    if (msg) { msg.style.display='block'; msg.style.background='#FEE2E2'; msg.style.color='#991B1B'; msg.textContent='Error de conexión: '+e.message; }
+  }
+}
+
+function limpiarGasto() {
+  ['gasto-concepto','gasto-nota'].forEach(id => { const el=document.getElementById(id); if(el)el.value=''; });
+  ['gasto-base','gasto-imp-pct'].forEach(id => { const el=document.getElementById(id); if(el)el.value=''; });
+  document.getElementById('gasto-total') && (document.getElementById('gasto-total').value='');
+  document.getElementById('gasto-vencimiento') && (document.getElementById('gasto-vencimiento').value='');
+  document.getElementById('gasto-fecha') && (document.getElementById('gasto-fecha').valueAsDate = new Date());
+  document.querySelector('.gasto-tag.active')?.classList.remove('active');
+  document.querySelector('.gasto-tag')?.classList.add('active');
+}
+
+async function loadGastos() {
+  const tbody = document.getElementById('gastos-tbody');
+  if (!tbody) return;
+  try {
+    const [listRes, sumRes] = await Promise.all([
+      fetch(API + '/api/gastos').then(r => r.json()),
+      fetch(API + '/api/gastos/resumen').then(r => r.json())
+    ]);
+
+    // KPIs
+    if (sumRes.success) {
+      const s = sumRes.data;
+      const el = id => document.getElementById(id);
+      if (el('gasto-kpi-total'))     el('gasto-kpi-total').textContent     = fmt(s.total_gastos);
+      if (el('gasto-kpi-periodicos')) el('gasto-kpi-periodicos').textContent = fmt(s.gastos_periodicos);
+      if (el('gasto-kpi-variables')) el('gasto-kpi-variables').textContent  = fmt(s.gastos_variables);
+      if (el('gasto-kpi-num'))       el('gasto-kpi-num').textContent        = s.num_gastos;
+    }
+
+    // Listado
+    if (!listRes.success || !listRes.data.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--mu);font-style:italic;padding:16px">Sin gastos registrados — usa el formulario de arriba</td></tr>';
+      return;
+    }
+    const perTag = { puntual:'tc', mensual:'tb', trimestral:'tb', anual:'tb' };
+    const perLbl = { puntual:'Puntual', mensual:'Mensual', trimestral:'Trimestral', anual:'Anual' };
+    tbody.innerHTML = listRes.data.map(g => {
+      const fecha = g.fecha ? g.fecha.split('T')[0].split('-').reverse().join('/') : '—';
+      const base  = parseFloat(g.base_imponible).toLocaleString('es-ES',{maximumFractionDigits:0}) + '€';
+      const total = parseFloat(g.total).toLocaleString('es-ES',{maximumFractionDigits:0}) + '€';
+      const per   = g.periodicidad || 'puntual';
+      let venc = '<span style="color:var(--mu);font-size:10px">—</span>';
+      if (g.fecha_vencimiento_contrato) {
+        const d = new Date(g.fecha_vencimiento_contrato);
+        const hoy = new Date();
+        const dias = Math.ceil((d - hoy) / 86400000);
+        const vFmt = d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+        venc = dias < 60
+          ? `<span style="color:#d97706;font-size:10px;font-weight:600">${vFmt} ⚠</span>`
+          : `<span style="color:var(--mu);font-size:10px">${vFmt}</span>`;
+      }
+      return `<tr>
+        <td>${fecha}</td>
+        <td>${g.concepto}</td>
+        <td><span class="tag tc">${g.categoria || '—'}</span></td>
+        <td>${g.oficinas || 'Central'}</td>
+        <td><span class="tag ${perTag[per]||'tc'}">${perLbl[per]||per}</span></td>
+        <td class="nr">${base}</td>
+        <td class="nr">${g.tipo_impuesto_desc || '—'}</td>
+        <td class="nr"><strong>${total}</strong></td>
+        <td>${venc}</td>
+        <td><button class="br2" onclick="eliminarGasto(${g.id})">✕</button></td>
+      </tr>`;
+    }).join('');
+  } catch(e) { console.warn('Error cargando gastos:', e.message); }
+}
+
+async function eliminarGasto(id) {
+  if (!confirm('¿Eliminar este gasto?')) return;
+  try {
+    await fetch(`${API}/api/gastos/${id}`, { method: 'DELETE' });
+    loadGastos();
   } catch(e) { alert('Error: ' + e.message); }
 }
 
@@ -1550,6 +1673,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadDashboard();
   loadSelectsFormulario();
   loadListadoOps();
+  loadGastos();
 });
 </script>
 </body>

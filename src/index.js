@@ -16,6 +16,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok', time: new Date() }));
 app.use('/api/oficinas',    require('../routes/oficinas'));
 app.use('/api/operaciones', require('../routes/operaciones'));
 app.use('/api/consultores', require('../routes/consultores'));
+app.use('/api/gastos',      require('../routes/gastos'));
 
 // Mantener compatibilidad con endpoints legacy del dashboard
 const pool = require('../db/pool');
