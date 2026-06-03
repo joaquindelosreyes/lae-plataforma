@@ -13,7 +13,7 @@ console.log('DB connection:', connectionString ? 'OK (variable encontrada)' : 'E
 
 const pool = new Pool({
   connectionString,
-  ssl: process.env.PGHOST?.includes('railway') ? { rejectUnauthorized: false } : false
+  ssl: { rejectUnauthorized: false }
 });
 
 app.use(cors());
