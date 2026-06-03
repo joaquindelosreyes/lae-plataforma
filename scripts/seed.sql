@@ -1,4 +1,4 @@
--- Oficinas con objetivos reales 2026
+-- Oficinas reales LAE HOMES 2026
 INSERT INTO oficinas (nombre, objetivo_anual, obj_1t, obj_2t, obj_3t, obj_4t, objetivo_aaff) VALUES
   ('Alicante',      250000,  35000,  55000,  75000,  85000, 12),
   ('Barcelona',     250000,  50000,  50000,  60000,  90000,  8),
@@ -12,9 +12,23 @@ INSERT INTO oficinas (nombre, objetivo_anual, obj_1t, obj_2t, obj_3t, obj_4t, ob
   ('Valencia',      250000,  40000,  60000,  70000,  80000, 16)
 ON CONFLICT DO NOTHING;
 
--- Datos reales 1T 2026
+-- Directores de oficina (personas clave)
+INSERT INTO consultores (nombre, oficina_id, activo) VALUES
+  ('Jorge',    (SELECT id FROM oficinas WHERE nombre='Madrid'),        true),
+  ('Yolanda',  (SELECT id FROM oficinas WHERE nombre='Marbella'),      true),
+  ('Eduardo',  (SELECT id FROM oficinas WHERE nombre='San Sebastián'), true),
+  ('Ana',      (SELECT id FROM oficinas WHERE nombre='Barcelona'),     true),
+  ('Fernando', (SELECT id FROM oficinas WHERE nombre='Málaga'),        true),
+  ('Miriam',   (SELECT id FROM oficinas WHERE nombre='Alicante'),      true),
+  ('Marina',   (SELECT id FROM oficinas WHERE nombre='Jaén'),          true),
+  ('Elena',    (SELECT id FROM oficinas WHERE nombre='Castellón'),     true),
+  ('Joaquín',  (SELECT id FROM oficinas WHERE nombre='Valencia'),      true)
+ON CONFLICT DO NOTHING;
+
+-- Datos reales seguimiento 1T 2026
 INSERT INTO seguimiento (oficina_id, año, trimestre, cobrado, generado, captaciones, cierres, aaff_activos)
-SELECT id, 2026, 1, cobrado, generado, captaciones, cierres, aaff FROM (VALUES
+SELECT o.id, 2026, 1, d.cobrado, d.generado, d.captaciones, d.cierres, d.aaff
+FROM (VALUES
   ('Alicante',       71572,    43654, 24, 14,  4),
   ('Barcelona',      11790,     1340, 11,  3,  0),
   ('Castellón',      21082,    34145, 17,  8,  0),
@@ -27,11 +41,14 @@ SELECT id, 2026, 1, cobrado, generado, captaciones, cierres, aaff FROM (VALUES
   ('Valencia',       11730,    75650,  6,  2,  7)
 ) AS d(nombre, cobrado, generado, captaciones, cierres, aaff)
 JOIN oficinas o ON o.nombre = d.nombre
-ON CONFLICT (oficina_id, año, trimestre) DO NOTHING;
+ON CONFLICT (oficina_id, año, trimestre) DO UPDATE
+SET cobrado=EXCLUDED.cobrado, generado=EXCLUDED.generado,
+    captaciones=EXCLUDED.captaciones, cierres=EXCLUDED.cierres, aaff_activos=EXCLUDED.aaff_activos;
 
--- Datos reales 2T 2026
+-- Datos reales seguimiento 2T 2026
 INSERT INTO seguimiento (oficina_id, año, trimestre, cobrado, generado, captaciones, cierres, aaff_activos)
-SELECT id, 2026, 2, cobrado, generado, captaciones, cierres, aaff FROM (VALUES
+SELECT o.id, 2026, 2, d.cobrado, d.generado, d.captaciones, d.cierres, d.aaff
+FROM (VALUES
   ('Alicante',      15300,   7200,  8,  1,  6),
   ('Barcelona',      1400, 226260,  4,  1,  0),
   ('Castellón',     21050,    600,  2,  3,  1),
@@ -44,4 +61,6 @@ SELECT id, 2026, 2, cobrado, generado, captaciones, cierres, aaff FROM (VALUES
   ('Valencia',       2650,   2650,  1,  2,  9)
 ) AS d(nombre, cobrado, generado, captaciones, cierres, aaff)
 JOIN oficinas o ON o.nombre = d.nombre
-ON CONFLICT (oficina_id, año, trimestre) DO NOTHING;
+ON CONFLICT (oficina_id, año, trimestre) DO UPDATE
+SET cobrado=EXCLUDED.cobrado, generado=EXCLUDED.generado,
+    captaciones=EXCLUDED.captaciones, cierres=EXCLUDED.cierres, aaff_activos=EXCLUDED.aaff_activos;

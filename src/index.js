@@ -1,74 +1,25 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { Pool } = require('pg');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-const connectionString = process.env.DATABASE_URL ||
-  (process.env.PGHOST ? `postgresql://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT}/${process.env.PGDATABASE}` : null);
-
-console.log('DB connection:', connectionString ? 'OK (variable encontrada)' : 'ERROR: no hay DATABASE_URL ni variables PG_*');
-
-const isInternal = connectionString?.includes('railway.internal');
-const pool = new Pool({
-  connectionString,
-  ssl: isInternal ? false : { rejectUnauthorized: false }
-});
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Health check
+// Health
 app.get('/health', (req, res) => res.json({ status: 'ok', time: new Date() }));
 
-// GET todas las oficinas con acumulado
-app.get('/api/oficinas', async (req, res) => {
-  try {
-    const { rows } = await pool.query(`
-      SELECT o.*,
-        COALESCE(SUM(s.cobrado), 0) AS total_cobrado,
-        COALESCE(SUM(s.generado), 0) AS total_generado,
-        COALESCE(SUM(s.captaciones), 0) AS total_captaciones,
-        COALESCE(SUM(s.cierres), 0) AS total_cierres,
-        CASE WHEN o.objetivo_anual > 0 THEN ROUND(COALESCE(SUM(s.cobrado),0) / o.objetivo_anual * 100, 1) ELSE 0 END AS pct_cumplimiento
-      FROM oficinas o
-      LEFT JOIN seguimiento s ON s.oficina_id = o.id
-      GROUP BY o.id ORDER BY total_cobrado DESC
-    `);
-    res.json(rows);
-  } catch (e) { console.error('DB error:', e); res.status(500).json({ error: e.message || String(e) }); }
-});
+// Rutas API
+app.use('/api/oficinas',    require('../routes/oficinas'));
+app.use('/api/operaciones', require('../routes/operaciones'));
+app.use('/api/consultores', require('../routes/consultores'));
 
-// GET seguimiento trimestral de una oficina
-app.get('/api/oficinas/:id/seguimiento', async (req, res) => {
-  try {
-    const { rows } = await pool.query(
-      'SELECT * FROM seguimiento WHERE oficina_id = $1 ORDER BY año, trimestre',
-      [req.params.id]
-    );
-    res.json(rows);
-  } catch (e) { console.error('DB error:', e); res.status(500).json({ error: e.message || String(e) }); }
-});
+// Mantener compatibilidad con endpoints legacy del dashboard
+const pool = require('../db/pool');
 
-// POST / PUT datos de seguimiento trimestral
-app.post('/api/seguimiento', async (req, res) => {
-  const { oficina_id, año, trimestre, cobrado, generado, captaciones, cierres, aaff_activos } = req.body;
-  try {
-    const { rows } = await pool.query(`
-      INSERT INTO seguimiento (oficina_id, año, trimestre, cobrado, generado, captaciones, cierres, aaff_activos)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-      ON CONFLICT (oficina_id, año, trimestre)
-      DO UPDATE SET cobrado=$4, generado=$5, captaciones=$6, cierres=$7, aaff_activos=$8, updated_at=NOW()
-      RETURNING *
-    `, [oficina_id, año, trimestre, cobrado, generado, captaciones, cierres, aaff_activos]);
-    res.json(rows[0]);
-  } catch (e) { console.error('DB error:', e); res.status(500).json({ error: e.message || String(e) }); }
-});
-
-// GET resumen red completa
 app.get('/api/resumen', async (req, res) => {
   try {
     const { rows } = await pool.query(`
@@ -78,11 +29,13 @@ app.get('/api/resumen', async (req, res) => {
         COALESCE(SUM(s.generado), 0) AS generado_total,
         COALESCE(SUM(s.captaciones), 0) AS captaciones_total,
         COALESCE(SUM(s.cierres), 0) AS cierres_total,
-        CASE WHEN SUM(o.objetivo_anual) > 0 THEN ROUND(COALESCE(SUM(s.cobrado),0) / SUM(o.objetivo_anual) * 100, 1) ELSE 0 END AS pct_cumplimiento
+        CASE WHEN SUM(o.objetivo_anual) > 0
+          THEN ROUND(COALESCE(SUM(s.cobrado),0) / SUM(o.objetivo_anual) * 100, 1)
+          ELSE 0 END AS pct_cumplimiento
       FROM oficinas o LEFT JOIN seguimiento s ON s.oficina_id = o.id
     `);
     res.json(rows[0]);
-  } catch (e) { console.error('DB error:', e); res.status(500).json({ error: e.message || String(e) }); }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.listen(PORT, () => console.log(`LAE Plataforma corriendo en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`LAE Plataforma · puerto ${PORT}`));
