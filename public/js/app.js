@@ -67,13 +67,49 @@ function nav(viewId) {
   if (viewId === 'gastos')           loadGastos();
 }
 
+// ── FILTRO FECHAS ────────────────────────────────────
+const DR = {
+  '1t':   ['2026-01-01','2026-03-31'],
+  '2t':   ['2026-04-01','2026-06-30'],
+  '3t':   ['2026-07-01','2026-09-30'],
+  '4t':   ['2026-10-01','2026-12-31'],
+  'ytd':  ['2026-01-01','2026-12-31'],
+  '2025': ['2025-01-01','2025-12-31'],
+  'm4':   ['2026-04-01','2026-04-30'],
+  'm5':   ['2026-05-01','2026-05-31'],
+  'm6':   ['2026-06-01','2026-06-30'],
+};
+
+function setDR(k) {
+  document.querySelectorAll('.dsc').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`[onclick="setDR('${k}')"]`);
+  if (btn) btn.classList.add('active');
+  const [from, to] = DR[k] || [];
+  if (from) document.getElementById('date-from').value = from;
+  if (to)   document.getElementById('date-to').value   = to;
+  loadDashboard();
+}
+
+function onDateChange() {
+  document.querySelectorAll('.dsc').forEach(b => b.classList.remove('active'));
+  loadDashboard();
+}
+
+function getDateRange() {
+  const from = document.getElementById('date-from')?.value || '2026-01-01';
+  const to   = document.getElementById('date-to')?.value   || '2026-12-31';
+  return { desde: from, hasta: to };
+}
+
 // ── DASHBOARD ────────────────────────────────────────
 async function loadDashboard() {
-  const año = new Date().getFullYear();
+  const { desde, hasta } = getDateRange();
+  // Extraer año del rango para endpoints que lo necesitan
+  const año = desde ? desde.split('-')[0] : new Date().getFullYear();
   try {
     const [resumenResp, oficinasResp] = await Promise.all([
-      fetch(`${API}/api/resumen?año=${año}`),
-      fetch(`${API}/api/oficinas?año=${año}`)
+      fetch(`${API}/api/resumen?año=${año}&desde=${desde}&hasta=${hasta}`),
+      fetch(`${API}/api/oficinas?año=${año}&desde=${desde}&hasta=${hasta}`)
     ]);
     const resumen  = await resumenResp.json();
     const oficinas = await oficinasResp.json();
@@ -570,6 +606,7 @@ async function loadSelectsGlobales() {
 
 // ── INIT ──────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  setDR('ytd'); // Arranca mostrando todo 2026
   nav('dashboard');
   loadSelectsGlobales();
   // Drag & drop para importar

@@ -220,3 +220,13 @@ tr:hover td { background: var(--cream); }
 /* ── COMPROMISOS ── */
 .comp-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
 .comp-check { width: 18px; height: 18px; border-radius: 3px; border: 2px solid var(--border); cursor: pointer; flex-shrink: 0; margin-top: 1px; }
+
+/* ── DATE SHORTCUTS ── */
+.dsc {
+  font-family: 'Jost', sans-serif; font-size: 10px; font-weight: 500;
+  padding: 3px 7px; border-radius: 3px; border: none;
+  background: transparent; color: var(--muted); cursor: pointer;
+  transition: all .15s; white-space: nowrap;
+}
+.dsc:hover { background: var(--navy); color: #fff; }
+.dsc.active { background: var(--navy); color: #fff; }

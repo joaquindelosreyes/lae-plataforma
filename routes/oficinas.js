@@ -1,10 +1,12 @@
 const router = require('express').Router();
 const pool = require('../db/pool');
 
-// GET /api/oficinas?año=2026
+// GET /api/oficinas?año=2026&desde=2026-01-01&hasta=2026-06-30
 router.get('/', async (req, res) => {
   try {
-    const año = parseInt(req.query.año) || new Date().getFullYear();
+    const año   = parseInt(req.query.año) || new Date().getFullYear();
+    const desde = req.query.desde || `${año}-01-01`;
+    const hasta = req.query.hasta || `${año}-12-31`;
     const { rows } = await pool.query(`
       SELECT o.*,
         COALESCE(ops.cobrado, 0)     AS total_cobrado,
@@ -21,7 +23,7 @@ router.get('/', async (req, res) => {
           SUM(honorarios_lae) FILTER (WHERE estado='cobrada')  AS cobrado,
           SUM(honorarios_lae) FILTER (WHERE estado='pipeline') AS generado,
           COUNT(*) FILTER (WHERE estado='cobrada')             AS cierres
-        FROM operaciones WHERE EXTRACT(YEAR FROM fecha) = $1
+        FROM operaciones WHERE fecha BETWEEN $1 AND $2
         GROUP BY oficina_id
       ) ops ON ops.oficina_id = o.id
       LEFT JOIN (
@@ -31,7 +33,7 @@ router.get('/', async (req, res) => {
         SELECT oficina_id, COUNT(*) AS activos FROM aaff_despachos WHERE estado='activo' GROUP BY oficina_id
       ) aaff ON aaff.oficina_id = o.id
       ORDER BY total_cobrado DESC
-    `, [año]);
+    `, [desde, hasta]);
     res.json({ success: true, data: rows });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });

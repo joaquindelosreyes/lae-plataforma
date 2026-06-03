@@ -28,7 +28,9 @@ const pool = require('../db/pool');
 
 app.get('/api/resumen', async (req, res) => {
   try {
-    const año = parseInt(req.query.año) || new Date().getFullYear();
+    const año   = parseInt(req.query.año) || new Date().getFullYear();
+    const desde = req.query.desde || `${año}-01-01`;
+    const hasta = req.query.hasta || `${año}-12-31`;
     const { rows } = await pool.query(`
       SELECT
         (SELECT SUM(objetivo_anual) FROM oficinas) AS objetivo_total,
@@ -41,8 +43,8 @@ app.get('/api/resumen', async (req, res) => {
                (SELECT SUM(objetivo_anual) FROM oficinas) * 100, 1)
           ELSE 0 END AS pct_cumplimiento
       FROM operaciones
-      WHERE EXTRACT(YEAR FROM fecha) = $1
-    `, [año]);
+      WHERE fecha BETWEEN $1 AND $2
+    `, [desde, hasta]);
     res.json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

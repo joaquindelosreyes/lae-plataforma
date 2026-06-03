@@ -89,8 +89,26 @@
 <div class="main">
   <div class="topbar">
     <span class="topbar-title" id="page-title">Dashboard General</span>
-    <div class="topbar-actions">
-      <span style="font-size:11px;color:var(--muted)">LAE HOMES · 2026</span>
+    <div class="topbar-actions" id="date-filter-wrap">
+      <div style="display:flex;align-items:center;gap:6px;background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:4px 8px;flex-wrap:wrap">
+        <input type="date" id="date-from" class="form-input" style="width:120px;padding:3px 6px;font-size:11px;border:none;background:transparent" onchange="onDateChange()">
+        <span style="font-size:11px;color:var(--muted)">→</span>
+        <input type="date" id="date-to" class="form-input" style="width:120px;padding:3px 6px;font-size:11px;border:none;background:transparent" onchange="onDateChange()">
+        <div style="width:1px;height:16px;background:var(--border);margin:0 2px"></div>
+        <div style="display:flex;gap:3px" id="date-shortcuts">
+          <button class="dsc" onclick="setDR('1t')">1T</button>
+          <button class="dsc" onclick="setDR('2t')">2T</button>
+          <button class="dsc" onclick="setDR('3t')">3T</button>
+          <button class="dsc" onclick="setDR('4t')">4T</button>
+          <div style="width:1px;height:12px;background:var(--border);margin:0 1px;align-self:center"></div>
+          <button class="dsc" onclick="setDR('ytd')">2026</button>
+          <button class="dsc" onclick="setDR('2025')">2025</button>
+          <div style="width:1px;height:12px;background:var(--border);margin:0 1px;align-self:center"></div>
+          <button class="dsc" onclick="setDR('m4')">Abr</button>
+          <button class="dsc" onclick="setDR('m5')">May</button>
+          <button class="dsc" onclick="setDR('m6')">Jun</button>
+        </div>
+      </div>
     </div>
   </div>
 
