@@ -7,18 +7,30 @@ router.get('/', async (req, res) => {
     const año = parseInt(req.query.año) || new Date().getFullYear();
     const { rows } = await pool.query(`
       SELECT o.*,
-        COALESCE(SUM(op.honorarios_lae) FILTER (WHERE op.estado='cobrada'), 0)   AS total_cobrado,
-        COALESCE(SUM(op.honorarios_lae) FILTER (WHERE op.estado='pipeline'), 0)  AS total_generado,
-        COUNT(op.id) FILTER (WHERE op.estado='cobrada')                           AS total_cierres,
-        (SELECT COUNT(*) FROM captaciones c WHERE c.oficina_id=o.id AND c.estado='activa') AS total_captaciones,
-        (SELECT COUNT(*) FROM aaff_despachos a WHERE a.oficina_id=o.id AND a.estado='activo') AS aaff_activos,
+        COALESCE(ops.cobrado, 0)     AS total_cobrado,
+        COALESCE(ops.generado, 0)    AS total_generado,
+        COALESCE(ops.cierres, 0)     AS total_cierres,
+        COALESCE(cap.total, 0)       AS total_captaciones,
+        COALESCE(aaff.activos, 0)    AS aaff_activos,
         CASE WHEN o.objetivo_anual > 0
-          THEN ROUND(COALESCE(SUM(op.honorarios_lae) FILTER (WHERE op.estado='cobrada'),0) / o.objetivo_anual * 100, 1)
+          THEN ROUND(COALESCE(ops.cobrado,0) / o.objetivo_anual * 100, 1)
           ELSE 0 END AS pct_cumplimiento
       FROM oficinas o
-      LEFT JOIN operaciones op ON op.oficina_id = o.id
-        AND EXTRACT(YEAR FROM op.fecha) = $1
-      GROUP BY o.id ORDER BY total_cobrado DESC
+      LEFT JOIN (
+        SELECT oficina_id,
+          SUM(honorarios_lae) FILTER (WHERE estado='cobrada')  AS cobrado,
+          SUM(honorarios_lae) FILTER (WHERE estado='pipeline') AS generado,
+          COUNT(*) FILTER (WHERE estado='cobrada')             AS cierres
+        FROM operaciones WHERE EXTRACT(YEAR FROM fecha) = $1
+        GROUP BY oficina_id
+      ) ops ON ops.oficina_id = o.id
+      LEFT JOIN (
+        SELECT oficina_id, COUNT(*) AS total FROM captaciones WHERE estado='activa' GROUP BY oficina_id
+      ) cap ON cap.oficina_id = o.id
+      LEFT JOIN (
+        SELECT oficina_id, COUNT(*) AS activos FROM aaff_despachos WHERE estado='activo' GROUP BY oficina_id
+      ) aaff ON aaff.oficina_id = o.id
+      ORDER BY total_cobrado DESC
     `, [año]);
     res.json({ success: true, data: rows });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
