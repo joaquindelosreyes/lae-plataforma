@@ -129,12 +129,47 @@ async function loadDashboard() {
     set('kpi-captaciones', r.captaciones_total || 0);
     set('kpi-generado',    fmtK(r.generado_total || 0));
 
-    // Tabla de oficinas
-    const lista = oficinas.data || oficinas;
+    // Guardar datos para ordenación
+    window._dashOficinas = oficinas.data || oficinas;
+    renderDashOficinas(window._dashOficinas);
+  } catch(e) { console.error('Error dashboard:', e); }
+}
+
+let _sortCol = 'cobrado', _sortAsc = false;
+
+function sortDash(col) {
+  if (_sortCol === col) {
+    _sortAsc = !_sortAsc;
+  } else {
+    _sortCol = col;
+    _sortAsc = col === 'nombre'; // texto asc por defecto, números desc
+  }
+  // Actualizar flechas
+  ['nombre','objetivo','cobrado','pct','cierres','captaciones'].forEach(c => {
+    const el = document.getElementById('sort-' + c);
+    if (el) el.textContent = c === col ? (_sortAsc ? ' ↑' : ' ↓') : '';
+  });
+  if (window._dashOficinas) renderDashOficinas(window._dashOficinas);
+}
+
+function renderDashOficinas(lista) {
     const tbody = document.getElementById('dash-tbody');
-    if (tbody && Array.isArray(lista)) {
-      const max = Math.max(...lista.map(o => parseFloat(o.total_cobrado) || 0), 1);
-      tbody.innerHTML = lista.map(o => {
+    if (!tbody || !Array.isArray(lista)) return;
+
+    const sorted = [...lista].sort((a, b) => {
+      let va, vb;
+      if (_sortCol === 'nombre')       { va = a.nombre; vb = b.nombre; }
+      else if (_sortCol === 'objetivo'){ va = parseFloat(a.objetivo_anual)||0; vb = parseFloat(b.objetivo_anual)||0; }
+      else if (_sortCol === 'cobrado') { va = parseFloat(a.total_cobrado)||0; vb = parseFloat(b.total_cobrado)||0; }
+      else if (_sortCol === 'pct')     { va = parseFloat(a.pct_cumplimiento)||0; vb = parseFloat(b.pct_cumplimiento)||0; }
+      else if (_sortCol === 'cierres') { va = parseInt(a.total_cierres)||0; vb = parseInt(b.total_cierres)||0; }
+      else if (_sortCol === 'captaciones') { va = parseInt(a.total_captaciones)||0; vb = parseInt(b.total_captaciones)||0; }
+      if (typeof va === 'string') return _sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+      return _sortAsc ? va - vb : vb - va;
+    });
+
+    const max = Math.max(...sorted.map(o => parseFloat(o.total_cobrado) || 0), 1);
+    tbody.innerHTML = sorted.map(o => {
         const cob  = parseFloat(o.total_cobrado) || 0;
         const obj  = parseFloat(o.objetivo_anual) || 0;
         const p    = parseFloat(o.pct_cumplimiento) || 0;
@@ -157,8 +192,6 @@ async function loadDashboard() {
           <td class="td-right">${parseInt(o.total_captaciones) || 0}</td>
         </tr>`;
       }).join('');
-    }
-  } catch(e) { console.error('Error dashboard:', e); }
 }
 
 function set(id, val) {

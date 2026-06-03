@@ -159,12 +159,12 @@
             <thead>
               <tr>
                 <th></th>
-                <th>Oficina</th>
-                <th>Objetivo</th>
-                <th>Cobrado</th>
-                <th style="min-width:160px">Progreso</th>
-                <th>Cierres</th>
-                <th>Captaciones</th>
+                <th onclick="sortDash('nombre')"    style="cursor:pointer;user-select:none">Oficina <span id="sort-nombre"></span></th>
+                <th onclick="sortDash('objetivo')"  style="cursor:pointer;user-select:none">Objetivo <span id="sort-objetivo"></span></th>
+                <th onclick="sortDash('cobrado')"   style="cursor:pointer;user-select:none">Cobrado <span id="sort-cobrado"></span></th>
+                <th onclick="sortDash('pct')"       style="cursor:pointer;user-select:none;min-width:160px">Progreso <span id="sort-pct"></span></th>
+                <th onclick="sortDash('cierres')"   style="cursor:pointer;user-select:none">Cierres <span id="sort-cierres"></span></th>
+                <th onclick="sortDash('captaciones')" style="cursor:pointer;user-select:none">Captaciones <span id="sort-captaciones"></span></th>
               </tr>
             </thead>
             <tbody id="dash-tbody">
