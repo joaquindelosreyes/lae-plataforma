@@ -75,6 +75,10 @@
   </a>
 
   <div class="nav-divider"></div>
+  <a class="nav-item" data-view="recursos" onclick="nav('recursos')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+    Recursos
+  </a>
   <div class="nav-divider"></div>
   <a class="nav-item" data-view="importar" onclick="nav('importar')" style="color:#d4b96a">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M8 12l4 4 4-4M12 3v13"/></svg>
@@ -897,6 +901,133 @@
             Importar
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- ═══ RECURSOS ═══ -->
+    <div class="view" id="view-recursos">
+
+      <div class="ssep">Documentos corporativos</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+        <a href="#" class="panel" style="text-decoration:none;cursor:pointer" onclick="alert('Añade el link a tu Drive/OneDrive aquí')">
+          <div class="panel-body" style="display:flex;align-items:center;gap:12px">
+            <div style="font-size:28px">📋</div>
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--navy)">Manual Coordinadora</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Guía operativa para coordinadoras de oficina</div>
+              <span class="badge badge-blue" style="margin-top:6px">PDF</span>
+            </div>
+          </div>
+        </a>
+        <a href="#" class="panel" style="text-decoration:none;cursor:pointer" onclick="alert('Añade el link a tu Drive/OneDrive aquí')">
+          <div class="panel-body" style="display:flex;align-items:center;gap:12px">
+            <div style="font-size:28px">🏠</div>
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--navy)">Guía del Comprador</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Proceso de compra paso a paso para clientes</div>
+              <span class="badge badge-green" style="margin-top:6px">PDF</span>
+            </div>
+          </div>
+        </a>
+        <a href="#" class="panel" style="text-decoration:none;cursor:pointer" onclick="alert('Añade el link a tu Drive/OneDrive aquí')">
+          <div class="panel-body" style="display:flex;align-items:center;gap:12px">
+            <div style="font-size:28px">🔑</div>
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--navy)">Guía del Vendedor</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Proceso de venta y captación para propietarios</div>
+              <span class="badge badge-green" style="margin-top:6px">PDF</span>
+            </div>
+          </div>
+        </a>
+        <a href="#" class="panel" style="text-decoration:none;cursor:pointer" onclick="alert('Añade el link a tu Drive/OneDrive aquí')">
+          <div class="panel-body" style="display:flex;align-items:center;gap:12px">
+            <div style="font-size:28px">⭐</div>
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--navy)">Propuesta de Valor LAE</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Argumentario comercial y diferenciación</div>
+              <span class="badge badge-amber" style="margin-top:6px">PPT</span>
+            </div>
+          </div>
+        </a>
+        <a href="#" class="panel" style="text-decoration:none;cursor:pointer" onclick="alert('Añade el link a tu Drive/OneDrive aquí')">
+          <div class="panel-body" style="display:flex;align-items:center;gap:12px">
+            <div style="font-size:28px">🏗️</div>
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--navy)">Propuesta Obra Nueva</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Argumentario para canal promotor</div>
+              <span class="badge badge-amber" style="margin-top:6px">PPT</span>
+            </div>
+          </div>
+        </a>
+        <a href="#" class="panel" style="text-decoration:none;cursor:pointer" onclick="alert('Añade el link a tu Drive/OneDrive aquí')">
+          <div class="panel-body" style="display:flex;align-items:center;gap:12px">
+            <div style="font-size:28px">📁</div>
+            <div>
+              <div style="font-size:13px;font-weight:500;color:var(--navy)">Carpeta corporativa</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Todos los documentos en Drive / OneDrive</div>
+              <span class="badge badge-gray" style="margin-top:6px">Drive ↗</span>
+            </div>
+          </div>
+        </a>
+      </div>
+
+      <div class="ssep">Planes de oficina 2026</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
+        <div class="panel"><div class="panel-body" style="text-align:center">
+          <div style="font-size:20px;margin-bottom:6px">📊</div>
+          <div style="font-size:12px;font-weight:500;color:var(--navy)">Alicante</div>
+          <div style="font-size:11px;color:var(--green);font-weight:600;margin-top:2px">250k€</div>
+        </div></div>
+        <div class="panel"><div class="panel-body" style="text-align:center">
+          <div style="font-size:20px;margin-bottom:6px">📊</div>
+          <div style="font-size:12px;font-weight:500;color:var(--navy)">Barcelona</div>
+          <div style="font-size:11px;color:var(--green);font-weight:600;margin-top:2px">250k€</div>
+        </div></div>
+        <div class="panel"><div class="panel-body" style="text-align:center">
+          <div style="font-size:20px;margin-bottom:6px">📊</div>
+          <div style="font-size:12px;font-weight:500;color:var(--navy)">Castellón</div>
+          <div style="font-size:11px;color:var(--green);font-weight:600;margin-top:2px">125k€</div>
+        </div></div>
+        <div class="panel"><div class="panel-body" style="text-align:center">
+          <div style="font-size:20px;margin-bottom:6px">📊</div>
+          <div style="font-size:12px;font-weight:500;color:var(--navy)">Jaén</div>
+          <div style="font-size:11px;color:var(--green);font-weight:600;margin-top:2px">134k€</div>
+        </div></div>
+        <div class="panel"><div class="panel-body" style="text-align:center">
+          <div style="font-size:20px;margin-bottom:6px">📊</div>
+          <div style="font-size:12px;font-weight:500;color:var(--navy)">Madrid</div>
+          <div style="font-size:11px;color:var(--green);font-weight:600;margin-top:2px">300k€</div>
+        </div></div>
+        <div class="panel"><div class="panel-body" style="text-align:center">
+          <div style="font-size:20px;margin-bottom:6px">📊</div>
+          <div style="font-size:12px;font-weight:500;color:var(--navy)">Málaga</div>
+          <div style="font-size:11px;color:var(--green);font-weight:600;margin-top:2px">250k€</div>
+        </div></div>
+        <div class="panel"><div class="panel-body" style="text-align:center">
+          <div style="font-size:20px;margin-bottom:6px">📊</div>
+          <div style="font-size:12px;font-weight:500;color:var(--navy)">Marbella</div>
+          <div style="font-size:11px;color:var(--green);font-weight:600;margin-top:2px">375k€</div>
+        </div></div>
+        <div class="panel"><div class="panel-body" style="text-align:center">
+          <div style="font-size:20px;margin-bottom:6px">📊</div>
+          <div style="font-size:12px;font-weight:500;color:var(--navy)">San Sebastián</div>
+          <div style="font-size:11px;color:var(--green);font-weight:600;margin-top:2px">375k€</div>
+        </div></div>
+        <div class="panel"><div class="panel-body" style="text-align:center">
+          <div style="font-size:20px;margin-bottom:6px">📊</div>
+          <div style="font-size:12px;font-weight:500;color:var(--navy)">Sevilla</div>
+          <div style="font-size:11px;color:var(--green);font-weight:600;margin-top:2px">120k€</div>
+        </div></div>
+        <div class="panel"><div class="panel-body" style="text-align:center">
+          <div style="font-size:20px;margin-bottom:6px">📊</div>
+          <div style="font-size:12px;font-weight:500;color:var(--navy)">Valencia</div>
+          <div style="font-size:11px;color:var(--green);font-weight:600;margin-top:2px">250k€</div>
+        </div></div>
+      </div>
+
+      <div style="margin-top:16px;padding:14px 16px;background:#fff;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:12px;color:var(--muted)">Los documentos se abren desde tu carpeta de Drive o OneDrive · Dime los links y los conecto</span>
+        <button class="btn btn-primary btn-sm" onclick="alert('Dile a Claude los links de Drive/OneDrive para conectarlos')">Conectar Drive</button>
       </div>
     </div>
 

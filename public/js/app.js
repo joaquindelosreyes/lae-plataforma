@@ -53,6 +53,7 @@ function nav(viewId) {
     aaff: 'AAFF',
     gastos: 'Gastos',
     importar: 'Importar Inmovilla',
+    recursos: 'Recursos y documentos',
   };
   const title = document.getElementById('page-title');
   if (title) title.textContent = titles[viewId] || viewId;
