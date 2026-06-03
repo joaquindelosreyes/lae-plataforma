@@ -971,14 +971,15 @@ table.t tr:hover td{background:var(--cream)}
   <div class="inmo-banner">
     <div class="inmo-left"><h3>Palancas — análisis automático de rendimiento</h3>
     <p>Datos cruzados de Ingresos, Cartera, AAFF y Captaciones · Sin entrada manual<br>
-    Ritmo esperado a mayo: <strong style="color:var(--gl)">42% del objetivo anual</strong></p></div>
+    Ritmo esperado: <strong style="color:var(--gl)" id="palanca-ritmo">calculando...</strong></p></div>
     <div class="inmo-stats">
-      <div class="inmo-stat"><div class="val" style="color:#16a34a">5</div><div class="lbl">Oficinas por encima</div></div>
-      <div class="inmo-stat"><div class="val" style="color:#d97706">3</div><div class="lbl">En ritmo</div></div>
-      <div class="inmo-stat"><div class="val" style="color:#dc2626">2</div><div class="lbl">Por debajo</div></div>
+      <div class="inmo-stat"><div class="val" style="color:#16a34a" id="palanca-cnt-verde">—</div><div class="lbl">Por encima</div></div>
+      <div class="inmo-stat"><div class="val" style="color:#d97706" id="palanca-cnt-ambar">—</div><div class="lbl">En ritmo</div></div>
+      <div class="inmo-stat"><div class="val" style="color:#dc2626" id="palanca-cnt-rojo">—</div><div class="lbl">Por debajo</div></div>
     </div>
   </div>
-  <div class="panel"><div class="ph"><span class="pt">Matriz de palancas por oficina — % cumplimiento vs ritmo esperado (42%)</span>
+  <div class="panel"><div class="ph">
+    <span class="pt" id="palanca-matriz-titulo">Matriz de palancas por oficina</span>
     <div style="display:flex;gap:5px;font-size:10px">
       <span style="background:#f0faf3;color:#16a34a;padding:2px 7px;border-radius:3px;font-weight:600">↑ Por encima</span>
       <span style="background:#fffbeb;color:#d97706;padding:2px 7px;border-radius:3px;font-weight:600">→ En ritmo</span>
@@ -986,36 +987,26 @@ table.t tr:hover td{background:var(--cream)}
     </div>
   </div>
   <div class="pb" style="overflow-x:auto">
-    <table class="t" style="border-collapse:collapse">
-      <thead><tr><th>Oficina</th><th style="min-width:95px">Honor. LAE</th><th style="min-width:95px">Captac. excl.</th><th style="min-width:95px">Cierres</th><th style="min-width:95px">AAFF activos</th><th style="min-width:95px">Cartera excl.</th></tr></thead>
-      <tbody><tr><td style="font-weight:500;color:var(--navy);white-space:nowrap;padding:7px 8px">Alicante</td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">87% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">75% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">80% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">71% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">82% ↑</span></td></tr><tr><td style="font-weight:500;color:var(--navy);white-space:nowrap;padding:7px 8px">Barcelona</td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">74% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">63% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">78% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">80% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">70% ↑</span></td></tr><tr><td style="font-weight:500;color:var(--navy);white-space:nowrap;padding:7px 8px">Castellón</td><td class="nr" style="background:#fffbeb"><span style="color:#d97706;font-weight:600">50% →</span></td><td class="nr" style="background:#fffbeb"><span style="color:#d97706;font-weight:600">40% →</span></td><td class="nr" style="background:#fffbeb"><span style="color:#d97706;font-weight:600">35% →</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">55% ↑</span></td><td class="nr" style="background:#fffbeb"><span style="color:#d97706;font-weight:600">45% →</span></td></tr><tr><td style="font-weight:500;color:var(--navy);white-space:nowrap;padding:7px 8px">Jaén</td><td class="nr" style="background:#fffbeb"><span style="color:#d97706;font-weight:600">35% →</span></td><td class="nr" style="background:#fff5f5"><span style="color:#dc2626;font-weight:600">28% ↓</span></td><td class="nr" style="background:#fff5f5"><span style="color:#dc2626;font-weight:600">0% ↓</span></td><td class="nr" style="background:#fffbeb"><span style="color:#d97706;font-weight:600">50% →</span></td><td class="nr" style="background:#fffbeb"><span style="color:#d97706;font-weight:600">40% →</span></td></tr><tr><td style="font-weight:500;color:var(--navy);white-space:nowrap;padding:7px 8px">Madrid</td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">94% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">90% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">95% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">88% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">88% ↑</span></td></tr><tr><td style="font-weight:500;color:var(--navy);white-space:nowrap;padding:7px 8px">Málaga</td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">89% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">78% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">88% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">82% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">80% ↑</span></td></tr><tr><td style="font-weight:500;color:var(--navy);white-space:nowrap;padding:7px 8px">Marbella</td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">89% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">95% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">92% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">90% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">96% ↑</span></td></tr><tr><td style="font-weight:500;color:var(--navy);white-space:nowrap;padding:7px 8px">San Sebastián</td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">60% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">52% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">58% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">60% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">65% ↑</span></td></tr><tr><td style="font-weight:500;color:var(--navy);white-space:nowrap;padding:7px 8px">Sevilla</td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">52% ↑</span></td><td class="nr" style="background:#fffbeb"><span style="color:#d97706;font-weight:600">42% →</span></td><td class="nr" style="background:#fffbeb"><span style="color:#d97706;font-weight:600">40% →</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">65% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">55% ↑</span></td></tr><tr><td style="font-weight:500;color:var(--navy);white-space:nowrap;padding:7px 8px">Valencia</td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">91% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">85% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">87% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">78% ↑</span></td><td class="nr" style="background:#f0faf3"><span style="color:#16a34a;font-weight:600">88% ↑</span></td></tr></tbody>
+    <table class="t" style="border-collapse:collapse" id="palanca-tabla">
+      <thead><tr>
+        <th>Oficina</th>
+        <th style="min-width:95px">Honor. LAE</th>
+        <th style="min-width:95px">Captaciones</th>
+        <th style="min-width:95px">Cierres</th>
+        <th style="min-width:95px">AAFF activos</th>
+        <th style="min-width:95px">Cartera excl.</th>
+      </tr></thead>
+      <tbody id="palanca-tbody">
+        <tr><td colspan="6" style="text-align:center;color:var(--mu);font-style:italic;padding:16px">Calculando palancas...</td></tr>
+      </tbody>
     </table>
   </div></div>
   <div class="ssep">Resumen por palanca — media de la red</div>
-  <div class="kgrid" style="grid-template-columns:repeat(5,1fr)">
-    <div class="kc"><div class="kl">Honor. LAE</div><div class="kv gr">72%</div><div class="ks">media red · ritmo 42%</div><div class="kd up">↑ por encima</div></div>
-    <div class="kc"><div class="kl">Captac. excl.</div><div class="kv am">65%</div><div class="ks">media red</div><div class="kd up">↑ por encima</div></div>
-    <div class="kc"><div class="kl">Cierres</div><div class="kv am">65%</div><div class="ks">Jaén en 0%</div><div class="kd dn">↓ Jaén alerta</div></div>
-    <div class="kc"><div class="kl">AAFF activos</div><div class="kv gr">72%</div><div class="ks">media red</div><div class="kd up">↑ por encima</div></div>
-    <div class="kc"><div class="kl">Cartera excl.</div><div class="kv gr">71%</div><div class="ks">media red</div><div class="kd up">↑ por encima</div></div>
-  </div>
+  <div class="kgrid" style="grid-template-columns:repeat(5,1fr)" id="palanca-resumen"></div>
   <div class="ssep">Oficinas que requieren atención</div>
-  <div class="g2">
-    <div class="panel" style="border-left:3px solid #dc2626;border-radius:0 8px 8px 0"><div class="ph"><span class="pt" style="color:#dc2626">Jaén — por debajo en todas las palancas</span></div><div class="pb">
-      <div class="bh"><span class="blbl">Honor. LAE</span><div class="btrack"><div class="bfill" style="width:35%;background:#dc2626"></div></div><span class="bval" style="color:#dc2626">35%</span></div>
-      <div class="bh"><span class="blbl">Captaciones</span><div class="btrack"><div class="bfill" style="width:28%;background:#dc2626"></div></div><span class="bval" style="color:#dc2626">28%</span></div>
-      <div class="bh"><span class="blbl">Cierres</span><div class="btrack"><div class="bfill" style="width:1%;background:#dc2626"></div></div><span class="bval" style="color:#dc2626">0%</span></div>
-      <div style="margin-top:8px;padding:8px;background:var(--reb);border-radius:5px;font-size:11px;color:var(--re)">Acción urgente: reunión esta semana · plan captación específico · revisar objetivo anual</div>
-    </div></div>
-    <div class="panel" style="border-left:3px solid #d97706;border-radius:0 8px 8px 0"><div class="ph"><span class="pt" style="color:#d97706">San Sebastián — potencial no capitalizado</span></div><div class="pb">
-      <div class="bh"><span class="blbl">Honor. LAE</span><div class="btrack"><div class="bfill" style="width:60%;background:#d97706"></div></div><span class="bval" style="color:#d97706">60%</span></div>
-      <div class="bh"><span class="blbl">Captaciones</span><div class="btrack"><div class="bfill" style="width:52%;background:#d97706"></div></div><span class="bval" style="color:#d97706">52%</span></div>
-      <div class="bh"><span class="blbl">Cierres</span><div class="btrack"><div class="bfill" style="width:58%;background:#d97706"></div></div><span class="bval" style="color:#d97706">58%</span></div>
-      <div style="margin-top:8px;padding:8px;background:var(--amb);border-radius:5px;font-size:11px;color:var(--am)">Objetivo más alto (375k€) · reforzar canal AAFF · seguimiento quincenal</div>
-    </div></div>
-  </div>
+  <div id="palanca-alertas"></div>
 </div>
-<div class="expbar"><div class="exptxt">5 palancas · 10 oficinas · calculado automáticamente</div><div><button class="expbtn">CSV palancas</button><button class="expbtn prim">Exportar para reunión</button></div></div>
+<div class="expbar"><div class="exptxt" id="palanca-expbar">5 palancas · 10 oficinas · calculado automáticamente</div><div><button class="expbtn prim" onclick="loadPalancas()">↻ Recalcular</button></div></div>
 </div>
 <div class="view" id="view-marca">
 <div class="scroll">
@@ -1472,6 +1463,89 @@ async function cambiarEstado(id, estadoActual) {
     loadListadoOps();
     loadDashboard();
   } catch(e) { alert('Error: ' + e.message); }
+}
+
+// ── PALANCAS ─────────────────────────────────────────
+async function loadPalancas() {
+  try {
+    const año = new Date().getFullYear();
+    const res = await fetch(`${API}/api/palancas?año=${año}`).then(r => r.json());
+    if (!res.success) return;
+    const d = res.data;
+
+    // Banner
+    const el = id => document.getElementById(id);
+    if (el('palanca-ritmo')) el('palanca-ritmo').textContent = d.ritmo_esperado + '% del objetivo anual';
+    if (el('palanca-cnt-verde')) el('palanca-cnt-verde').textContent = d.contadores.verde;
+    if (el('palanca-cnt-ambar')) el('palanca-cnt-ambar').textContent = d.contadores.ambar;
+    if (el('palanca-cnt-rojo'))  el('palanca-cnt-rojo').textContent  = d.contadores.rojo;
+    if (el('palanca-matriz-titulo')) el('palanca-matriz-titulo').textContent =
+      `Matriz de palancas — % cumplimiento vs ritmo esperado (${d.ritmo_esperado}%)`;
+
+    // Colores por semáforo
+    const bg  = { verde:'#f0faf3', ambar:'#fffbeb', rojo:'#fff5f5', sin_datos:'transparent' };
+    const col = { verde:'#16a34a', ambar:'#d97706', rojo:'#dc2626', sin_datos:'var(--mu)' };
+    const palancaKeys = ['honor_lae','captaciones','cierres','aaff_activos','cartera_excl'];
+
+    // Tabla
+    const tbody = el('palanca-tbody');
+    if (tbody) {
+      tbody.innerHTML = d.oficinas.map(o => {
+        const celdas = palancaKeys.map(k => {
+          const p = o.palancas[k];
+          const txt = p.sem === 'sin_datos' ? '—' : `${p.pct}% ${p.icono}`;
+          return `<td class="nr" style="background:${bg[p.sem]}"><span style="color:${col[p.sem]};font-weight:600">${txt}</span></td>`;
+        }).join('');
+        return `<tr><td style="font-weight:500;color:var(--navy);white-space:nowrap;padding:7px 8px">${o.nombre}</td>${celdas}</tr>`;
+      }).join('');
+    }
+
+    // Resumen palancas
+    const lbl = { honor_lae:'Honor. LAE', captaciones:'Captaciones', cierres:'Cierres', aaff_activos:'AAFF activos', cartera_excl:'Cartera excl.' };
+    const resDiv = el('palanca-resumen');
+    if (resDiv) {
+      resDiv.innerHTML = palancaKeys.map(k => {
+        const r = d.resumen_palancas[k];
+        const cls = r.sem === 'verde' ? 'gr' : r.sem === 'ambar' ? 'am' : 'red';
+        const dir = r.sem === 'verde' ? '↑ por encima' : r.sem === 'ambar' ? '→ en ritmo' : '↓ por debajo';
+        const dirCls = r.sem === 'verde' ? 'up' : 'dn';
+        return `<div class="kc"><div class="kl">${lbl[k]}</div><div class="kv ${cls}">${r.media}%</div><div class="ks">media red · ritmo ${d.ritmo_esperado}%</div><div class="kd ${dirCls}">${dir}</div></div>`;
+      }).join('');
+    }
+
+    // Alertas
+    const alertDiv = el('palanca-alertas');
+    if (alertDiv) {
+      if (!d.alertas.length) {
+        alertDiv.innerHTML = '<div style="text-align:center;color:var(--gr);padding:16px;font-size:12px">✓ Ninguna oficina requiere atención urgente</div>';
+      } else {
+        alertDiv.innerHTML = '<div class="g2">' + d.alertas.map(a => {
+          const borderCol = a.rojas >= 3 ? '#dc2626' : '#d97706';
+          const txtCol = a.rojas >= 3 ? '#dc2626' : '#d97706';
+          const barras = palancaKeys.map(k => {
+            const p = a.palancas[k];
+            if (p.sem === 'sin_datos') return '';
+            const w = Math.min(p.pct, 100);
+            const c = col[p.sem];
+            return `<div class="bh"><span class="blbl">${lbl[k]}</span><div class="btrack"><div class="bfill" style="width:${w}%;background:${c}"></div></div><span class="bval" style="color:${c}">${p.pct}%</span></div>`;
+          }).filter(Boolean).join('');
+          const accion = a.rojas >= 3
+            ? 'Acción urgente: reunión esta semana · plan específico de captación · revisar objetivo'
+            : 'Seguimiento quincenal · reforzar canal AAFF · revisar ritmo de captaciones';
+          const bgMsg = a.rojas >= 3 ? 'var(--reb)' : 'var(--amb)';
+          const fgMsg = a.rojas >= 3 ? 'var(--re)' : 'var(--am)';
+          return `<div class="panel" style="border-left:3px solid ${borderCol};border-radius:0 8px 8px 0">
+            <div class="ph"><span class="pt" style="color:${txtCol}">${a.nombre} — ${a.rojas} palancas por debajo</span></div>
+            <div class="pb">${barras}<div style="margin-top:8px;padding:8px;background:${bgMsg};border-radius:5px;font-size:11px;color:${fgMsg}">${accion}</div></div>
+          </div>`;
+        }).join('') + '</div>';
+      }
+    }
+
+    if (el('palanca-expbar')) el('palanca-expbar').textContent =
+      `5 palancas · ${d.oficinas.length} oficinas · ritmo ${d.ritmo_esperado}% · calculado automáticamente`;
+
+  } catch(e) { console.warn('Error cargando palancas:', e.message); }
 }
 
 // ── REUNIONES ────────────────────────────────────────
@@ -2024,6 +2098,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadGastos();
   loadAAFF();
   loadReuniones();
+  loadPalancas();
 });
 </script>
 </body>
