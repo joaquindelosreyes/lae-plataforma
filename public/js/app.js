@@ -439,24 +439,7 @@ async function loadCaptaciones() {
       tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">🏠</div><h3>Sin captaciones</h3><p>Importa un CSV de Inmovilla para ver las captaciones activas.</p><button class="btn btn-primary" style="margin-top:12px" onclick="nav('importar')">Importar Inmovilla</button></div></td></tr>`;
       return;
     }
-    tbody.innerHTML = lista.map(c => {
-      const meses = Math.round(parseFloat(c.meses_activa) || 0);
-      const mCol  = meses >= 7 ? 'var(--red)' : meses >= 5 ? 'var(--amber)' : 'var(--green)';
-      const mandTag = c.mandato === 'exclusiva'
-        ? '<span class="badge badge-blue">Excl.</span>'
-        : '<span class="badge badge-gray">NE</span>';
-      return `<tr>
-        <td style="font-size:10px;color:var(--muted);font-family:monospace">${c.ref||'—'}</td>
-        <td>${c.oficina_nombre||'—'}</td>
-        <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.direccion||'—'}</td>
-        <td>${mandTag}</td>
-        <td><span class="badge badge-gray">${c.tipologia||'—'}</span></td>
-        <td><span class="badge badge-gray">${c.tipo_operacion === 'alquiler' ? 'Alquiler' : 'C-V'}</span></td>
-        <td class="td-right">${parseFloat(c.precio_captacion)>0 ? fmtK(c.precio_captacion) : '—'}</td>
-        <td class="td-right" style="color:var(--green)">${parseFloat(c.honorarios_potenciales)>0 ? fmt(c.honorarios_potenciales) : '—'}</td>
-        <td class="td-right" style="color:${mCol};font-weight:600">${meses}m</td>
-      </tr>`;
-    }).join('');
+    renderCap(lista);
     const cnt = document.getElementById('cap-count');
     if (cnt) cnt.textContent = lista.length + ' captaciones activas';
   } catch(e) { tbody.innerHTML = `<tr><td colspan="9" class="loading">Error: ${e.message}</td></tr>`; }
@@ -504,18 +487,7 @@ async function loadAAFF() {
       tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">🤝</div><h3>Sin despachos AAFF</h3><p>Añade el primero con el botón "+ Nuevo despacho".</p></div></td></tr>`;
       return;
     }
-    const estBadge = { activo:'badge-green', reactivar:'badge-amber', rescindir:'badge-red' };
-    const estLbl   = { activo:'Activo', reactivar:'Reactivar', rescindir:'Rescindir' };
-    tbody.innerHTML = lista.map(d => `<tr>
-      <td><strong>${d.nombre}</strong></td>
-      <td>${d.oficina_nombre||'—'}</td>
-      <td>${d.consultor_nombre||'—'}</td>
-      <td class="td-right">${parseInt(d.total_captaciones)||0}</td>
-      <td class="td-right">${parseInt(d.total_cierres)||0}</td>
-      <td class="td-right">${parseFloat(d.honorarios_cierres)>0 ? fmt(d.honorarios_cierres) : '—'}</td>
-      <td class="td-right">${d.dias_sin_actividad!=null ? d.dias_sin_actividad+'d' : '—'}</td>
-      <td><span class="badge ${estBadge[d.estado]||'badge-gray'}" style="cursor:pointer" onclick="cambiarEstadoAAFF(${d.id},'${d.estado}')">${estLbl[d.estado]||d.estado}</span></td>
-    </tr>`).join('');
+    renderAaffTabla(lista);
   } catch(e) { if (tbody) tbody.innerHTML = `<tr><td colspan="8" class="loading">Error: ${e.message}</td></tr>`; }
 }
 
@@ -565,28 +537,10 @@ async function loadGastos() {
 
     const lista = listRes.data || listRes;
     if (!Array.isArray(lista) || !lista.length) {
-      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">💰</div><h3>Sin gastos registrados</h3><p>Añade el primer gasto con el formulario de abajo.</p></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">💰</div><h3>Sin gastos registrados</h3><p>Añade el primer gasto con el formulario de abajo.</p></div></td></tr>`;
       return;
     }
-    const perLbl = { puntual:'Puntual', mensual:'Mensual', trimestral:'Trimestral', anual:'Anual' };
-    tbody.innerHTML = lista.map(g => {
-      const venc = g.fecha_vencimiento_contrato
-        ? (new Date(g.fecha_vencimiento_contrato) - new Date() < 60*86400000*1000
-          ? `<span style="color:var(--amber);font-weight:500">${fmtFecha(g.fecha_vencimiento_contrato)} ⚠</span>`
-          : fmtFecha(g.fecha_vencimiento_contrato))
-        : '—';
-      return `<tr>
-        <td>${fmtFecha(g.fecha)}</td>
-        <td><strong>${g.concepto}</strong></td>
-        <td><span class="badge badge-gray">${g.categoria||'—'}</span></td>
-        <td>${g.oficinas||'Central'}</td>
-        <td><span class="badge badge-gray">${perLbl[g.periodicidad]||g.periodicidad}</span></td>
-        <td class="td-right">${fmt(g.base_imponible)}</td>
-        <td class="td-right"><strong>${fmt(g.total)}</strong></td>
-        <td>${venc}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="eliminarGasto(${g.id})">✕</button></td>
-      </tr>`;
-    }).join('');
+    renderGastosTabla(lista);
   } catch(e) { tbody.innerHTML = `<tr><td colspan="8" class="loading">Error: ${e.message}</td></tr>`; }
 }
 
@@ -896,24 +850,7 @@ async function loadCaptacionesPorOficina() {
     const res = await fetch(`${API}/api/captaciones/por-oficina`).then(r => r.json());
     const lista = res.data || res;
     if (!Array.isArray(lista)) return;
-    const tbody = document.getElementById('cap-oficinas-tbody');
-    if (!tbody) return;
-    const maxTotal = Math.max(...lista.map(o => parseInt(o.total) || 0), 1);
-    tbody.innerHTML = lista.map(o => {
-      const w = Math.round((parseInt(o.total)||0) / maxTotal * 100);
-      return `<tr>
-        <td><strong>${o.nombre}</strong></td>
-        <td class="td-right" style="color:#1E40AF;font-weight:600">${o.exclusivas||0}</td>
-        <td class="td-right" style="color:#7C3AED">${o.notas_encargo||0}</td>
-        <td class="td-right"><strong>${o.total||0}</strong></td>
-        <td class="td-right" style="color:var(--green)">${fmtK(o.honorarios||0)}</td>
-        <td style="width:120px">
-          <div style="height:5px;background:var(--border);border-radius:2px">
-            <div style="width:${w}%;height:100%;background:var(--navy);border-radius:2px"></div>
-          </div>
-        </td>
-      </tr>`;
-    }).join('');
+    renderCapOf(lista);
   } catch(e) {}
 }
 
@@ -1139,4 +1076,218 @@ async function loadReuniones() {
       if (hoyReu) abrirReunion(hoyReu.id);
     }
   } catch(e) { console.warn('Error reuniones:', e.message); }
+}
+
+// ── ORDENACIÓN GENÉRICA ───────────────────────────────
+function makeSorter(dataKey, colMap, renderFn, sortPrefix, defaultCol, defaultAsc) {
+  let col = defaultCol, asc = defaultAsc;
+  return function(newCol) {
+    if (col === newCol) { asc = !asc; } else { col = newCol; asc = defaultAsc; }
+    Object.keys(colMap).forEach(c => {
+      const el = document.getElementById(sortPrefix + c);
+      if (el) el.textContent = c === col ? (asc ? ' ↑' : ' ↓') : '';
+    });
+    const data = window[dataKey];
+    if (!data) return;
+    const sorted = [...data].sort((a, b) => {
+      const va = colMap[col]?.(a) ?? '';
+      const vb = colMap[col]?.(b) ?? '';
+      if (typeof va === 'string') return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+      return asc ? va - vb : vb - va;
+    });
+    window[dataKey] = sorted;
+    renderFn(sorted);
+    window[dataKey] = data; // restaurar original para re-sorts
+  };
+}
+
+// ── CAPTACIONES SORTABLE ──────────────────────────────
+let _capData = [], _capSortCol = 'meses', _capSortAsc = false;
+
+function sortCap(col) {
+  if (_capSortCol === col) { _capSortAsc = !_capSortAsc; }
+  else { _capSortCol = col; _capSortAsc = ['ref','oficina','direccion','mandato','tipologia','tipo_op'].includes(col); }
+  ['ref','oficina','direccion','mandato','tipologia','tipo_op','precio','honor','meses'].forEach(c => {
+    const el = document.getElementById('cap-sort-' + c);
+    if (el) el.textContent = c === _capSortCol ? (_capSortAsc ? ' ↑' : ' ↓') : '';
+  });
+  renderCap();
+}
+
+function renderCap(data) {
+  if (data) _capData = data;
+  const tbody = document.getElementById('cap-tbody');
+  if (!tbody || !_capData.length) return;
+  const sorted = [..._capData].sort((a, b) => {
+    let va, vb;
+    if      (_capSortCol === 'ref')       { va = a.ref||''; vb = b.ref||''; }
+    else if (_capSortCol === 'oficina')   { va = a.oficina_nombre||''; vb = b.oficina_nombre||''; }
+    else if (_capSortCol === 'direccion') { va = a.direccion||''; vb = b.direccion||''; }
+    else if (_capSortCol === 'mandato')   { va = a.mandato||''; vb = b.mandato||''; }
+    else if (_capSortCol === 'tipologia') { va = a.tipologia||''; vb = b.tipologia||''; }
+    else if (_capSortCol === 'tipo_op')   { va = a.tipo_operacion||''; vb = b.tipo_operacion||''; }
+    else if (_capSortCol === 'precio')    { va = parseFloat(a.precio_captacion)||0; vb = parseFloat(b.precio_captacion)||0; }
+    else if (_capSortCol === 'honor')     { va = parseFloat(a.honorarios_potenciales)||0; vb = parseFloat(b.honorarios_potenciales)||0; }
+    else if (_capSortCol === 'meses')     { va = parseFloat(a.meses_activa)||0; vb = parseFloat(b.meses_activa)||0; }
+    if (typeof va === 'string') return _capSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _capSortAsc ? va - vb : vb - va;
+  });
+  tbody.innerHTML = sorted.map(c => {
+    const meses = Math.round(parseFloat(c.meses_activa)||0);
+    const mCol  = meses >= 7 ? 'var(--red)' : meses >= 5 ? 'var(--amber)' : 'var(--green)';
+    const mandTag = c.mandato === 'exclusiva'
+      ? '<span class="badge badge-blue">Excl.</span>'
+      : '<span class="badge badge-gray">NE</span>';
+    return `<tr>
+      <td style="font-size:10px;color:var(--muted);font-family:monospace">${c.ref||'—'}</td>
+      <td>${c.oficina_nombre||'—'}</td>
+      <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.direccion||'—'}</td>
+      <td>${mandTag}</td>
+      <td><span class="badge badge-gray">${c.tipologia||'—'}</span></td>
+      <td><span class="badge badge-gray">${c.tipo_operacion==='alquiler'?'Alquiler':'C-V'}</span></td>
+      <td class="td-right">${parseFloat(c.precio_captacion)>0?fmtK(c.precio_captacion):'—'}</td>
+      <td class="td-right" style="color:var(--green)">${parseFloat(c.honorarios_potenciales)>0?fmt(c.honorarios_potenciales):'—'}</td>
+      <td class="td-right" style="color:${mCol};font-weight:600">${meses}m</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── AAFF SORTABLE ─────────────────────────────────────
+let _aaffData = [], _aaffSortCol = 'nombre', _aaffSortAsc = true;
+
+function sortAAFF(col) {
+  if (_aaffSortCol === col) { _aaffSortAsc = !_aaffSortAsc; }
+  else { _aaffSortCol = col; _aaffSortAsc = ['nombre','oficina','consultor','estado'].includes(col); }
+  ['nombre','oficina','consultor','captac','cierres','honor','dias','estado'].forEach(c => {
+    const el = document.getElementById('aaff-sort-' + c);
+    if (el) el.textContent = c === _aaffSortCol ? (_aaffSortAsc ? ' ↑' : ' ↓') : '';
+  });
+  renderAaffTabla();
+}
+
+function renderAaffTabla(data) {
+  if (data) _aaffData = data;
+  const tbody = document.getElementById('aaff-tbody');
+  if (!tbody || !_aaffData.length) return;
+  const sorted = [..._aaffData].sort((a, b) => {
+    let va, vb;
+    if      (_aaffSortCol === 'nombre')   { va = a.nombre||''; vb = b.nombre||''; }
+    else if (_aaffSortCol === 'oficina')  { va = a.oficina_nombre||''; vb = b.oficina_nombre||''; }
+    else if (_aaffSortCol === 'consultor'){ va = a.consultor_nombre||''; vb = b.consultor_nombre||''; }
+    else if (_aaffSortCol === 'captac')   { va = parseInt(a.total_captaciones)||0; vb = parseInt(b.total_captaciones)||0; }
+    else if (_aaffSortCol === 'cierres')  { va = parseInt(a.total_cierres)||0; vb = parseInt(b.total_cierres)||0; }
+    else if (_aaffSortCol === 'honor')    { va = parseFloat(a.honorarios_cierres)||0; vb = parseFloat(b.honorarios_cierres)||0; }
+    else if (_aaffSortCol === 'dias')     { va = parseInt(a.dias_sin_actividad)||0; vb = parseInt(b.dias_sin_actividad)||0; }
+    else if (_aaffSortCol === 'estado')   { va = a.estado||''; vb = b.estado||''; }
+    if (typeof va === 'string') return _aaffSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _aaffSortAsc ? va - vb : vb - va;
+  });
+  const estBadge = { activo:'badge-green', reactivar:'badge-amber', rescindir:'badge-red' };
+  const estLbl   = { activo:'Activo', reactivar:'Reactivar', rescindir:'Rescindir' };
+  tbody.innerHTML = sorted.map(d => `<tr>
+    <td><strong>${d.nombre}</strong></td>
+    <td>${d.oficina_nombre||'—'}</td>
+    <td>${d.consultor_nombre||'—'}</td>
+    <td class="td-right">${parseInt(d.total_captaciones)||0}</td>
+    <td class="td-right">${parseInt(d.total_cierres)||0}</td>
+    <td class="td-right">${parseFloat(d.honorarios_cierres)>0?fmt(d.honorarios_cierres):'—'}</td>
+    <td class="td-right">${d.dias_sin_actividad!=null?d.dias_sin_actividad+'d':'—'}</td>
+    <td><span class="badge ${estBadge[d.estado]||'badge-gray'}" style="cursor:pointer" onclick="cambiarEstadoAAFF(${d.id},'${d.estado}')">${estLbl[d.estado]||d.estado}</span></td>
+  </tr>`).join('');
+}
+
+// ── GASTOS SORTABLE ───────────────────────────────────
+let _gastosData = [], _gastosSortCol = 'fecha', _gastosSortAsc = false;
+
+function sortGastos(col) {
+  if (_gastosSortCol === col) { _gastosSortAsc = !_gastosSortAsc; }
+  else { _gastosSortCol = col; _gastosSortAsc = ['concepto','categoria','oficina','periodo'].includes(col); }
+  ['fecha','concepto','categoria','oficina','periodo','base','total','vencimiento'].forEach(c => {
+    const el = document.getElementById('g-sort-' + c);
+    if (el) el.textContent = c === _gastosSortCol ? (_gastosSortAsc ? ' ↑' : ' ↓') : '';
+  });
+  renderGastosTabla();
+}
+
+function renderGastosTabla(data) {
+  if (data) _gastosData = data;
+  const tbody = document.getElementById('gastos-tbody');
+  if (!tbody || !_gastosData.length) return;
+  const sorted = [..._gastosData].sort((a, b) => {
+    let va, vb;
+    if      (_gastosSortCol === 'fecha')      { va = a.fecha||''; vb = b.fecha||''; }
+    else if (_gastosSortCol === 'concepto')   { va = a.concepto||''; vb = b.concepto||''; }
+    else if (_gastosSortCol === 'categoria')  { va = a.categoria||''; vb = b.categoria||''; }
+    else if (_gastosSortCol === 'oficina')    { va = a.oficinas||''; vb = b.oficinas||''; }
+    else if (_gastosSortCol === 'periodo')    { va = a.periodicidad||''; vb = b.periodicidad||''; }
+    else if (_gastosSortCol === 'base')       { va = parseFloat(a.base_imponible)||0; vb = parseFloat(b.base_imponible)||0; }
+    else if (_gastosSortCol === 'total')      { va = parseFloat(a.total)||0; vb = parseFloat(b.total)||0; }
+    else if (_gastosSortCol === 'vencimiento'){ va = a.fecha_vencimiento_contrato||'9999'; vb = b.fecha_vencimiento_contrato||'9999'; }
+    if (typeof va === 'string') return _gastosSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _gastosSortAsc ? va - vb : vb - va;
+  });
+  const perLbl = { puntual:'Puntual', mensual:'Mensual', trimestral:'Trimestral', anual:'Anual' };
+  tbody.innerHTML = sorted.map(g => {
+    const venc = g.fecha_vencimiento_contrato
+      ? (new Date(g.fecha_vencimiento_contrato) - new Date() < 60*86400000
+        ? `<span style="color:var(--amber);font-weight:500">${fmtFecha(g.fecha_vencimiento_contrato)} ⚠</span>`
+        : fmtFecha(g.fecha_vencimiento_contrato))
+      : '—';
+    return `<tr>
+      <td>${fmtFecha(g.fecha)}</td>
+      <td><strong>${g.concepto}</strong></td>
+      <td><span class="badge badge-gray">${g.categoria||'—'}</span></td>
+      <td>${g.oficinas||'Central'}</td>
+      <td><span class="badge badge-gray">${perLbl[g.periodicidad]||g.periodicidad}</span></td>
+      <td class="td-right">${fmt(g.base_imponible)}</td>
+      <td class="td-right"><strong>${fmt(g.total)}</strong></td>
+      <td>${venc}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="eliminarGasto(${g.id})">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── CAPTACIONES POR OFICINA SORTABLE ──────────────────
+let _capOfData = [], _capOfSortCol = 'total', _capOfSortAsc = false;
+
+function sortCapOf(col) {
+  if (_capOfSortCol === col) { _capOfSortAsc = !_capOfSortAsc; }
+  else { _capOfSortCol = col; _capOfSortAsc = col === 'nombre'; }
+  ['nombre','excl','ne','total','honor'].forEach(c => {
+    const el = document.getElementById('cof-sort-' + c);
+    if (el) el.textContent = c === _capOfSortCol ? (_capOfSortAsc ? ' ↑' : ' ↓') : '';
+  });
+  renderCapOf();
+}
+
+function renderCapOf(data) {
+  if (data) _capOfData = data;
+  const tbody = document.getElementById('cap-oficinas-tbody');
+  if (!tbody || !_capOfData.length) return;
+  const sorted = [..._capOfData].sort((a, b) => {
+    let va, vb;
+    if      (_capOfSortCol === 'nombre') { va = a.nombre||''; vb = b.nombre||''; }
+    else if (_capOfSortCol === 'excl')   { va = parseInt(a.exclusivas)||0; vb = parseInt(b.exclusivas)||0; }
+    else if (_capOfSortCol === 'ne')     { va = parseInt(a.notas_encargo)||0; vb = parseInt(b.notas_encargo)||0; }
+    else if (_capOfSortCol === 'total')  { va = parseInt(a.total)||0; vb = parseInt(b.total)||0; }
+    else if (_capOfSortCol === 'honor')  { va = parseFloat(a.honorarios)||0; vb = parseFloat(b.honorarios)||0; }
+    if (typeof va === 'string') return _capOfSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _capOfSortAsc ? va - vb : vb - va;
+  });
+  const maxTotal = Math.max(...sorted.map(o => parseInt(o.total)||0), 1);
+  tbody.innerHTML = sorted.map(o => {
+    const w = Math.round((parseInt(o.total)||0) / maxTotal * 100);
+    return `<tr>
+      <td><strong>${o.nombre}</strong></td>
+      <td class="td-right" style="color:#1E40AF;font-weight:600">${o.exclusivas||0}</td>
+      <td class="td-right" style="color:#7C3AED">${o.notas_encargo||0}</td>
+      <td class="td-right"><strong>${o.total||0}</strong></td>
+      <td class="td-right" style="color:var(--green)">${fmtK(o.honorarios||0)}</td>
+      <td style="width:120px">
+        <div style="height:5px;background:var(--border);border-radius:2px">
+          <div style="width:${w}%;height:100%;background:var(--navy);border-radius:2px"></div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
 }

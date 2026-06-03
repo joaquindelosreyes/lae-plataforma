@@ -381,9 +381,15 @@
           <table>
             <thead>
               <tr>
-                <th>Ref.</th><th>Oficina</th><th>Dirección</th>
-                <th>Mandato</th><th>Tipo</th><th>Op.</th>
-                <th>Precio</th><th>Honor. pot.</th><th>Antigüedad</th>
+                <th onclick="sortCap('ref')"      style="cursor:pointer;user-select:none">Ref. <span id="cap-sort-ref"></span></th>
+                <th onclick="sortCap('oficina')"  style="cursor:pointer;user-select:none">Oficina <span id="cap-sort-oficina"></span></th>
+                <th onclick="sortCap('direccion')" style="cursor:pointer;user-select:none">Dirección <span id="cap-sort-direccion"></span></th>
+                <th onclick="sortCap('mandato')"  style="cursor:pointer;user-select:none">Mandato <span id="cap-sort-mandato"></span></th>
+                <th onclick="sortCap('tipologia')" style="cursor:pointer;user-select:none">Tipo <span id="cap-sort-tipologia"></span></th>
+                <th onclick="sortCap('tipo_op')"  style="cursor:pointer;user-select:none">Op. <span id="cap-sort-tipo_op"></span></th>
+                <th onclick="sortCap('precio')"   style="cursor:pointer;user-select:none">Precio <span id="cap-sort-precio"></span></th>
+                <th onclick="sortCap('honor')"    style="cursor:pointer;user-select:none">Honor. pot. <span id="cap-sort-honor"></span></th>
+                <th onclick="sortCap('meses')"    style="cursor:pointer;user-select:none">Antigüedad <span id="cap-sort-meses"></span></th>
               </tr>
             </thead>
             <tbody id="cap-tbody">
@@ -471,7 +477,16 @@
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>Despacho</th><th>Oficina</th><th>Responsable</th><th>Captac.</th><th>Cierres</th><th>Honorarios</th><th>Últ. contacto</th><th>Estado</th></tr>
+              <tr>
+                <th onclick="sortAAFF('nombre')"   style="cursor:pointer;user-select:none">Despacho <span id="aaff-sort-nombre"></span></th>
+                <th onclick="sortAAFF('oficina')"  style="cursor:pointer;user-select:none">Oficina <span id="aaff-sort-oficina"></span></th>
+                <th onclick="sortAAFF('consultor')" style="cursor:pointer;user-select:none">Responsable <span id="aaff-sort-consultor"></span></th>
+                <th onclick="sortAAFF('captac')"   style="cursor:pointer;user-select:none">Captac. <span id="aaff-sort-captac"></span></th>
+                <th onclick="sortAAFF('cierres')"  style="cursor:pointer;user-select:none">Cierres <span id="aaff-sort-cierres"></span></th>
+                <th onclick="sortAAFF('honor')"    style="cursor:pointer;user-select:none">Honorarios <span id="aaff-sort-honor"></span></th>
+                <th onclick="sortAAFF('dias')"     style="cursor:pointer;user-select:none">Últ. contacto <span id="aaff-sort-dias"></span></th>
+                <th onclick="sortAAFF('estado')"   style="cursor:pointer;user-select:none">Estado <span id="aaff-sort-estado"></span></th>
+              </tr>
             </thead>
             <tbody id="aaff-tbody">
               <tr><td colspan="8" class="loading">Cargando...</td></tr>
@@ -576,7 +591,17 @@
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>Fecha</th><th>Concepto</th><th>Categoría</th><th>Oficina</th><th>Periodicidad</th><th>Base</th><th>Total</th><th>Vencimiento</th><th></th></tr>
+              <tr>
+                <th onclick="sortGastos('fecha')"     style="cursor:pointer;user-select:none">Fecha <span id="g-sort-fecha"></span></th>
+                <th onclick="sortGastos('concepto')"  style="cursor:pointer;user-select:none">Concepto <span id="g-sort-concepto"></span></th>
+                <th onclick="sortGastos('categoria')" style="cursor:pointer;user-select:none">Categoría <span id="g-sort-categoria"></span></th>
+                <th onclick="sortGastos('oficina')"   style="cursor:pointer;user-select:none">Oficina <span id="g-sort-oficina"></span></th>
+                <th onclick="sortGastos('periodo')"   style="cursor:pointer;user-select:none">Periodicidad <span id="g-sort-periodo"></span></th>
+                <th onclick="sortGastos('base')"      style="cursor:pointer;user-select:none">Base <span id="g-sort-base"></span></th>
+                <th onclick="sortGastos('total')"     style="cursor:pointer;user-select:none">Total <span id="g-sort-total"></span></th>
+                <th onclick="sortGastos('vencimiento')" style="cursor:pointer;user-select:none">Vencimiento <span id="g-sort-vencimiento"></span></th>
+                <th></th>
+              </tr>
             </thead>
             <tbody id="gastos-tbody">
               <tr><td colspan="9" class="loading">Cargando...</td></tr>
@@ -749,11 +774,11 @@
           <table>
             <thead>
               <tr>
-                <th>Oficina</th>
-                <th>Exclusivas</th>
-                <th>Notas encargo</th>
-                <th>Total</th>
-                <th>Honor. pot.</th>
+                <th onclick="sortCapOf('nombre')"  style="cursor:pointer;user-select:none">Oficina <span id="cof-sort-nombre"></span></th>
+                <th onclick="sortCapOf('excl')"    style="cursor:pointer;user-select:none">Exclusivas <span id="cof-sort-excl"></span></th>
+                <th onclick="sortCapOf('ne')"      style="cursor:pointer;user-select:none">Notas encargo <span id="cof-sort-ne"></span></th>
+                <th onclick="sortCapOf('total')"   style="cursor:pointer;user-select:none">Total <span id="cof-sort-total"></span></th>
+                <th onclick="sortCapOf('honor')"   style="cursor:pointer;user-select:none">Honor. pot. <span id="cof-sort-honor"></span></th>
                 <th style="min-width:120px">Peso relativo</th>
               </tr>
             </thead>
