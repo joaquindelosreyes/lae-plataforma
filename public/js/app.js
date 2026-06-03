@@ -106,10 +106,10 @@ function recargarVistaActiva() {
   if (id === 'operaciones')      loadOperaciones();
   if (id === 'ingresos-resumen') loadIngresosResumen();
   if (id === 'captaciones')      loadCaptaciones();
+  if (id === 'cap-matriz')       loadCaptacionesMatriz();
   if (id === 'cap-oficinas')     loadCaptacionesPorOficina();
   if (id === 'palancas')         loadPalancas();
-  // Si no hay vista específica, al menos recarga el dashboard
-  if (!['dashboard','operaciones','ingresos-resumen','captaciones','cap-oficinas','palancas'].includes(id)) loadDashboard();
+  if (!['dashboard','operaciones','ingresos-resumen','captaciones','cap-matriz','cap-oficinas','palancas'].includes(id)) loadDashboard();
 }
 
 function getDateRange() {
@@ -826,36 +826,57 @@ async function loadIngresosResumen() {
 
 // ── CAPTACIONES MATRIZ ────────────────────────────────
 async function loadCaptacionesMatriz() {
-  const el = id => document.getElementById(id);
+  const tbody = document.getElementById('matriz-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7" class="loading">Cargando...</td></tr>';
   try {
     const res = await fetch(`${API}/api/captaciones/matriz`).then(r => r.json());
     const lista = res.data || res;
-    if (!Array.isArray(lista)) return;
-
-    const tipologias = [...new Set(lista.map(r => r.tipologia))].sort();
+    if (!Array.isArray(lista) || !lista.length) {
+      tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state" style="padding:24px"><div class="empty-state-icon">📊</div><h3>Sin datos</h3><p>Importa captaciones de Inmovilla para ver la matriz.</p></div></td></tr>';
+      return;
+    }
+    // Ordenar tipologías: vivienda primero, resto alfabético
+    const tipologias = [...new Set(lista.map(r => r.tipologia))].sort((a,b) => a === 'vivienda' ? -1 : b === 'vivienda' ? 1 : a.localeCompare(b));
     const matrix = {};
     lista.forEach(r => {
       if (!matrix[r.tipologia]) matrix[r.tipologia] = { exclusiva:{num:0,valor:0,honor:0}, nota_encargo:{num:0,valor:0,honor:0} };
-      matrix[r.tipologia][r.mandato] = { num: parseInt(r.num), valor: parseFloat(r.valor), honor: parseFloat(r.honorarios) };
+      matrix[r.tipologia][r.mandato] = { num: parseInt(r.num)||0, valor: parseFloat(r.valor)||0, honor: parseFloat(r.honorarios)||0 };
     });
 
-    const tbody = el('matriz-tbody');
-    if (!tbody) return;
+    // Totales para fila final
+    let totExclNum=0, totExclHon=0, totNeNum=0, totNeHon=0;
+    tipologias.forEach(t => {
+      const e = matrix[t]?.exclusiva || {num:0,honor:0};
+      const n = matrix[t]?.nota_encargo || {num:0,honor:0};
+      totExclNum += e.num; totExclHon += e.honor;
+      totNeNum   += n.num; totNeHon   += n.honor;
+    });
+
     tbody.innerHTML = tipologias.map(tip => {
-      const e = matrix[tip]?.exclusiva || {num:0,valor:0,honor:0};
+      const e = matrix[tip]?.exclusiva    || {num:0,valor:0,honor:0};
       const n = matrix[tip]?.nota_encargo || {num:0,valor:0,honor:0};
       const total = e.num + n.num;
+      const tipLbl = tip === 'vivienda' ? '⭐ Vivienda' : tip.charAt(0).toUpperCase() + tip.slice(1);
       return `<tr>
-        <td style="font-weight:500;color:var(--navy)">${tip === 'vivienda' ? '⭐ Vivienda' : tip}</td>
+        <td style="font-weight:500;color:var(--navy)">${tipLbl}</td>
         <td class="td-right" style="background:#EFF6FF"><strong style="color:#1E40AF">${e.num}</strong></td>
-        <td class="td-right" style="background:#EFF6FF"><span style="color:var(--green);font-size:11px">${fmtK(e.honor)}</span></td>
+        <td class="td-right" style="background:#EFF6FF;font-size:11px;color:var(--green)">${fmtK(e.honor)}</td>
         <td class="td-right" style="background:#F5F3FF"><strong style="color:#7C3AED">${n.num}</strong></td>
-        <td class="td-right" style="background:#F5F3FF"><span style="color:var(--green);font-size:11px">${fmtK(n.honor)}</span></td>
+        <td class="td-right" style="background:#F5F3FF;font-size:11px;color:var(--green)">${fmtK(n.honor)}</td>
         <td class="td-right"><strong>${total}</strong></td>
-        <td class="td-right" style="color:var(--green);font-size:11px">${fmtK(e.honor + n.honor)}</td>
+        <td class="td-right" style="color:var(--green);font-weight:600">${fmtK(e.honor + n.honor)}</td>
       </tr>`;
-    }).join('');
-  } catch(e) { console.warn('Error matriz:', e.message); }
+    }).join('') + `<tr style="background:var(--cream);font-weight:600">
+      <td>TOTAL</td>
+      <td class="td-right" style="color:#1E40AF">${totExclNum}</td>
+      <td class="td-right" style="color:var(--green)">${fmtK(totExclHon)}</td>
+      <td class="td-right" style="color:#7C3AED">${totNeNum}</td>
+      <td class="td-right" style="color:var(--green)">${fmtK(totNeHon)}</td>
+      <td class="td-right">${totExclNum + totNeNum}</td>
+      <td class="td-right" style="color:var(--green)">${fmtK(totExclHon + totNeHon)}</td>
+    </tr>`;
+  } catch(e) { tbody.innerHTML = `<tr><td colspan="7" class="loading">Error: ${e.message}</td></tr>`; console.warn('Error matriz:', e); }
 }
 
 // ── CAPTACIONES POR OFICINA ───────────────────────────
