@@ -693,9 +693,12 @@ async function loadPalancas() {
 // ── INGRESOS RESUMEN ──────────────────────────────────
 async function loadIngresosResumen() {
   try {
-    const año = new Date().getFullYear();
-    const res = await fetch(`${API}/api/operaciones/resumen?año=${año}`).then(r => r.json());
-    if (!res.success) return;
+    const { desde, hasta } = getDateRange();
+    const res = await fetch(`${API}/api/operaciones/resumen?desde=${desde}&hasta=${hasta}`).then(r => r.json());
+    if (!res.success) {
+      console.warn('Ingresos resumen error:', res.error);
+      return;
+    }
     const s = res.data;
     const el = id => document.getElementById(id);
     if (el('ir-cobrado'))    el('ir-cobrado').textContent    = fmtK(s.cobrado);
@@ -716,14 +719,36 @@ async function loadIngresosResumen() {
       barDiv.innerHTML = canales.map(c => {
         const v = parseFloat(c.val) || 0;
         const w = Math.round(v / total * 100);
-        return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
           <span style="width:80px;font-size:11px;color:var(--muted)">${c.lbl}</span>
-          <div style="flex:1;height:14px;background:var(--border);border-radius:3px;overflow:hidden">
+          <div style="flex:1;height:12px;background:var(--border);border-radius:3px;overflow:hidden">
             <div style="width:${w}%;height:100%;background:${c.color};border-radius:3px"></div>
           </div>
-          <span style="font-size:11px;font-weight:500;color:var(--text);width:70px;text-align:right">${fmtK(v)}</span>
+          <span style="font-size:11px;font-weight:600;color:var(--text);width:70px;text-align:right">${fmtK(v)}</span>
         </div>`;
       }).join('');
+    }
+
+    // Panel cobrado por oficina
+    const ofDiv = el('ir-por-oficina');
+    if (ofDiv) {
+      const { desde, hasta } = getDateRange();
+      const ofRes = await fetch(`${API}/api/oficinas?desde=${desde}&hasta=${hasta}`).then(r => r.json());
+      const lista = ofRes.data || ofRes;
+      if (Array.isArray(lista) && lista.length) {
+        const max = Math.max(...lista.map(o => parseFloat(o.total_cobrado)||0), 1);
+        ofDiv.innerHTML = lista.filter(o => parseFloat(o.total_cobrado) > 0).map(o => {
+          const v = parseFloat(o.total_cobrado)||0;
+          const w = Math.round(v/max*100);
+          return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <span style="width:90px;font-size:11px;color:var(--muted);white-space:nowrap">${o.nombre}</span>
+            <div style="flex:1;height:12px;background:var(--border);border-radius:3px;overflow:hidden">
+              <div style="width:${w}%;height:100%;background:var(--navy);border-radius:3px"></div>
+            </div>
+            <span style="font-size:11px;font-weight:600;color:var(--navy);width:70px;text-align:right">${fmtK(v)}</span>
+          </div>`;
+        }).join('') || '<p style="font-size:12px;color:var(--muted)">Sin datos para este período</p>';
+      }
     }
   } catch(e) { console.warn('Error ingresos resumen:', e.message); }
 }
