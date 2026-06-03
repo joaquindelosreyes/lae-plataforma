@@ -21,7 +21,8 @@ router.get('/resumen', async (req, res) => {
 // GET /api/captaciones/matriz
 router.get('/matriz', async (req, res) => {
   try {
-    const data = await Captacion.matriz();
+    const { desde, hasta } = req.query;
+    const data = await Captacion.matriz({ desde, hasta });
     res.json({ success: true, data });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -29,7 +30,8 @@ router.get('/matriz', async (req, res) => {
 // GET /api/captaciones/por-oficina
 router.get('/por-oficina', async (req, res) => {
   try {
-    const data = await Captacion.porOficina();
+    const { desde, hasta } = req.query;
+    const data = await Captacion.porOficina({ desde, hasta });
     res.json({ success: true, data });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });

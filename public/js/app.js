@@ -830,7 +830,8 @@ async function loadCaptacionesMatriz() {
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="7" class="loading">Cargando...</td></tr>';
   try {
-    const res = await fetch(`${API}/api/captaciones/matriz`).then(r => r.json());
+    const { desde, hasta } = getDateRange();
+    const res = await fetch(`${API}/api/captaciones/matriz?desde=${desde}&hasta=${hasta}`).then(r => r.json());
     const lista = res.data || res;
     if (!Array.isArray(lista) || !lista.length) {
       tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state" style="padding:24px"><div class="empty-state-icon">📊</div><h3>Sin datos</h3><p>Importa captaciones de Inmovilla para ver la matriz.</p></div></td></tr>';
@@ -882,7 +883,8 @@ async function loadCaptacionesMatriz() {
 // ── CAPTACIONES POR OFICINA ───────────────────────────
 async function loadCaptacionesPorOficina() {
   try {
-    const res = await fetch(`${API}/api/captaciones/por-oficina`).then(r => r.json());
+    const { desde, hasta } = getDateRange();
+    const res = await fetch(`${API}/api/captaciones/por-oficina?desde=${desde}&hasta=${hasta}`).then(r => r.json());
     const lista = res.data || res;
     if (!Array.isArray(lista)) return;
     renderCapOf(lista);
