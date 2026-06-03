@@ -204,6 +204,8 @@ table.t tr:hover td{background:var(--cream)}
   <div class="ndiv"></div>
   <div class="sb-lbl">Recursos</div>
   <div class="ni" onclick="nav('marca',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>Marca y Recursos</div>
+  <div class="ndiv"></div>
+  <a href="/importar.html" style="text-decoration:none"><div class="ni" style="color:var(--gl)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>Importar Inmovilla</div></a>
   <div class="sb-foot">
     <div style="display:flex;align-items:center;gap:8px">
       <div class="uav">JR</div>
@@ -2117,27 +2119,29 @@ async function eliminarGasto(id) {
 }
 
 async function loadDashboard() {
+  const año = new Date().getFullYear();
   try {
     const [resumen, oficinas] = await Promise.all([
-      fetch(API + '/api/resumen').then(r => r.json()),
-      fetch(API + '/api/oficinas').then(r => r.json())
+      fetch(API + `/api/resumen?año=${año}`).then(r => r.json()),
+      fetch(API + `/api/oficinas?año=${año}`).then(r => r.json())
     ]);
 
-    // KPIs globales
-    const cobrado = parseFloat(resumen.cobrado_total);
-    const objetivo = parseFloat(resumen.objetivo_total);
-    const pct = parseFloat(resumen.pct_cumplimiento);
+    // Los datos de resumen vienen del endpoint /api/resumen
+    const r = resumen.data || resumen; // compatibilidad con ambos formatos
+    const cobrado = parseFloat(r.cobrado_total) || 0;
+    const objetivo = parseFloat(r.objetivo_total) || 0;
+    const pct = parseFloat(r.pct_cumplimiento) || 0;
 
     const el = id => document.getElementById(id);
-    if (el('kpi-cobrado'))    el('kpi-cobrado').textContent    = fmt(cobrado);
-    if (el('kpi-generado'))   el('kpi-generado').textContent   = fmt(resumen.generado_total);
-    if (el('kpi-captaciones')) el('kpi-captaciones').textContent = parseInt(resumen.captaciones_total).toLocaleString('es-ES');
-    if (el('kpi-cierres'))    el('kpi-cierres').textContent    = parseInt(resumen.cierres_total).toLocaleString('es-ES');
-    if (el('kpi-objetivo'))   el('kpi-objetivo').textContent   = fmt(objetivo);
-    if (el('kpi-cumpl'))      el('kpi-cumpl').textContent      = pct + '%';
-    if (el('kpi-cumpl-sub'))  el('kpi-cumpl-sub').textContent  = Math.round(cobrado/1000) + 'k / ' + Math.round(objetivo/1000) + 'k';
+    if (el('kpi-cobrado'))     el('kpi-cobrado').textContent     = fmt(cobrado);
+    if (el('kpi-generado'))    el('kpi-generado').textContent    = fmt(r.generado_total || 0);
+    if (el('kpi-captaciones')) el('kpi-captaciones').textContent = parseInt(r.captaciones_total || 0).toLocaleString('es-ES');
+    if (el('kpi-cierres'))     el('kpi-cierres').textContent     = parseInt(r.cierres_total || 0).toLocaleString('es-ES');
+    if (el('kpi-objetivo'))    el('kpi-objetivo').textContent    = fmt(objetivo);
+    if (el('kpi-cumpl'))       el('kpi-cumpl').textContent       = pct + '%';
+    if (el('kpi-cumpl-sub'))   el('kpi-cumpl-sub').textContent   = Math.round(cobrado/1000) + 'k / ' + Math.round(objetivo/1000) + 'k';
 
-    // Banner
+    // Banner superior
     const banner = document.querySelector('.inmo-stats');
     if (banner) {
       const vals = banner.querySelectorAll('.val');
@@ -2145,9 +2149,26 @@ async function loadDashboard() {
       if (vals[1]) vals[1].textContent = pct + '%';
     }
 
-    // Tabla oficinas
+    // AAFF activos en KPI
+    const aaffEl = el('kpi-aaff') || document.querySelector('.kc .kv:contains("39")');
+    const aaffAct = parseInt(r.aaff_activos_total || 0);
+    const aaffObj = parseInt(r.aaff_objetivo_total || 94);
+    const aaffKpi = document.getElementById('kpi-aaff-val');
+    if (!aaffKpi) {
+      // Actualizar el div existente de AAFF activos
+      document.querySelectorAll('.kl').forEach(kl => {
+        if (kl.textContent.includes('AAFF activos')) {
+          const kv = kl.nextElementSibling;
+          if (kv) kv.innerHTML = `${aaffAct}<span style="font-size:12px;color:var(--mu)">${aaffObj>0?'/'+aaffObj:''}</span>`;
+        }
+      });
+    }
+
+    // Tabla oficinas — oficinas.data o oficinas directamente
+    const listaOficinas = oficinas.data || oficinas;
     const tbody = document.getElementById('tabla-oficinas');
-    if (tbody && oficinas.length) {
+    if (tbody && listaOficinas.length) {
+      const oficinas = listaOficinas; // alias
       const maxCobrado = Math.max(...oficinas.map(o => parseFloat(o.total_cobrado)));
       tbody.innerHTML = oficinas.map(o => {
         const cob = parseFloat(o.total_cobrado);
