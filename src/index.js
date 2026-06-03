@@ -28,23 +28,18 @@ const pool = require('../db/pool');
 
 app.get('/api/resumen', async (req, res) => {
   try {
-    const año   = parseInt(req.query.año) || new Date().getFullYear();
-    const desde = req.query.desde || `${año}-01-01`;
-    const hasta = req.query.hasta || `${año}-12-31`;
     const { rows } = await pool.query(`
       SELECT
-        (SELECT SUM(objetivo_anual) FROM oficinas) AS objetivo_total,
-        COALESCE(SUM(honorarios_lae) FILTER (WHERE estado='cobrada'), 0)  AS cobrado_total,
-        COALESCE(SUM(honorarios_lae) FILTER (WHERE estado='pipeline'), 0) AS generado_total,
-        COUNT(*) FILTER (WHERE estado='cobrada') AS cierres_total,
-        (SELECT COUNT(*) FROM captaciones WHERE estado='activa') AS captaciones_total,
-        CASE WHEN (SELECT SUM(objetivo_anual) FROM oficinas) > 0
-          THEN ROUND(COALESCE(SUM(honorarios_lae) FILTER (WHERE estado='cobrada'),0) /
-               (SELECT SUM(objetivo_anual) FROM oficinas) * 100, 1)
+        SUM(o.objetivo_anual) AS objetivo_total,
+        COALESCE(SUM(s.cobrado), 0) AS cobrado_total,
+        COALESCE(SUM(s.generado), 0) AS generado_total,
+        COALESCE(SUM(s.captaciones), 0) AS captaciones_total,
+        COALESCE(SUM(s.cierres), 0) AS cierres_total,
+        CASE WHEN SUM(o.objetivo_anual) > 0
+          THEN ROUND(COALESCE(SUM(s.cobrado),0) / SUM(o.objetivo_anual) * 100, 1)
           ELSE 0 END AS pct_cumplimiento
-      FROM operaciones
-      WHERE fecha BETWEEN $1 AND $2
-    `, [desde, hasta]);
+      FROM oficinas o LEFT JOIN seguimiento s ON s.oficina_id = o.id
+    `);
     res.json(rows[0]);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });

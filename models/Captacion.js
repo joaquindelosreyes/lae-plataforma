@@ -48,31 +48,23 @@ const Captacion = {
     return rows[0];
   },
 
-  async matriz({ desde, hasta } = {}) {
-    let where = [`estado = 'activa'`];
-    const params = [];
-    let i = 1;
-    if (desde) { where.push(`fecha_captacion >= $${i++}`); params.push(desde); }
-    if (hasta) { where.push(`fecha_captacion <= $${i++}`); params.push(hasta); }
+  async matriz() {
     const { rows } = await pool.query(`
-      SELECT tipologia, mandato,
+      SELECT
+        tipologia,
+        mandato,
         COUNT(*) AS num,
         COALESCE(SUM(precio_captacion), 0) AS valor,
         COALESCE(SUM(honorarios_potenciales), 0) AS honorarios
       FROM captaciones
-      WHERE ${where.join(' AND ')}
+      WHERE estado = 'activa'
       GROUP BY tipologia, mandato
       ORDER BY tipologia, mandato
-    `, params);
+    `);
     return rows;
   },
 
-  async porOficina({ desde, hasta } = {}) {
-    let where = [`c.estado = 'activa'`];
-    const params = [];
-    let i = 1;
-    if (desde) { where.push(`c.fecha_captacion >= $${i++}`); params.push(desde); }
-    if (hasta) { where.push(`c.fecha_captacion <= $${i++}`); params.push(hasta); }
+  async porOficina() {
     const { rows } = await pool.query(`
       SELECT
         o.id, o.nombre,
@@ -82,10 +74,10 @@ const Captacion = {
         COALESCE(SUM(c.precio_captacion), 0) AS valor,
         COALESCE(SUM(c.honorarios_potenciales), 0) AS honorarios
       FROM oficinas o
-      LEFT JOIN captaciones c ON c.oficina_id = o.id AND ${where.join(' AND ')}
+      LEFT JOIN captaciones c ON c.oficina_id = o.id AND c.estado = 'activa'
       GROUP BY o.id, o.nombre
       ORDER BY total DESC
-    `, params);
+    `);
     return rows;
   },
 

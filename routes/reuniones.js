@@ -19,33 +19,6 @@ router.get('/compromisos-abiertos', async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// GET /api/reuniones/plantillas
-router.get('/plantillas', async (req, res) => {
-  try {
-    const pool = require('../db/pool');
-    const { rows } = await pool.query('SELECT * FROM plantillas_reunion ORDER BY id');
-    res.json({ success: true, data: rows });
-  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
-});
-
-// GET /api/reuniones/actas
-router.get('/actas', async (req, res) => {
-  try {
-    const pool = require('../db/pool');
-    const { rows } = await pool.query(`
-      SELECT r.*, o.nombre AS oficina_nombre,
-        COUNT(c.id) AS total_compromisos,
-        COUNT(c.id) FILTER (WHERE c.completado = false) AS compromisos_abiertos
-      FROM reuniones r
-      LEFT JOIN oficinas o ON o.id = r.oficina_id
-      LEFT JOIN compromisos c ON c.reunion_id = r.id
-      GROUP BY r.id, o.nombre
-      ORDER BY r.fecha DESC LIMIT 50
-    `);
-    res.json({ success: true, data: rows });
-  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
-});
-
 // GET /api/reuniones/:id
 router.get('/:id', async (req, res) => {
   try {
