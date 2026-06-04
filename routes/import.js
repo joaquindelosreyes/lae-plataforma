@@ -222,7 +222,9 @@ router.post('/demandas', upload.single('archivo'), async (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, error: 'No se recibió archivo' });
   try {
     const content = req.file.buffer.toString('latin1');
-    const rows = parse(content, { delimiter:';', columns:true, skip_empty_lines:true, trim:true, relax_column_count:true, relax_quotes:true, quote:false });
+    // Limpiar HTML del campo Título antes de parsear
+    const cleanContent = content.replace(/<[^>]*>/g, '').replace(/\[amp,\]/g, '&');
+    const rows = parse(cleanContent, { delimiter:';', columns:true, skip_empty_lines:true, trim:true, relax_column_count:true, relax_quotes:true });
 
     const { rows: oficinas } = await pool.query('SELECT id, nombre FROM oficinas');
     const oficinaMap = {};
