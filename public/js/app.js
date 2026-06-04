@@ -1878,7 +1878,9 @@ async function loadAAFF50() {
     if (tbody && listRes.success) {
       const lista = listRes.data;
       if (cnt) cnt.textContent = lista.length + ' despachos';
-      tbody.innerHTML = lista.map(d => {
+      renderA50Tabla(lista);
+      // Keep old render for reference but use new sortable version
+      if (false) lista.map(d => {
         const dias = d.dias_ultimo_contacto;
         const diasCol = dias == null ? 'var(--muted)' : dias > 30 ? 'var(--red)' : dias > 14 ? 'var(--amber)' : 'var(--green)';
         const diasTxt = dias == null ? 'Sin contacto' : dias === 0 ? 'Hoy' : dias + 'd';
@@ -2084,6 +2086,63 @@ function renderActComerciales() {
       <td class="td-right" style="color:var(--red)">${c.canceladas||0}</td>
       <td class="td-right"><span class="${rc>12?'pct-red':rc>8?'pct-amber':'pct-green'}">${rc}%</span></td>
       <td><div style="height:5px;background:var(--border);border-radius:2px"><div style="width:${w}%;height:100%;background:var(--navy);border-radius:2px"></div></div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── AAFF 50-50 SORT ───────────────────────────────────
+let _a50SortCol = 'nombre', _a50SortAsc = true, _a50Data = [];
+
+function sortAAFF50(col) {
+  if (_a50SortCol === col) { _a50SortAsc = !_a50SortAsc; }
+  else { _a50SortCol = col; _a50SortAsc = ['nombre','oficina','resp','mkt'].includes(col); }
+  ['nombre','oficina','resp','com_total','com_comp','vecinos','captaciones','ventas','msgs','interes','dias','mkt'].forEach(c => {
+    const el = document.getElementById('s50-' + c);
+    if (el) el.textContent = c === col ? (_a50SortAsc ? ' ↑' : ' ↓') : '';
+  });
+  if (_a50Data.length) renderA50Tabla(_a50Data);
+}
+
+function renderA50Tabla(lista) {
+  _a50Data = lista;
+  const tbody = document.getElementById('a50-tbody');
+  if (!tbody) return;
+  const sorted = [...lista].sort((a, b) => {
+    let va, vb;
+    if (_a50SortCol === 'nombre')      { va = a.nombre||''; vb = b.nombre||''; }
+    else if (_a50SortCol === 'oficina'){ va = a.oficina_nombre||''; vb = b.oficina_nombre||''; }
+    else if (_a50SortCol === 'resp')   { va = a.observaciones||''; vb = b.observaciones||''; }
+    else if (_a50SortCol === 'com_total') { va = parseInt(a.comunidades_totales)||0; vb = parseInt(b.comunidades_totales)||0; }
+    else if (_a50SortCol === 'com_comp')  { va = parseInt(a.comunidades_compartidas)||0; vb = parseInt(b.comunidades_compartidas)||0; }
+    else if (_a50SortCol === 'vecinos')   { va = parseInt(a.vecinos_compartidos)||0; vb = parseInt(b.vecinos_compartidos)||0; }
+    else if (_a50SortCol === 'captaciones') { va = parseInt(a.captaciones_cerradas)||0; vb = parseInt(b.captaciones_cerradas)||0; }
+    else if (_a50SortCol === 'ventas')    { va = parseInt(a.ventas_cerradas)||0; vb = parseInt(b.ventas_cerradas)||0; }
+    else if (_a50SortCol === 'msgs')      { va = parseInt(a.total_comunicaciones)||0; vb = parseInt(b.total_comunicaciones)||0; }
+    else if (_a50SortCol === 'interes')   { va = parseFloat(a.tasa_interes)||0; vb = parseFloat(b.tasa_interes)||0; }
+    else if (_a50SortCol === 'dias')      { va = parseInt(a.dias_ultimo_contacto)||9999; vb = parseInt(b.dias_ultimo_contacto)||9999; }
+    else if (_a50SortCol === 'mkt')       { va = a.plan_mkt?1:0; vb = b.plan_mkt?1:0; }
+    if (typeof va === 'string') return _a50SortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _a50SortAsc ? va - vb : vb - va;
+  });
+  const max = Math.max(...sorted.map(d => parseInt(d.total_comunicaciones)||0), 1);
+  tbody.innerHTML = sorted.map(d => {
+    const dias = d.dias_ultimo_contacto;
+    const diasCol = dias == null ? 'var(--muted)' : dias > 30 ? 'var(--red)' : dias > 14 ? 'var(--amber)' : 'var(--green)';
+    const diasTxt = dias == null ? 'Sin contacto' : dias === 0 ? 'Hoy' : dias + 'd';
+    const tasa = parseFloat(d.tasa_interes)||0;
+    return `<tr style="cursor:pointer" onclick="abrirDespacho50(${d.id})">
+      <td><strong>${d.nombre}</strong><div style="font-size:10px;color:var(--muted)">${d.ciudad||'—'} · ${d.dni||d.cif||'—'}</div></td>
+      <td><span class="badge badge-gray">${d.oficina_nombre||'—'}</span></td>
+      <td style="font-size:11px;color:var(--muted)">${d.observaciones||'—'}</td>
+      <td class="td-right">${d.comunidades_totales||0}</td>
+      <td class="td-right" style="color:#1E40AF">${d.comunidades_compartidas||0}</td>
+      <td class="td-right" style="color:#1E40AF">${(d.vecinos_compartidos||0).toLocaleString('es-ES')}</td>
+      <td class="td-right" style="color:var(--green);font-weight:600">${d.captaciones_cerradas||0}</td>
+      <td class="td-right" style="color:var(--green);font-weight:600">${d.ventas_cerradas||0}</td>
+      <td class="td-right">${d.total_comunicaciones||0}</td>
+      <td class="td-right"><span style="color:${tasa>=5?'var(--green)':tasa>=2?'var(--amber)':'var(--red)'};font-weight:600">${tasa}%</span></td>
+      <td style="color:${diasCol};font-size:11px;font-weight:500">${diasTxt}</td>
+      <td>${d.plan_mkt?'<span class="badge badge-green">✓ Sí</span>':'<span class="badge badge-gray">No</span>'}</td>
     </tr>`;
   }).join('');
 }
