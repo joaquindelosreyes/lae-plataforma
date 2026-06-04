@@ -47,6 +47,8 @@ function nav(viewId) {
     captaciones: 'Captaciones — Listado',
     'cap-matriz': 'Captaciones — Matriz',
     'cap-oficinas': 'Captaciones — Por oficina',
+    actividad: 'Actividad Comercial',
+    actividad: 'Actividad Comercial',
     aaff50: 'AAFF 50-50 — Administradores de Fincas',
     demandas: 'Demandas / Leads',
     palancas: 'Palancas — Análisis automático',
@@ -66,6 +68,7 @@ function nav(viewId) {
   if (viewId === 'cap-matriz')       loadCaptacionesMatriz();
   if (viewId === 'cap-oficinas')     loadCaptacionesPorOficina();
   if (viewId === 'ingresos-resumen') loadIngresosResumen();
+  if (viewId === 'actividad')         loadActividad();
   if (viewId === 'aaff50')           loadAAFF50();
   if (viewId === 'demandas')         loadDemandas();
   if (viewId === 'palancas')         loadPalancas();
@@ -1974,4 +1977,113 @@ async function guardarComunicacion() {
     abrirDespacho50(_aaffSelId);
     loadAAFF50();
   }
+}
+
+// ── ACTIVIDAD COMERCIAL ───────────────────────────────
+let _actData = [], _actSortCol = 'total', _actSortAsc = false;
+
+async function loadActividad() {
+  try {
+    const { desde, hasta } = getDateRange();
+    const q = `desde=${desde}&hasta=${hasta}`;
+    const año = new Date().getFullYear();
+
+    const [sumRes, comRes, tipoRes, propRes] = await Promise.all([
+      fetch(`${API}/api/actividad/resumen?${q}`).then(r => r.json()),
+      fetch(`${API}/api/actividad/por-comercial?${q}`).then(r => r.json()),
+      fetch(`${API}/api/actividad/por-tipo?${q}`).then(r => r.json()),
+      fetch(`${API}/api/actividad/propiedades-activas?${q}`).then(r => r.json()),
+    ]);
+
+    // KPIs
+    if (sumRes.success) {
+      const s = sumRes.data;
+      set('act-total',       (parseInt(s.total_visitas)||0).toLocaleString('es-ES'));
+      set('act-venta',       s.visitas_venta||0);
+      set('act-alquiler',    s.visitas_alquiler||0);
+      set('act-eval',        s.visitas_evaluacion||0);
+      set('act-adicionales', s.visitas_adicionales||0);
+      set('act-canceladas',  s.visitas_canceladas||0);
+      set('act-ratio',       (s.ratio_cancelacion||0) + '%');
+      set('act-comerciales', s.comerciales_activos||0);
+      set('act-propiedades', s.propiedades_visitadas||0);
+    }
+
+    // Tipos de visita
+    const tipoDiv = document.getElementById('act-tipos');
+    if (tipoDiv && tipoRes.success) {
+      const lista = tipoRes.data;
+      const max = Math.max(...lista.map(t => parseInt(t.total)||0), 1);
+      tipoDiv.innerHTML = lista.map(t => {
+        const v = parseInt(t.total)||0;
+        const w = Math.round(v/max*100);
+        const esCancel = t.tipo_seguimiento.includes('Cancelada');
+        const color = esCancel ? 'var(--red)' : t.tipo_seguimiento.includes('Venta') ? '#1E40AF' :
+                      t.tipo_seguimiento.includes('Alquiler') ? '#7C3AED' : 'var(--navy)';
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="width:200px;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.tipo_seguimiento}</span>
+          <div style="flex:1;height:10px;background:var(--border);border-radius:3px;overflow:hidden">
+            <div style="width:${w}%;height:100%;background:${color};border-radius:3px"></div>
+          </div>
+          <span style="font-size:11px;font-weight:600;color:${color};width:32px;text-align:right">${v}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // Propiedades más visitadas
+    const tProps = document.getElementById('act-props-tbody');
+    if (tProps && propRes.success) {
+      tProps.innerHTML = propRes.data.map(p => `<tr>
+        <td style="font-family:monospace;font-size:10px;font-weight:600;color:var(--navy)">${p.ref}</td>
+        <td><span class="badge badge-gray" style="font-size:9px">${p.oficina||'—'}</span></td>
+        <td class="td-right" style="font-weight:700">${p.total_visitas}</td>
+        <td class="td-right" style="color:#1E40AF">${p.primeras_visitas}</td>
+        <td class="td-right" style="color:var(--red)">${p.canceladas}</td>
+        <td style="font-size:11px;color:var(--muted)">${p.ultima_visita?fmtFecha(p.ultima_visita):'—'}</td>
+      </tr>`).join('');
+    }
+
+    // Comerciales
+    _actData = comRes.data || [];
+    renderActComerciales();
+
+  } catch(e) { console.warn('Error actividad:', e.message); }
+}
+
+function sortActividad(col) {
+  if (_actSortCol === col) { _actSortAsc = !_actSortAsc; }
+  else { _actSortCol = col; _actSortAsc = col === 'comercial'; }
+  ['comercial','total'].forEach(c => {
+    const el = document.getElementById('act-sort-' + c[0]);
+    if (el) el.textContent = c === col ? (_actSortAsc ? ' ↑' : ' ↓') : '';
+  });
+  renderActComerciales();
+}
+
+function renderActComerciales() {
+  const tbody = document.getElementById('act-comerciales-tbody');
+  if (!tbody || !_actData.length) return;
+  const sorted = [..._actData].sort((a,b) => {
+    const va = _actSortCol==='comercial' ? (a.comercial||'') : (parseInt(a.total)||0);
+    const vb = _actSortCol==='comercial' ? (b.comercial||'') : (parseInt(b.total)||0);
+    if (typeof va==='string') return _actSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _actSortAsc ? va-vb : vb-va;
+  });
+  const max = Math.max(...sorted.map(c => parseInt(c.total)||0), 1);
+  tbody.innerHTML = sorted.map(c => {
+    const t = parseInt(c.total)||0;
+    const rc = parseFloat(c.ratio_cancel)||0;
+    const w = Math.round(t/max*100);
+    return `<tr>
+      <td style="font-weight:500">${c.comercial||'—'}</td>
+      <td><span class="badge badge-gray" style="font-size:9px">${c.oficina||'—'}</span></td>
+      <td class="td-right" style="font-weight:700">${t}</td>
+      <td class="td-right" style="color:#1E40AF">${c.venta||0}</td>
+      <td class="td-right" style="color:#7C3AED">${c.alquiler||0}</td>
+      <td class="td-right">${c.adicionales||0}</td>
+      <td class="td-right" style="color:var(--red)">${c.canceladas||0}</td>
+      <td class="td-right"><span class="${rc>12?'pct-red':rc>8?'pct-amber':'pct-green'}">${rc}%</span></td>
+      <td><div style="height:5px;background:var(--border);border-radius:2px"><div style="width:${w}%;height:100%;background:var(--navy);border-radius:2px"></div></div></td>
+    </tr>`;
+  }).join('');
 }

@@ -50,6 +50,10 @@
   </a>
 
   <div class="sb-section">Análisis</div>
+  <a class="nav-item" data-view="actividad" onclick="nav('actividad')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    Actividad comercial
+  </a>
   <a class="nav-item" data-view="demandas" onclick="nav('demandas')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
     Demandas / Leads
@@ -770,6 +774,69 @@
           <div class="loading">Cargando...</div>
         </div>
       </div>
+    </div>
+
+    <!-- ═══ ACTIVIDAD COMERCIAL ═══ -->
+    <div class="view" id="view-actividad">
+
+      <div class="kpi-grid" style="grid-template-columns:repeat(9,1fr);margin-bottom:16px">
+        <div class="kpi-card highlight"><div class="kpi-label">Total visitas</div><div class="kpi-value" id="act-total">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">1ª Visita venta</div><div class="kpi-value" style="color:#1E40AF" id="act-venta">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">1ª Visita alquiler</div><div class="kpi-value" style="color:#7C3AED" id="act-alquiler">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Evaluación/captac.</div><div class="kpi-value gold" id="act-eval">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Visitas adicionales</div><div class="kpi-value" id="act-adicionales">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Canceladas</div><div class="kpi-value red" id="act-canceladas">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Ratio cancelación</div><div class="kpi-value amber" id="act-ratio">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Comerciales activos</div><div class="kpi-value green" id="act-comerciales">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Propiedades con visita</div><div class="kpi-value" id="act-propiedades">—</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <!-- Distribución por tipo -->
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Distribución por tipo de visita</span></div>
+          <div class="panel-body" id="act-tipos"><div class="loading">Cargando...</div></div>
+        </div>
+        <!-- Propiedades más visitadas -->
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Propiedades más visitadas</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Ref.</th><th>Oficina</th>
+                <th class="nr">Total</th><th class="nr">1ªs visitas</th>
+                <th class="nr" style="color:var(--red)">Canceladas</th><th>Última visita</th>
+              </tr></thead>
+              <tbody id="act-props-tbody"><tr><td colspan="6" class="loading">Cargando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ranking comerciales -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Ranking de actividad por comercial</span>
+          <span style="font-size:11px;color:var(--muted)">Total visitas · ratio cancelación</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th onclick="sortActividad('comercial')" style="cursor:pointer;user-select:none">Comercial <span id="act-sort-c"></span></th>
+              <th>Oficina</th>
+              <th class="nr" onclick="sortActividad('total')" style="cursor:pointer;user-select:none">Total <span id="act-sort-t"></span></th>
+              <th class="nr" style="color:#1E40AF">Venta</th>
+              <th class="nr" style="color:#7C3AED">Alquiler</th>
+              <th class="nr">Adicionales</th>
+              <th class="nr" style="color:var(--red)">Canceladas</th>
+              <th class="nr">% Cancel.</th>
+              <th style="min-width:100px">Actividad</th>
+            </tr></thead>
+            <tbody id="act-comerciales-tbody"><tr><td colspan="9" class="loading">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
 
     <!-- ═══ DEMANDAS / LEADS ═══ -->
