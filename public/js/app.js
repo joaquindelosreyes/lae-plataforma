@@ -671,7 +671,7 @@ async function guardarGasto() {
   if (!concepto) { alert('El concepto es obligatorio'); return; }
   const base = parseFloat((document.getElementById('g-base')?.value||'0').replace(/[^0-9,]/g,'').replace(',','.')) || 0;
   const pct  = parseFloat(document.getElementById('g-pct')?.value||'0') || 0;
-  const categoria = document.querySelector('[name="g-categoria"]:checked')?.value || 'Otros';
+  const categoria = document.getElementById('g-categoria')?.value || 'Otros';
   const oficina_id = document.getElementById('g-oficina')?.value || null;
   const payload = {
     concepto, categoria,

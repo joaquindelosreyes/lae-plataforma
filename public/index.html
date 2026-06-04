@@ -575,15 +575,20 @@
         <div class="panel-body">
           <div id="gastos-alert" class="alert" style="display:none"></div>
           <form id="form-gasto" onsubmit="event.preventDefault();guardarGasto()">
-            <div class="ssep">Categoría</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
-              <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:5px 10px;border:1px solid var(--border);border-radius:20px"><input type="radio" name="g-categoria" value="Portales" checked style="display:none"> Portales</label>
-              <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:5px 10px;border:1px solid var(--border);border-radius:20px"><input type="radio" name="g-categoria" value="Tecnología" style="display:none"> Tecnología</label>
-              <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:5px 10px;border:1px solid var(--border);border-radius:20px"><input type="radio" name="g-categoria" value="Instalaciones" style="display:none"> Instalaciones</label>
-              <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:5px 10px;border:1px solid var(--border);border-radius:20px"><input type="radio" name="g-categoria" value="Marketing" style="display:none"> Marketing</label>
-              <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:5px 10px;border:1px solid var(--border);border-radius:20px"><input type="radio" name="g-categoria" value="Personal" style="display:none"> Personal</label>
-              <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:5px 10px;border:1px solid var(--border);border-radius:20px"><input type="radio" name="g-categoria" value="Formación" style="display:none"> Formación</label>
-              <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;padding:5px 10px;border:1px solid var(--border);border-radius:20px"><input type="radio" name="g-categoria" value="Otros" style="display:none"> Otros</label>
+            <div class="form-grid form-4" style="margin-bottom:12px">
+              <div class="form-group">
+                <label class="form-label">Categoría *</label>
+                <select id="g-categoria" class="form-select" required>
+                  <option value="Portales">Portales</option>
+                  <option value="Tecnología">Tecnología</option>
+                  <option value="Instalaciones">Instalaciones</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Personal">Personal</option>
+                  <option value="Formación">Formación</option>
+                  <option value="AAFF">AAFF</option>
+                  <option value="Otros">Otros</option>
+                </select>
+              </div>
             </div>
             <div class="form-grid form-4">
               <div class="form-group" style="grid-column:1/3">
