@@ -1359,22 +1359,135 @@ async function loadPlantillas() {
     const res = await fetch(`${API}/api/reuniones/plantillas`).then(r => r.json());
     const lista = res.data || [];
     const iconos = { semanal:'📅', quincenal:'🗓️', trimestral:'📊' };
-    const colores = { semanal:'#1B2A4A', quincenal:'#C9A84C', trimestral:'#16a34a' };
+    const colores = { semanal:'var(--navy)', quincenal:'var(--gold)', trimestral:'var(--green)' };
     grid.innerHTML = lista.map(p => `
-      <div class="panel" style="cursor:pointer;border-top:3px solid ${colores[p.frecuencia]||'var(--border)'}" onclick="usarPlantilla(${p.id})">
+      <div class="panel" style="border-top:3px solid ${colores[p.frecuencia]||'var(--border)'}">
         <div class="panel-body">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-            <span style="font-size:20px">${iconos[p.frecuencia]||'📋'}</span>
-            <div>
-              <div style="font-size:13px;font-weight:600;color:var(--navy)">${p.nombre}</div>
-              <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">${p.frecuencia}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:20px">${iconos[p.frecuencia]||'📋'}</span>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--navy)">${p.nombre}</div>
+                <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">${p.frecuencia}</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-outline btn-sm" onclick="editarPlantilla(${p.id})" title="Editar plantilla">✏️</button>
+              <button class="btn btn-outline btn-sm" onclick="exportarOrdenDia(${p.id})" title="Exportar PDF">📄</button>
             </div>
           </div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${p.participantes}</div>
-          <button class="btn btn-primary btn-sm" style="width:100%">+ Nueva reunión con esta plantilla</button>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:10px">${p.participantes}</div>
+          <button class="btn btn-primary btn-sm" style="width:100%" onclick="usarPlantilla(${p.id})">+ Nueva reunión</button>
         </div>
       </div>`).join('');
   } catch(e) {}
+}
+
+let _plantillas = [];
+async function editarPlantilla(id) {
+  if (!_plantillas.length) {
+    const res = await fetch(`${API}/api/reuniones/plantillas`).then(r => r.json());
+    _plantillas = res.data || [];
+  }
+  const p = _plantillas.find(x => x.id === id);
+  if (!p) return;
+
+  const modal = document.getElementById('modal-plantilla') || crearModalPlantilla();
+  document.getElementById('mp-titulo').textContent = p.nombre;
+  document.getElementById('mp-id').value = id;
+  document.getElementById('mp-participantes').value = p.participantes || '';
+  document.getElementById('mp-orden').value = p.orden_dia || '';
+  modal.style.display = 'flex';
+}
+
+function crearModalPlantilla() {
+  const m = document.createElement('div');
+  m.id = 'modal-plantilla';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:1000';
+  m.innerHTML = `
+    <div style="background:#fff;border-radius:10px;padding:24px;max-width:560px;width:90%;max-height:85vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:17px;color:var(--navy)" id="mp-titulo"></div>
+        <button onclick="document.getElementById('modal-plantilla').style.display='none'" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted)">✕</button>
+      </div>
+      <input type="hidden" id="mp-id">
+      <div class="form-group" style="margin-bottom:12px">
+        <label class="form-label">Participantes</label>
+        <input type="text" id="mp-participantes" class="form-input" placeholder="Nombres separados por ·">
+      </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">Orden del día</label>
+        <textarea id="mp-orden" class="form-textarea" style="min-height:200px" placeholder="1. Punto uno&#10;2. Punto dos&#10;..."></textarea>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-gold" onclick="guardarPlantilla()">Guardar cambios</button>
+        <button class="btn btn-outline" onclick="document.getElementById('modal-plantilla').style.display='none'">Cancelar</button>
+      </div>
+      <div id="mp-msg" style="display:none;margin-top:8px;font-size:11px;padding:6px 10px;border-radius:4px"></div>
+    </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', e => { if (e.target === m) m.style.display='none'; });
+  return m;
+}
+
+async function guardarPlantilla() {
+  const id = document.getElementById('mp-id').value;
+  const participantes = document.getElementById('mp-participantes').value;
+  const orden_dia = document.getElementById('mp-orden').value;
+  const msg = document.getElementById('mp-msg');
+  try {
+    const res = await fetch(`${API}/api/reuniones/plantillas/${id}`, {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ participantes, orden_dia })
+    }).then(r => r.json());
+    if (res.success) {
+      if (msg) { msg.style.display='block'; msg.style.background='#ECFDF5'; msg.style.color='#065F46'; msg.textContent='✓ Plantilla guardada'; }
+      _plantillas = [];
+      setTimeout(() => { document.getElementById('modal-plantilla').style.display='none'; loadPlantillas(); }, 800);
+    }
+  } catch(e) { if (msg) { msg.style.display='block'; msg.style.background='#FEF2F2'; msg.style.color='#991B1B'; msg.textContent='Error: '+e.message; } }
+}
+
+async function exportarOrdenDia(id) {
+  if (!_plantillas.length) {
+    const res = await fetch(`${API}/api/reuniones/plantillas`).then(r => r.json());
+    _plantillas = res.data || [];
+  }
+  const p = _plantillas.find(x => x.id === id);
+  if (!p) return;
+  const hoy = new Date().toLocaleDateString('es-ES', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+    <style>
+      body { font-family: 'Georgia', serif; max-width: 680px; margin: 40px auto; color: #1a1a1a; }
+      .header { border-bottom: 2px solid #1B2A4A; padding-bottom: 16px; margin-bottom: 24px; }
+      .logo { font-size: 22px; font-weight: bold; color: #1B2A4A; letter-spacing: .05em; }
+      .tipo { font-size: 11px; color: #C9A84C; text-transform: uppercase; letter-spacing: .1em; margin-top: 4px; }
+      h1 { font-size: 20px; color: #1B2A4A; margin-bottom: 6px; }
+      .fecha { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
+      .section-title { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: .1em; color: #6b7280; margin-bottom: 8px; border-bottom: 1px solid #EDE8DF; padding-bottom: 4px; }
+      .participantes { font-size: 13px; color: #374151; margin-bottom: 24px; line-height: 1.8; }
+      .orden { font-size: 14px; line-height: 2; white-space: pre-wrap; }
+      .footer { margin-top: 40px; border-top: 1px solid #EDE8DF; padding-top: 12px; font-size: 11px; color: #9ca3af; }
+    </style>
+  </head><body>
+    <div class="header">
+      <div class="logo">LAE HOMES</div>
+      <div class="tipo">${p.frecuencia} · Plataforma interna</div>
+    </div>
+    <h1>${p.nombre}</h1>
+    <div class="fecha">${hoy}</div>
+    <div class="section-title">Participantes</div>
+    <div class="participantes">${(p.participantes||'').split('·').map(x => '· '+x.trim()).join('<br>')}</div>
+    <div class="section-title">Orden del día</div>
+    <div class="orden">${p.orden_dia||''}</div>
+    <div class="footer">LAE HOMES · Documento generado automáticamente</div>
+  </body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 500);
 }
 
 let _plantillaActual = null;

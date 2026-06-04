@@ -28,6 +28,19 @@ router.get('/plantillas', async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// PUT /api/reuniones/plantillas/:id
+router.put('/plantillas/:id', async (req, res) => {
+  try {
+    const pool = require('../db/pool');
+    const { participantes, orden_dia } = req.body;
+    const { rows } = await pool.query(
+      'UPDATE plantillas_reunion SET participantes=$1, orden_dia=$2 WHERE id=$3 RETURNING *',
+      [participantes, orden_dia, req.params.id]
+    );
+    res.json({ success: true, data: rows[0] });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 // GET /api/reuniones/actas
 router.get('/actas', async (req, res) => {
   try {
