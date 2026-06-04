@@ -48,8 +48,16 @@ app.get('/api/resumen', async (req, res) => {
     const { rows } = await pool.query(`
       SELECT
         (SELECT SUM(${objCol}) FROM oficinas) AS objetivo_total,
-        COALESCE(SUM(honorarios_lae) FILTER (WHERE estado='cobrada'), 0)  AS cobrado_total,
+        -- Honor. brutos cobrado
+        COALESCE(SUM(GREATEST(honorarios_brutos, comision_bruta)) FILTER (WHERE estado='cobrada'), 0) AS honor_brutos_total,
+        -- Honor. LAE cobrado (neto)
+        COALESCE(SUM(honorarios_lae) FILTER (WHERE estado='cobrada'), 0) AS cobrado_total,
+        -- Generados brutos (pipeline)
+        COALESCE(SUM(GREATEST(honorarios_brutos, comision_bruta)) FILTER (WHERE estado='pipeline'), 0) AS generados_brutos_total,
+        -- Generados LAE (pipeline neto)
         COALESCE(SUM(honorarios_lae) FILTER (WHERE estado='pipeline'), 0) AS generado_total,
+        -- Pendientes escritura
+        COALESCE(SUM(honorarios_lae) FILTER (WHERE estado='pendiente_escritura'), 0) AS pendientes_total,
         COUNT(*) FILTER (WHERE estado='cobrada') AS cierres_total,
         (SELECT COUNT(*) FROM captaciones WHERE estado='activa') AS captaciones_total,
         CASE WHEN (SELECT SUM(${objCol}) FROM oficinas) > 0

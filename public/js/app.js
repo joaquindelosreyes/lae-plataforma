@@ -177,12 +177,17 @@ async function loadDashboard() {
     const objetivo = parseFloat(r.objetivo_total) || 0;
     const pct      = parseFloat(r.pct_cumplimiento) || 0;
 
-    set('kpi-cobrado',     fmtK(cobrado));
+    // Los 5 conceptos de honorarios en orden
+    set('kpi-honor-brutos', fmtK(r.honor_brutos_total || cobrado)); // fallback a cobrado si no hay brutos
+    set('kpi-cobrado',      fmtK(cobrado));
+    set('kpi-gen-brutos',   fmtK(r.generados_brutos_total || r.generado_total || 0));
+    set('kpi-generado',     fmtK(r.generado_total || 0));
+    set('kpi-pendientes',   fmtK(r.pendientes_total || 0));
+    // Métricas
     set('kpi-objetivo',    fmtK(objetivo));
     set('kpi-pct',         pct + '%');
     set('kpi-cierres',     r.cierres_total || 0);
     set('kpi-captaciones', r.captaciones_total || 0);
-    set('kpi-generado',    fmtK(r.generado_total || 0));
 
     // Guardar datos para ordenación
     window._dashOficinas = oficinas.data || oficinas;

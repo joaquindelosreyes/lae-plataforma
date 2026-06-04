@@ -140,33 +140,52 @@
 
     <!-- ═══ DASHBOARD ═══ -->
     <div class="view active" id="view-dashboard">
-      <div class="kpi-grid kpi-grid-6">
+      <!-- Fila 1: Los 5 conceptos de honorarios -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:10px">
         <div class="kpi-card highlight">
-          <div class="kpi-label">Honorarios LAE cobrado</div>
-          <div class="kpi-value" id="kpi-cobrado">—</div>
-          <div class="kpi-sub">acumulado 2026</div>
+          <div class="kpi-label">Honor. brutos</div>
+          <div class="kpi-value" id="kpi-honor-brutos">—</div>
+          <div class="kpi-sub">cobrado período</div>
         </div>
+        <div class="kpi-card highlight">
+          <div class="kpi-label">Honor. LAE</div>
+          <div class="kpi-value green" id="kpi-cobrado">—</div>
+          <div class="kpi-sub">neto después split</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Generados brutos</div>
+          <div class="kpi-value amber" id="kpi-gen-brutos">—</div>
+          <div class="kpi-sub">pipeline bruto</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Generados LAE</div>
+          <div class="kpi-value amber" id="kpi-generado">—</div>
+          <div class="kpi-sub">pipeline neto LAE</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Pendientes</div>
+          <div class="kpi-value amber" id="kpi-pendientes">—</div>
+          <div class="kpi-sub">pend. escritura</div>
+        </div>
+      </div>
+      <!-- Fila 2: Objetivo y métricas -->
+      <div class="kpi-grid kpi-grid-4" style="margin-bottom:16px">
         <div class="kpi-card">
           <div class="kpi-label" id="kpi-objetivo-label">Objetivo anual red</div>
           <div class="kpi-value gold" id="kpi-objetivo">—</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">% Cumplimiento</div>
+          <div class="kpi-label">% Cumplimiento Honor. LAE</div>
           <div class="kpi-value" id="kpi-pct">—</div>
-          <div class="kpi-sub" id="kpi-pct-sub">vs objetivo anual</div>
+          <div class="kpi-sub" id="kpi-pct-sub">vs objetivo</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Operaciones cerradas</div>
+          <div class="kpi-label">Cierres</div>
           <div class="kpi-value" id="kpi-cierres">—</div>
-          <div class="kpi-sub">cobradas 2026</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Captaciones activas</div>
           <div class="kpi-value" id="kpi-captaciones">—</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Pipeline</div>
-          <div class="kpi-value amber" id="kpi-generado">—</div>
         </div>
       </div>
 
