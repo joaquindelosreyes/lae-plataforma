@@ -47,6 +47,7 @@ function nav(viewId) {
     captaciones: 'Captaciones — Listado',
     'cap-matriz': 'Captaciones — Matriz',
     'cap-oficinas': 'Captaciones — Por oficina',
+    demandas: 'Demandas / Leads',
     palancas: 'Palancas — Análisis automático',
     reuniones: 'Reuniones — Calendario',
     actas: 'Actas de reuniones',
@@ -64,6 +65,7 @@ function nav(viewId) {
   if (viewId === 'cap-matriz')       loadCaptacionesMatriz();
   if (viewId === 'cap-oficinas')     loadCaptacionesPorOficina();
   if (viewId === 'ingresos-resumen') loadIngresosResumen();
+  if (viewId === 'demandas')         loadDemandas();
   if (viewId === 'palancas')         loadPalancas();
   if (viewId === 'aaff')             loadAAFF();
   if (viewId === 'gastos')           loadGastos();
@@ -148,6 +150,7 @@ function recargarVistaActiva() {
   if (id === 'captaciones')      loadCaptaciones();
   if (id === 'cap-matriz')       loadCaptacionesMatriz();
   if (id === 'cap-oficinas')     loadCaptacionesPorOficina();
+  if (id === 'demandas')       loadDemandas();
   if (id === 'palancas')         loadPalancas();
   if (id === 'compromisos') loadCompromisosPendientes();
   if (id === 'actas')       loadActas();
@@ -699,13 +702,15 @@ function setImportFile(f) {
   _importFile = f;
   const lbl = document.getElementById('import-file-label');
   if (lbl) { lbl.textContent = '✓ ' + f.name + ' (' + (f.size/1024).toFixed(0) + ' KB)'; lbl.style.display = 'block'; }
-  const btn = document.getElementById('btn-importar');
-  if (btn) btn.disabled = false;
+  document.getElementById('btn-importar') && (document.getElementById('btn-importar').disabled = false);
+  document.getElementById('btn-importar-demandas') && (document.getElementById('btn-importar-demandas').disabled = false);
 }
 
-async function ejecutarImport() {
+async function ejecutarImport(tipo) {
   if (!_importFile) return;
-  const btn = document.getElementById('btn-importar');
+  const esDemandas = tipo === 'demandas';
+  const btnId = esDemandas ? 'btn-importar-demandas' : 'btn-importar';
+  const btn = document.getElementById(btnId);
   const result = document.getElementById('import-result');
   const prog = document.getElementById('import-prog');
   if (btn) { btn.disabled = true; btn.textContent = 'Importando...'; }
@@ -719,7 +724,8 @@ async function ejecutarImport() {
   try {
     const fd = new FormData();
     fd.append('archivo', _importFile);
-    const res = await fetch(`${API}/api/import/inmovilla`, { method:'POST', body: fd }).then(r => r.json());
+    const endpoint = esDemandas ? '/api/import/demandas' : '/api/import/inmovilla';
+    const res = await fetch(`${API}${endpoint}`, { method:'POST', body: fd }).then(r => r.json());
     clearInterval(iv);
     if (fill) fill.style.width = '100%';
     if (result) {
@@ -727,10 +733,16 @@ async function ejecutarImport() {
       if (res.success) {
         const s = res.stats;
         result.className = 'alert alert-success';
-        result.innerHTML = `<strong>✓ Importación completada</strong><br>
-          ${s.captaciones_nuevas} captaciones · ${s.operaciones_nuevas} operaciones · ${s.ignoradas} ignoradas
-          ${s.errores > 0 ? ' · <span style="color:var(--red)">'+s.errores+' errores</span>' : ''}
-          <br><small style="opacity:.8">El dashboard ya refleja los datos actualizados.</small>`;
+        if (esDemandas) {
+          result.innerHTML = `<strong>✓ Demandas importadas</strong><br>
+            ${s.insertadas} demandas importadas · ${s.errores||0} errores
+            <br><small style="opacity:.8">Ve a Demandas/Leads para ver los datos.</small>`;
+        } else {
+          result.innerHTML = `<strong>✓ Propiedades importadas</strong><br>
+            ${s.captaciones_nuevas} captaciones · ${s.operaciones_nuevas} operaciones · ${s.ignoradas} ignoradas
+            ${s.errores > 0 ? ' · <span style="color:var(--red)">'+s.errores+' errores</span>' : ''}
+            <br><small style="opacity:.8">El dashboard ya refleja los datos actualizados.</small>`;
+        }
       } else {
         result.className = 'alert alert-error';
         result.innerHTML = `<strong>Error:</strong> ${res.error}`;
@@ -740,7 +752,10 @@ async function ejecutarImport() {
     clearInterval(iv);
     if (result) { result.style.display='block'; result.className='alert alert-error'; result.innerHTML='Error: '+e.message; }
   }
-  if (btn) { btn.disabled = false; btn.textContent = 'Importar'; }
+  if (btn) { btn.disabled = false; btn.textContent = esDemandas ? 'Importar demandas/leads' : 'Importar propiedades'; }
+  // Habilitar el otro botón también
+  const otroBtn = document.getElementById(esDemandas ? 'btn-importar' : 'btn-importar-demandas');
+  if (otroBtn) otroBtn.disabled = !_importFile;
 }
 
 // ── UTILIDADES ────────────────────────────────────────
@@ -1665,4 +1680,131 @@ async function loadActas() {
       </div>`;
     }).join('');
   } catch(e) { el.innerHTML = `<div class="loading">Error: ${e.message}</div>`; }
+}
+
+// ── DEMANDAS / LEADS ──────────────────────────────────
+async function loadDemandas() {
+  try {
+    const { desde, hasta } = getDateRange();
+    const q = `desde=${desde}&hasta=${hasta}`;
+    const [sumRes, ofRes, canRes, consRes] = await Promise.all([
+      fetch(`${API}/api/demandas/resumen?${q}`).then(r => r.json()),
+      fetch(`${API}/api/demandas/por-oficina?${q}`).then(r => r.json()),
+      fetch(`${API}/api/demandas/por-canal?${q}`).then(r => r.json()),
+      fetch(`${API}/api/demandas/por-consultor?${q}`).then(r => r.json()),
+    ]);
+
+    // KPIs
+    if (sumRes.success) {
+      const s = sumRes.data;
+      set('dem-total',       s.total||0);
+      set('dem-buscando',    s.buscando||0);
+      set('dem-convertidos', s.convertidos||0);
+      set('dem-tasa',        (s.tasa_conversion||0) + '%');
+      set('dem-arras',       s.arras||0);
+      set('dem-reservas',    s.reservas||0);
+      set('dem-perdidos',    s.perdidos||0);
+    }
+
+    // Por canal
+    const canalDiv = document.getElementById('dem-canales');
+    if (canalDiv && canRes.success) {
+      const lista = canRes.data;
+      const maxT = Math.max(...lista.map(c => parseInt(c.total)||0), 1);
+      canalDiv.innerHTML = lista.map(c => {
+        const t = parseInt(c.total)||0;
+        const conv = parseInt(c.convertidos)||0;
+        const w = Math.round(t/maxT*100);
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+          <span style="width:110px;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.canal}</span>
+          <div style="flex:1;height:12px;background:var(--border);border-radius:3px;overflow:hidden">
+            <div style="width:${w}%;height:100%;background:var(--navy);border-radius:3px"></div>
+          </div>
+          <span style="font-size:11px;font-weight:600;color:var(--navy);width:36px;text-align:right">${t}</span>
+          <span style="font-size:10px;color:var(--green);width:32px;text-align:right">${c.tasa_conversion||0}%</span>
+        </div>`;
+      }).join('');
+    }
+
+    // Situación (calculada del resumen)
+    const sitDiv = document.getElementById('dem-situacion');
+    if (sitDiv && sumRes.success) {
+      const s = sumRes.data;
+      const total = parseInt(s.total)||1;
+      const items = [
+        { lbl:'Buscando activos', val: s.buscando||0, color:'var(--green)' },
+        { lbl:'Convertidos (venta/alquiler)', val: s.convertidos||0, color:'#1E40AF' },
+        { lbl:'Contrato Arras', val: s.arras||0, color:'var(--amber)' },
+        { lbl:'Reservas realizadas', val: s.reservas||0, color:'var(--amber)' },
+        { lbl:'Perdidos', val: s.perdidos||0, color:'var(--red)' },
+      ];
+      sitDiv.innerHTML = items.map(it => {
+        const w = Math.round((parseInt(it.val)||0)/total*100);
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="width:170px;font-size:11px;color:var(--muted)">${it.lbl}</span>
+          <div style="flex:1;height:12px;background:var(--border);border-radius:3px;overflow:hidden">
+            <div style="width:${w}%;height:100%;background:${it.color};border-radius:3px"></div>
+          </div>
+          <span style="font-size:12px;font-weight:600;color:${it.color};width:42px;text-align:right">${it.val}</span>
+          <span style="font-size:10px;color:var(--muted);width:30px">${w}%</span>
+        </div>`;
+      }).join('');
+    }
+
+    // Por oficina
+    const tbody = document.getElementById('dem-oficinas-tbody');
+    if (tbody && ofRes.success) {
+      const lista = ofRes.data;
+      const maxT = Math.max(...lista.map(o => parseInt(o.total)||0), 1);
+      let totTotal=0, totBusc=0, totConv=0;
+      const filas = lista.map(o => {
+        const t = parseInt(o.total)||0;
+        const b = parseInt(o.buscando)||0;
+        const c = parseInt(o.convertidos)||0;
+        const a = parseInt(o.arras)||0;
+        const r = parseInt(o.reservas)||0;
+        const tc = parseFloat(o.tasa_conversion)||0;
+        const w = Math.round(t/maxT*100);
+        totTotal+=t; totBusc+=b; totConv+=c;
+        return `<tr>
+          <td><strong>${o.nombre}</strong></td>
+          <td class="td-right">${t}</td>
+          <td class="td-right" style="color:var(--green);font-weight:500">${b}</td>
+          <td class="td-right" style="color:#1E40AF;font-weight:500">${c}</td>
+          <td class="td-right" style="color:var(--amber)">${a}</td>
+          <td class="td-right" style="color:var(--amber)">${r}</td>
+          <td class="td-right"><span class="${tc>=5?'pct-green':tc>=2?'pct-amber':'pct-red'}">${tc}%</span></td>
+          <td><div style="height:5px;background:var(--border);border-radius:2px"><div style="width:${w}%;height:100%;background:var(--navy);border-radius:2px"></div></div></td>
+        </tr>`;
+      }).join('');
+      tbody.innerHTML = filas + `<tr style="background:var(--cream);border-top:2px solid var(--border)">
+        <td style="font-weight:700">RED TOTAL</td>
+        <td class="td-right" style="font-weight:700">${totTotal}</td>
+        <td class="td-right" style="color:var(--green);font-weight:700">${totBusc}</td>
+        <td class="td-right" style="color:#1E40AF;font-weight:700">${totConv}</td>
+        <td class="td-right">—</td><td class="td-right">—</td>
+        <td class="td-right" style="font-weight:700">${totTotal>0?Math.round(totConv/totTotal*100*10)/10:0}%</td>
+        <td></td>
+      </tr>`;
+    }
+
+    // Por consultor
+    const tbodyCons = document.getElementById('dem-consultores-tbody');
+    if (tbodyCons && consRes.success) {
+      const lista = consRes.data;
+      if (!lista.length) {
+        tbodyCons.innerHTML = '<tr><td colspan="6" class="loading">Sin datos para este período</td></tr>';
+      } else {
+        tbodyCons.innerHTML = lista.map(c => `<tr>
+          <td>${c.consultor||'—'}</td>
+          <td><span class="badge badge-gray">${c.oficina||'—'}</span></td>
+          <td class="td-right">${c.total||0}</td>
+          <td class="td-right" style="color:var(--green);font-weight:500">${c.buscando||0}</td>
+          <td class="td-right" style="color:#1E40AF;font-weight:500">${c.convertidos||0}</td>
+          <td class="td-right"><span class="${(c.tasa_conversion||0)>=5?'pct-green':(c.tasa_conversion||0)>=2?'pct-amber':'pct-red'}">${c.tasa_conversion||0}%</span></td>
+        </tr>`).join('');
+      }
+    }
+
+  } catch(e) { console.warn('Error demandas:', e.message); }
 }

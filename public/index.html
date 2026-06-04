@@ -49,6 +49,10 @@
   </a>
 
   <div class="sb-section">Análisis</div>
+  <a class="nav-item" data-view="demandas" onclick="nav('demandas')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+    Demandas / Leads
+  </a>
   <a class="nav-item" data-view="palancas" onclick="nav('palancas')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
     Palancas
@@ -762,6 +766,87 @@
       </div>
     </div>
 
+    <!-- ═══ DEMANDAS / LEADS ═══ -->
+    <div class="view" id="view-demandas">
+
+      <!-- KPIs -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(7,1fr);margin-bottom:16px">
+        <div class="kpi-card highlight"><div class="kpi-label">Total leads</div><div class="kpi-value" id="dem-total">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Buscando activos</div><div class="kpi-value green" id="dem-buscando">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Convertidos</div><div class="kpi-value" style="color:#1E40AF" id="dem-convertidos">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Tasa conversión</div><div class="kpi-value gold" id="dem-tasa">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Contrato Arras</div><div class="kpi-value amber" id="dem-arras">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Reservas</div><div class="kpi-value amber" id="dem-reservas">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Perdidos</div><div class="kpi-value red" id="dem-perdidos">—</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <!-- Por canal -->
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Leads por canal</span></div>
+          <div class="panel-body" id="dem-canales"><div class="loading">Cargando...</div></div>
+        </div>
+        <!-- Situación -->
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Distribución por situación</span></div>
+          <div class="panel-body" id="dem-situacion"><div class="loading">Cargando...</div></div>
+        </div>
+      </div>
+
+      <!-- Por oficina -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Leads por oficina</span>
+          <span style="font-size:11px;color:var(--muted)">Buscando · Convertidos · Tasa %</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Oficina</th>
+                <th class="nr">Total</th>
+                <th class="nr" style="color:var(--green)">Buscando</th>
+                <th class="nr" style="color:#1E40AF">Convertidos</th>
+                <th class="nr" style="color:var(--amber)">Arras</th>
+                <th class="nr" style="color:var(--amber)">Reservas</th>
+                <th class="nr">Tasa conv.</th>
+                <th style="min-width:120px">Peso relativo</th>
+              </tr>
+            </thead>
+            <tbody id="dem-oficinas-tbody">
+              <tr><td colspan="8" class="loading">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Por consultor -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Leads por consultor</span>
+          <span style="font-size:11px;color:var(--muted)">Top 30</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Consultor</th>
+                <th>Oficina</th>
+                <th class="nr">Total</th>
+                <th class="nr" style="color:var(--green)">Buscando</th>
+                <th class="nr" style="color:#1E40AF">Convertidos</th>
+                <th class="nr">Tasa conv.</th>
+              </tr>
+            </thead>
+            <tbody id="dem-consultores-tbody">
+              <tr><td colspan="6" class="loading">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
     <!-- ═══ INGRESOS RESUMEN ═══ -->
     <div class="view" id="view-ingresos-resumen">
       <div class="kpi-grid kpi-grid-4" style="grid-template-columns:repeat(5,1fr)">
@@ -953,9 +1038,14 @@
 
           <div id="import-result" style="display:none;margin-top:16px"></div>
 
-          <button id="btn-importar" class="btn btn-gold" style="width:100%;margin-top:16px;padding:12px" onclick="ejecutarImport()" disabled>
-            Importar
-          </button>
+          <div style="display:flex;gap:8px;margin-top:16px">
+            <button id="btn-importar" class="btn btn-gold" style="flex:1;padding:12px" onclick="ejecutarImport('inmovilla')" disabled>
+              Importar propiedades
+            </button>
+            <button id="btn-importar-demandas" class="btn btn-primary" style="flex:1;padding:12px" onclick="ejecutarImport('demandas')" disabled>
+              Importar demandas/leads
+            </button>
+          </div>
         </div>
       </div>
     </div>
