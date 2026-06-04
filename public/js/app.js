@@ -99,6 +99,15 @@ function setPeriodo(p) {
   aplicarFiltro();
 }
 
+const PERIODO_LABELS = {
+  year:'Objetivo año', '1t':'Objetivo 1T', '2t':'Objetivo 2T',
+  '3t':'Objetivo 3T', '4t':'Objetivo 4T',
+  m1:'Obj. Enero', m2:'Obj. Febrero', m3:'Obj. Marzo',
+  m4:'Obj. Abril', m5:'Obj. Mayo', m6:'Obj. Junio',
+  m7:'Obj. Julio', m8:'Obj. Agosto', m9:'Obj. Septiembre',
+  m10:'Obj. Octubre', m11:'Obj. Noviembre', m12:'Obj. Diciembre',
+};
+
 function aplicarFiltro() {
   const a = _año;
   let desde, hasta;
@@ -114,6 +123,13 @@ function aplicarFiltro() {
   }
   document.getElementById('date-from').value = desde;
   document.getElementById('date-to').value   = hasta;
+
+  // Actualizar labels del dashboard
+  const lbl = document.getElementById('kpi-objetivo-label');
+  if (lbl) lbl.textContent = (PERIODO_LABELS[_periodo] || 'Objetivo') + ' ' + a;
+  const sub = document.getElementById('kpi-pct-sub');
+  if (sub) sub.textContent = _periodo === 'year' ? `vs objetivo anual ${a}` : `vs ${PERIODO_LABELS[_periodo]||'objetivo'} ${a}`;
+
   recargarVistaActiva();
 }
 
