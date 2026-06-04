@@ -509,12 +509,43 @@ async function loadCaptaciones() {
     const s = sumRes.data || sumRes;
     if (kpis) {
       kpis.innerHTML = `
-        <div class="kpi-card highlight"><div class="kpi-label">Total activas</div><div class="kpi-value">${s.total||0}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Exclusivas</div><div class="kpi-value" style="color:#1E40AF">${s.exclusivas||0}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Notas encargo</div><div class="kpi-value" style="color:var(--navy)">${s.notas_encargo||0}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Valor cartera</div><div class="kpi-value gold">${fmtK(s.valor_cartera||0)}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Honor. potenciales</div><div class="kpi-value gold">${fmtK(s.honorarios_potenciales||0)}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Bloqueadas +7m</div><div class="kpi-value red">${s.bloqueadas||0}</div></div>
+        <div class="kpi-card highlight">
+          <div class="kpi-label">Total activas</div>
+          <div class="kpi-value">${s.total||0}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Exclusivas</div>
+          <div class="kpi-value" style="color:#1E40AF">${s.exclusivas||0}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Notas encargo</div>
+          <div class="kpi-value" style="color:#7C3AED">${s.notas_encargo||0}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Valor cartera</div>
+          <div class="kpi-value gold">${fmtK(s.valor_cartera||0)}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Hon. potenciales</div>
+          <div class="kpi-value green">${fmtK(s.honorarios_potenciales||0)}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Hon. pot. exclusivas</div>
+          <div class="kpi-value" style="color:#1E40AF">${fmtK(s.hon_pot_exclusivas||0)}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Hon. pot. N.E.</div>
+          <div class="kpi-value" style="color:#7C3AED">${fmtK(s.hon_pot_ne||0)}</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Excl. viviendas</div>
+          <div class="kpi-value" style="color:#1E40AF">${s.excl_viviendas||0}</div>
+          <div class="kpi-sub">⭐ tipología principal</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Hon. pot. excl. viviendas</div>
+          <div class="kpi-value green">${fmtK(s.hon_pot_excl_viviendas||0)}</div>
+        </div>
       `;
     }
     const lista = listRes.data || listRes;

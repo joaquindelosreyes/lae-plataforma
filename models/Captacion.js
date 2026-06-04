@@ -33,16 +33,27 @@ const Captacion = {
   async resumen() {
     const { rows } = await pool.query(`
       SELECT
+        -- 1. Total activas
         COUNT(*) AS total,
+        -- 2. Exclusivas
         COUNT(*) FILTER (WHERE mandato = 'exclusiva') AS exclusivas,
+        -- 3. Notas encargo
         COUNT(*) FILTER (WHERE mandato = 'nota_encargo') AS notas_encargo,
-        COUNT(*) FILTER (WHERE tipologia = 'vivienda') AS viviendas,
-        COUNT(*) FILTER (WHERE tipologia = 'vivienda' AND mandato = 'exclusiva') AS viviendas_excl,
-        COUNT(*) FILTER (WHERE tipologia = 'vivienda' AND mandato = 'nota_encargo') AS viviendas_ne,
-        COUNT(*) FILTER (WHERE fecha_captacion < NOW() - INTERVAL '7 months' AND mandato = 'exclusiva' AND estado = 'activa') AS bloqueadas,
-        COUNT(*) FILTER (WHERE fecha_captacion BETWEEN NOW() - INTERVAL '7 months' AND NOW() - INTERVAL '5 months' AND mandato = 'exclusiva' AND estado = 'activa') AS en_revision,
+        -- 4. Valor cartera total
         COALESCE(SUM(precio_captacion), 0) AS valor_cartera,
-        COALESCE(SUM(honorarios_potenciales), 0) AS honorarios_potenciales
+        -- 5. Hon. potenciales total
+        COALESCE(SUM(honorarios_potenciales), 0) AS honorarios_potenciales,
+        -- 6. Hon. potenciales exclusivas
+        COALESCE(SUM(honorarios_potenciales) FILTER (WHERE mandato = 'exclusiva'), 0) AS hon_pot_exclusivas,
+        -- 7. Hon. potenciales notas encargo
+        COALESCE(SUM(honorarios_potenciales) FILTER (WHERE mandato = 'nota_encargo'), 0) AS hon_pot_ne,
+        -- 8. Exclusivas vivienda
+        COUNT(*) FILTER (WHERE mandato = 'exclusiva' AND tipologia = 'vivienda') AS excl_viviendas,
+        -- 9. Hon. potenciales exclusivas vivienda
+        COALESCE(SUM(honorarios_potenciales) FILTER (WHERE mandato = 'exclusiva' AND tipologia = 'vivienda'), 0) AS hon_pot_excl_viviendas,
+        -- Extra útiles
+        COUNT(*) FILTER (WHERE fecha_captacion < NOW() - INTERVAL '7 months' AND mandato = 'exclusiva') AS bloqueadas,
+        COUNT(*) FILTER (WHERE fecha_captacion BETWEEN NOW() - INTERVAL '7 months' AND NOW() - INTERVAL '5 months' AND mandato = 'exclusiva') AS en_revision
       FROM captaciones WHERE estado = 'activa'
     `);
     return rows[0];
