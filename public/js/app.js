@@ -210,7 +210,7 @@ function renderDashOficinas(lista) {
     const max = Math.max(...sorted.map(o => parseFloat(o.total_cobrado) || 0), 1);
     tbody.innerHTML = sorted.map(o => {
         const cob  = parseFloat(o.total_cobrado) || 0;
-        const obj  = parseFloat(o.objetivo_anual) || 0;
+        const obj  = parseFloat(o.objetivo_periodo || o.objetivo_anual) || 0;
         const p    = parseFloat(o.pct_cumplimiento) || 0;
         const w    = Math.round(cob / max * 100);
         const barColor = p >= 90 ? 'var(--green)' : p >= 60 ? 'var(--amber)' : 'var(--red)';
