@@ -740,9 +740,15 @@ async function loadSelectsGlobales() {
       const s = document.getElementById(id);
       if (s) s.innerHTML = optsOf;
     });
+    // Opciones con puesto visible
+    const optsConsPuesto = Array.isArray(consultores)
+      ? '<option value="">— seleccionar —</option>' + consultores.map(c =>
+          `<option value="${c.id}">${c.nombre}${c.puesto ? ' · '+c.puesto : ''}${c.oficina_nombre ? ' ('+c.oficina_nombre+')' : ''}</option>`
+        ).join('')
+      : '';
     ['nop-captador','nop-vendedor','nop-coordinadora','nop-director','aaff-consultor-sel'].forEach(id => {
       const s = document.getElementById(id);
-      if (s) s.innerHTML = optsCons;
+      if (s) s.innerHTML = optsConsPuesto;
     });
   } catch(e) {}
 }
