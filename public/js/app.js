@@ -990,10 +990,39 @@ async function loadCaptacionesMatriz() {
 async function loadCaptacionesPorOficina() {
   try {
     const { desde, hasta } = getDateRange();
-    const res = await fetch(`${API}/api/captaciones/por-oficina?desde=${desde}&hasta=${hasta}`).then(r => r.json());
+    const [res, resViv] = await Promise.all([
+      fetch(`${API}/api/captaciones/por-oficina?desde=${desde}&hasta=${hasta}`).then(r => r.json()),
+      fetch(`${API}/api/captaciones/vivienda-excl-por-oficina?desde=${desde}&hasta=${hasta}`).then(r => r.json())
+    ]);
     const lista = res.data || res;
     if (!Array.isArray(lista)) return;
     renderCapOf(lista);
+
+    // Segundo panel: viviendas exclusiva
+    const listaViv = resViv.data || resViv;
+    const tbodyViv = document.getElementById('cap-viv-excl-tbody');
+    if (tbodyViv && Array.isArray(listaViv)) {
+      const maxExcl = Math.max(...listaViv.map(o => parseInt(o.exclusivas)||0), 1);
+      tbodyViv.innerHTML = listaViv.filter(o => (parseInt(o.total)||0) > 0).map(o => {
+        const excl  = parseInt(o.exclusivas)||0;
+        const ne    = parseInt(o.notas_encargo)||0;
+        const total = parseInt(o.total)||0;
+        const honor = parseFloat(o.honorarios_excl)||0;
+        const w = Math.round(excl / maxExcl * 100);
+        return `<tr>
+          <td><strong>${o.nombre}</strong></td>
+          <td class="td-right" style="color:#1E40AF;font-weight:600">${excl}</td>
+          <td class="td-right" style="color:#7C3AED">${ne}</td>
+          <td class="td-right"><strong>${total}</strong></td>
+          <td class="td-right" style="color:var(--green);font-weight:600">${fmtK(honor)}</td>
+          <td style="width:120px">
+            <div style="height:5px;background:var(--border);border-radius:2px">
+              <div style="width:${w}%;height:100%;background:#1E40AF;border-radius:2px"></div>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
   } catch(e) {}
 }
 

@@ -100,6 +100,29 @@ const Captacion = {
     return rows;
   },
 
+  async porOficinaViviendaExcl({ desde, hasta } = {}) {
+    let where = [`c.estado = 'activa'`, `c.tipologia = 'vivienda'`];
+    const params = [];
+    let i = 1;
+    if (desde) { where.push(`c.fecha_captacion >= $${i++}`); params.push(desde); }
+    if (hasta) { where.push(`c.fecha_captacion <= $${i++}`); params.push(hasta); }
+    const { rows } = await pool.query(`
+      SELECT
+        o.id, o.nombre,
+        COUNT(c.id) FILTER (WHERE c.mandato = 'exclusiva') AS exclusivas,
+        COUNT(c.id) FILTER (WHERE c.mandato = 'nota_encargo') AS notas_encargo,
+        COUNT(c.id) AS total,
+        COALESCE(SUM(c.precio_captacion) FILTER (WHERE c.mandato = 'exclusiva'), 0) AS valor_excl,
+        COALESCE(SUM(c.honorarios_potenciales) FILTER (WHERE c.mandato = 'exclusiva'), 0) AS honorarios_excl,
+        COALESCE(SUM(c.honorarios_potenciales), 0) AS honorarios
+      FROM oficinas o
+      LEFT JOIN captaciones c ON c.oficina_id = o.id AND ${where.join(' AND ')}
+      GROUP BY o.id, o.nombre
+      ORDER BY exclusivas DESC
+    `, params);
+    return rows;
+  },
+
   async crear(data) {
     const ref = 'CAP-' + Date.now().toString().slice(-6) + '-' + new Date().getFullYear();
     const precio = parseFloat(data.precio_captacion) || 0;
