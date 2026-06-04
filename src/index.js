@@ -22,6 +22,7 @@ app.use('/api/reuniones',   require('../routes/reuniones'));
 app.use('/api/palancas',    require('../routes/palancas'));
 app.use('/api/captaciones', require('../routes/captaciones'));
 app.use('/api/demandas',    require('../routes/demandas'));
+app.use('/api/aaff50',      require('../routes/aaff50'));
 app.use('/api/import',      require('../routes/import'));
 
 // Mantener compatibilidad con endpoints legacy del dashboard

@@ -47,6 +47,7 @@ function nav(viewId) {
     captaciones: 'Captaciones — Listado',
     'cap-matriz': 'Captaciones — Matriz',
     'cap-oficinas': 'Captaciones — Por oficina',
+    aaff50: 'AAFF 50-50 — Administradores de Fincas',
     demandas: 'Demandas / Leads',
     palancas: 'Palancas — Análisis automático',
     reuniones: 'Reuniones — Calendario',
@@ -65,6 +66,7 @@ function nav(viewId) {
   if (viewId === 'cap-matriz')       loadCaptacionesMatriz();
   if (viewId === 'cap-oficinas')     loadCaptacionesPorOficina();
   if (viewId === 'ingresos-resumen') loadIngresosResumen();
+  if (viewId === 'aaff50')           loadAAFF50();
   if (viewId === 'demandas')         loadDemandas();
   if (viewId === 'palancas')         loadPalancas();
   if (viewId === 'aaff')             loadAAFF();
@@ -1807,4 +1809,169 @@ async function loadDemandas() {
     }
 
   } catch(e) { console.warn('Error demandas:', e.message); }
+}
+
+// ── AAFF 50-50 ────────────────────────────────────────
+let _aaffSelId = null;
+
+async function loadAAFF50() {
+  try {
+    const [sumRes, listRes, ofRes, medRes] = await Promise.all([
+      fetch(`${API}/api/aaff50/resumen`).then(r => r.json()),
+      fetch(`${API}/api/aaff50`).then(r => r.json()),
+      fetch(`${API}/api/aaff50/stats/oficinas`).then(r => r.json()),
+      fetch(`${API}/api/aaff50/stats/medios`).then(r => r.json()),
+    ]);
+
+    // KPIs
+    if (sumRes.success) {
+      const s = sumRes.data;
+      set('a50-total',       s.total_despachos||0);
+      set('a50-comunidades', (s.total_comunidades||0).toLocaleString('es-ES'));
+      set('a50-admin',       (s.total_administrados||0).toLocaleString('es-ES'));
+      set('a50-com-comp',    s.comunidades_compartidas||0);
+      set('a50-vec-comp',    (s.vecinos_compartidos||0).toLocaleString('es-ES'));
+      set('a50-captaciones', s.captaciones_totales||0);
+      set('a50-ventas',      s.ventas_totales||0);
+      set('a50-impactados',  (s.vecinos_impactados||0).toLocaleString('es-ES'));
+      set('a50-tasa',        (s.tasa_interes||0) + '%');
+    }
+
+    // Por oficina
+    const tOficinas = document.getElementById('a50-oficinas-tbody');
+    if (tOficinas && ofRes.success) {
+      tOficinas.innerHTML = ofRes.data.map(o => `<tr>
+        <td><strong>${o.nombre||'—'}</strong></td>
+        <td class="td-right">${o.despachos||0}</td>
+        <td class="td-right" style="color:#1E40AF">${o.comunidades||0}</td>
+        <td class="td-right" style="color:#1E40AF">${(o.vecinos||0).toLocaleString('es-ES')}</td>
+        <td class="td-right" style="color:var(--green);font-weight:600">${o.captaciones||0}</td>
+        <td class="td-right" style="color:var(--green);font-weight:600">${o.ventas||0}</td>
+      </tr>`).join('');
+    }
+
+    // Por medio
+    const medDiv = document.getElementById('a50-medios');
+    if (medDiv && medRes.success) {
+      const max = Math.max(...medRes.data.map(m => parseInt(m.total)||0), 1);
+      medDiv.innerHTML = medRes.data.map(m => {
+        const t = parseInt(m.total)||0;
+        const w = Math.round(t/max*100);
+        const tasa = parseFloat(m.tasa)||0;
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+          <span style="width:130px;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.medio}</span>
+          <div style="flex:1;height:10px;background:var(--border);border-radius:3px;overflow:hidden">
+            <div style="width:${w}%;height:100%;background:var(--navy);border-radius:3px"></div>
+          </div>
+          <span style="font-size:11px;font-weight:600;width:28px;text-align:right">${t}</span>
+          <span style="font-size:10px;color:var(--amber);width:38px;text-align:right">${tasa}% int.</span>
+        </div>`;
+      }).join('');
+    }
+
+    // Tabla despachos
+    const tbody = document.getElementById('a50-tbody');
+    const cnt = document.getElementById('a50-count');
+    if (tbody && listRes.success) {
+      const lista = listRes.data;
+      if (cnt) cnt.textContent = lista.length + ' despachos';
+      tbody.innerHTML = lista.map(d => {
+        const dias = d.dias_ultimo_contacto;
+        const diasCol = dias == null ? 'var(--muted)' : dias > 30 ? 'var(--red)' : dias > 14 ? 'var(--amber)' : 'var(--green)';
+        const diasTxt = dias == null ? 'Sin contacto' : dias === 0 ? 'Hoy' : dias + 'd';
+        const tasa = parseFloat(d.tasa_interes)||0;
+        return `<tr style="cursor:pointer" onclick="abrirDespacho50(${d.id})">
+          <td><strong>${d.nombre}</strong><div style="font-size:10px;color:var(--muted)">${d.ciudad||'—'} · ${d.dni||d.cif||'—'}</div></td>
+          <td><span class="badge badge-gray">${d.oficina_nombre||'—'}</span></td>
+          <td style="font-size:11px;color:var(--muted)">${d.observaciones||'—'}</td>
+          <td class="td-right">${d.comunidades_totales||0}</td>
+          <td class="td-right" style="color:#1E40AF">${d.comunidades_compartidas||0}</td>
+          <td class="td-right" style="color:#1E40AF">${(d.vecinos_compartidos||0).toLocaleString('es-ES')}</td>
+          <td class="td-right" style="color:var(--green);font-weight:600">${d.captaciones_cerradas||0}</td>
+          <td class="td-right" style="color:var(--green);font-weight:600">${d.ventas_cerradas||0}</td>
+          <td class="td-right">${d.total_comunicaciones||0}</td>
+          <td class="td-right"><span style="color:${tasa>=5?'var(--green)':tasa>=2?'var(--amber)':'var(--red)'};font-weight:600">${tasa}%</span></td>
+          <td style="color:${diasCol};font-size:11px;font-weight:500">${diasTxt}</td>
+          <td>${d.plan_mkt?'<span class="badge badge-green">✓ Sí</span>':'<span class="badge badge-gray">No</span>'}</td>
+        </tr>`;
+      }).join('');
+    }
+  } catch(e) { console.warn('Error AAFF50:', e.message); }
+}
+
+async function abrirDespacho50(id) {
+  _aaffSelId = id;
+  const det = document.getElementById('a50-detalle');
+  if (det) det.style.display = 'block';
+  try {
+    const [dRes, comRes] = await Promise.all([
+      fetch(`${API}/api/aaff50`).then(r => r.json()),
+      fetch(`${API}/api/aaff50/${id}/comunicaciones`).then(r => r.json()),
+    ]);
+    const d = (dRes.data||[]).find(x => x.id === id);
+    if (d) {
+      set('a50-det-nombre', d.nombre);
+      const info = document.getElementById('a50-det-info');
+      if (info) info.innerHTML = `
+        <div class="mini"><span class="ml2">Ciudad</span><span class="mv2">${d.ciudad||'—'}</span></div>
+        <div class="mini"><span class="ml2">Oficina LAE</span><span class="mv2">${d.oficina_nombre||'—'}</span></div>
+        <div class="mini"><span class="ml2">Responsable</span><span class="mv2">${d.observaciones||'—'}</span></div>
+        <div class="mini"><span class="ml2">DNI/CIF</span><span class="mv2">${d.dni||d.cif||'—'}</span></div>
+        <div class="mini"><span class="ml2">Comunidades totales</span><span class="mv2">${d.comunidades_totales||0}</span></div>
+        <div class="mini"><span class="ml2">Administrados</span><span class="mv2">${(d.administrados||0).toLocaleString('es-ES')}</span></div>
+        <div class="mini"><span class="ml2">Com. compartidas</span><span class="mv2" style="color:#1E40AF">${d.comunidades_compartidas||0}</span></div>
+        <div class="mini"><span class="ml2">Vecinos compartidos</span><span class="mv2" style="color:#1E40AF">${(d.vecinos_compartidos||0).toLocaleString('es-ES')}</span></div>
+        <div class="mini"><span class="ml2">Captaciones cerradas</span><span class="mv2" style="color:var(--green)">${d.captaciones_cerradas||0}</span></div>
+        <div class="mini"><span class="ml2">Ventas cerradas</span><span class="mv2" style="color:var(--green)">${d.ventas_cerradas||0}</span></div>
+        <div class="mini"><span class="ml2">Plan MKT</span><span class="mv2">${d.plan_mkt?'✓ Sí':'No'}</span></div>
+        <div class="mini"><span class="ml2">Firma contrato</span><span class="mv2">${d.fecha_firma?fmtFecha(d.fecha_firma):'—'}</span></div>
+      `;
+    }
+
+    const tCom = document.getElementById('a50-com-tbody');
+    if (tCom && comRes.success) {
+      const lista = comRes.data;
+      if (!lista.length) {
+        tCom.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);font-style:italic;padding:12px">Sin comunicaciones registradas</td></tr>';
+      } else {
+        tCom.innerHTML = lista.map(c => `<tr>
+          <td>${c.fecha?fmtFecha(c.fecha):'—'}</td>
+          <td style="font-size:11px">${c.tematica||'—'}</td>
+          <td><span class="badge badge-gray" style="font-size:9px">${c.medio||'—'}</span></td>
+          <td class="td-right">${c.vecinos_recibido||0}</td>
+          <td class="td-right" style="color:var(--green)">${c.vecinos_interes||0}</td>
+          <td class="td-right" style="color:var(--red)">${c.vecinos_rechazo||0}</td>
+        </tr>`).join('');
+      }
+    }
+    det?.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  } catch(e) { console.warn(e); }
+}
+
+function mostrarFormCom() {
+  const f = document.getElementById('form-com');
+  if (f) { f.style.display = f.style.display==='none'?'block':'none'; }
+  const fi = document.getElementById('com-fecha');
+  if (fi) fi.valueAsDate = new Date();
+}
+
+async function guardarComunicacion() {
+  if (!_aaffSelId) return;
+  const payload = {
+    fecha: document.getElementById('com-fecha')?.value,
+    tematica: document.getElementById('com-tematica')?.value,
+    medio: document.getElementById('com-medio')?.value,
+    vecinos_recibido: parseInt(document.getElementById('com-recibidos')?.value)||0,
+    vecinos_interes:  parseInt(document.getElementById('com-interes')?.value)||0,
+    vecinos_rechazo:  parseInt(document.getElementById('com-rechazo')?.value)||0,
+  };
+  const res = await fetch(`${API}/api/aaff50/${_aaffSelId}/comunicaciones`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+  }).then(r => r.json());
+  if (res.success) {
+    document.getElementById('form-com').style.display = 'none';
+    document.getElementById('com-tematica').value = '';
+    abrirDespacho50(_aaffSelId);
+    loadAAFF50();
+  }
 }
