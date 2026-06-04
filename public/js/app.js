@@ -102,10 +102,11 @@ function setPeriodo(p) {
 const PERIODO_LABELS = {
   year:'Objetivo año', '1t':'Objetivo 1T', '2t':'Objetivo 2T',
   '3t':'Objetivo 3T', '4t':'Objetivo 4T',
-  m1:'Obj. Enero', m2:'Obj. Febrero', m3:'Obj. Marzo',
-  m4:'Obj. Abril', m5:'Obj. Mayo', m6:'Obj. Junio',
-  m7:'Obj. Julio', m8:'Obj. Agosto', m9:'Obj. Septiembre',
-  m10:'Obj. Octubre', m11:'Obj. Noviembre', m12:'Obj. Diciembre',
+  // Meses → muestran el trimestre al que pertenecen
+  m1:'Objetivo 1T', m2:'Objetivo 1T', m3:'Objetivo 1T',
+  m4:'Objetivo 2T', m5:'Objetivo 2T', m6:'Objetivo 2T',
+  m7:'Objetivo 3T', m8:'Objetivo 3T', m9:'Objetivo 3T',
+  m10:'Objetivo 4T', m11:'Objetivo 4T', m12:'Objetivo 4T',
 };
 
 function aplicarFiltro() {
