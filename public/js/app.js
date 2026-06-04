@@ -230,12 +230,16 @@ function renderDashOficinas(lista) {
     });
 
     const max = Math.max(...sorted.map(o => parseFloat(o.total_cobrado) || 0), 1);
-    tbody.innerHTML = sorted.map(o => {
-        const cob  = parseFloat(o.total_cobrado) || 0;
-        const obj  = parseFloat(o.objetivo_periodo || o.objetivo_anual) || 0;
-        const p    = parseFloat(o.pct_cumplimiento) || 0;
-        const w    = Math.round(cob / max * 100);
+    let totObj=0, totCob=0, totCierres=0, totCap=0;
+      const filas = sorted.map(o => {
+        const cob = parseFloat(o.total_cobrado) || 0;
+        const obj = parseFloat(o.objetivo_periodo || o.objetivo_anual) || 0;
+        const p   = parseFloat(o.pct_cumplimiento) || 0;
+        const w   = Math.round(cob / max * 100);
         const barColor = p >= 90 ? 'var(--green)' : p >= 60 ? 'var(--amber)' : 'var(--red)';
+        totObj += obj; totCob += cob;
+        totCierres += parseInt(o.total_cierres)||0;
+        totCap += parseInt(o.total_captaciones)||0;
         return `<tr>
           <td><span class="sem ${semClass(p)}"></span></td>
           <td><strong>${o.nombre}</strong></td>
@@ -249,10 +253,28 @@ function renderDashOficinas(lista) {
               <span class="${pctClass(p)}" style="width:38px;font-size:11px">${p}%</span>
             </div>
           </td>
-          <td class="td-right">${parseInt(o.total_cierres) || 0}</td>
-          <td class="td-right">${parseInt(o.total_captaciones) || 0}</td>
+          <td class="td-right">${parseInt(o.total_cierres)||0}</td>
+          <td class="td-right">${parseInt(o.total_captaciones)||0}</td>
         </tr>`;
       }).join('');
+      const pctT = totObj > 0 ? Math.round(totCob/totObj*100*10)/10 : 0;
+      const barT = pctT >= 90 ? 'var(--green)' : pctT >= 60 ? 'var(--amber)' : 'var(--red)';
+      tbody.innerHTML = filas + `<tr style="background:var(--cream);border-top:2px solid var(--border)">
+        <td></td>
+        <td style="font-weight:700;color:var(--navy)">RED TOTAL</td>
+        <td class="td-right" style="font-weight:700">${fmtK(totObj)}</td>
+        <td class="td-right" style="font-weight:700">${fmtK(totCob)}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px;min-width:120px">
+            <div style="flex:1;height:5px;background:var(--border);border-radius:2px">
+              <div style="width:${Math.min(pctT,100)}%;height:100%;background:${barT};border-radius:2px"></div>
+            </div>
+            <span class="${pctClass(pctT)}" style="width:38px;font-size:11px;font-weight:700">${pctT}%</span>
+          </div>
+        </td>
+        <td class="td-right" style="font-weight:700">${totCierres}</td>
+        <td class="td-right" style="font-weight:700">${totCap}</td>
+      </tr>`;
 }
 
 function set(id, val) {
