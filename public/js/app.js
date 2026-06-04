@@ -69,6 +69,7 @@ function nav(viewId) {
   if (viewId === 'gastos')           loadGastos();
   if (viewId === 'reuniones')        { loadReuniones(); loadPlantillas(); }
   if (viewId === 'actas')            loadActas();
+  if (viewId === 'compromisos')      loadCompromisosPendientes();
 }
 
 // ── FILTRO FECHAS ────────────────────────────────────
@@ -131,7 +132,9 @@ function recargarVistaActiva() {
   if (id === 'cap-matriz')       loadCaptacionesMatriz();
   if (id === 'cap-oficinas')     loadCaptacionesPorOficina();
   if (id === 'palancas')         loadPalancas();
-  if (!['dashboard','operaciones','ingresos-resumen','captaciones','cap-matriz','cap-oficinas','palancas'].includes(id)) loadDashboard();
+  if (id === 'compromisos') loadCompromisosPendientes();
+  if (id === 'actas')       loadActas();
+  if (!['dashboard','operaciones','ingresos-resumen','captaciones','cap-matriz','cap-oficinas','palancas','compromisos','actas'].includes(id)) loadDashboard();
 }
 
 function getDateRange() {
@@ -1030,7 +1033,8 @@ async function loadCompromisosPendientes() {
   const list = document.getElementById('compromisos-pendientes');
   if (!list) return;
   try {
-    const res = await fetch(`${API}/api/reuniones/compromisos-abiertos`).then(r => r.json());
+    const { desde, hasta } = getDateRange();
+    const res = await fetch(`${API}/api/reuniones/compromisos-abiertos?desde=${desde}&hasta=${hasta}`).then(r => r.json());
     const data = res.data || res;
     if (!Array.isArray(data) || !data.length) {
       list.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon">✓</div><h3>Sin compromisos pendientes</h3></div>';
@@ -1519,7 +1523,8 @@ async function loadActas() {
   if (!el) return;
   el.innerHTML = '<div class="loading">Cargando actas...</div>';
   try {
-    const res = await fetch(`${API}/api/reuniones/actas`).then(r => r.json());
+    const { desde, hasta } = getDateRange();
+    const res = await fetch(`${API}/api/reuniones/actas?desde=${desde}&hasta=${hasta}`).then(r => r.json());
     const lista = res.data || [];
     if (!lista.length) {
       el.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><h3>Sin actas todavía</h3><p>Las actas aparecen aquí cuando guardas conclusiones en una reunión.</p></div>';
