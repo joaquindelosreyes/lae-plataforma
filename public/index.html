@@ -1050,25 +1050,37 @@
       <div class="panel">
         <div class="panel-header">
           <span class="panel-title">Despachos AAFF 50-50 — detalle completo</span>
-          <span style="font-size:11px;color:var(--muted)" id="a50-count"></span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="a50-fil-oficina" class="form-select" style="height:28px;font-size:11px;padding:0 6px" onchange="filtrarA50()">
+              <option value="">Todas las oficinas</option>
+            </select>
+            <select id="a50-fil-resp" class="form-select" style="height:28px;font-size:11px;padding:0 6px" onchange="filtrarA50()">
+              <option value="">Todos los responsables</option>
+            </select>
+            <span style="font-size:11px;color:var(--muted)" id="a50-count"></span>
+          </div>
         </div>
         <div class="table-wrap">
           <table>
             <thead><tr>
-              <th onclick="sortAAFF50('nombre')"   style="cursor:pointer;user-select:none">Despacho / Administrador <span id="s50-nombre"></span></th>
-              <th onclick="sortAAFF50('oficina')"  style="cursor:pointer;user-select:none">Oficina <span id="s50-oficina"></span></th>
-              <th onclick="sortAAFF50('resp')"     style="cursor:pointer;user-select:none">Responsable LAE <span id="s50-resp"></span></th>
-              <th class="nr" onclick="sortAAFF50('com_total')"  style="cursor:pointer;user-select:none">Com. total <span id="s50-com_total"></span></th>
-              <th class="nr" onclick="sortAAFF50('com_comp')"   style="cursor:pointer;user-select:none">Com. compartidas <span id="s50-com_comp"></span></th>
-              <th class="nr" onclick="sortAAFF50('vecinos')"    style="cursor:pointer;user-select:none">Vecinos <span id="s50-vecinos"></span></th>
+              <th onclick="sortAAFF50('nombre')"      style="cursor:pointer;user-select:none">Despacho / Administrador <span id="s50-nombre"></span></th>
+              <th onclick="sortAAFF50('oficina')"     style="cursor:pointer;user-select:none">Oficina <span id="s50-oficina"></span></th>
+              <th onclick="sortAAFF50('resp')"        style="cursor:pointer;user-select:none">Responsable LAE <span id="s50-resp"></span></th>
+              <th class="nr" onclick="sortAAFF50('com_total')"   style="cursor:pointer;user-select:none">Com. total <span id="s50-com_total"></span></th>
+              <th class="nr" onclick="sortAAFF50('com_comp')"    style="cursor:pointer;user-select:none">Com. compartidas <span id="s50-com_comp"></span></th>
+              <th class="nr" onclick="sortAAFF50('vecinos')"     style="cursor:pointer;user-select:none">Vecinos <span id="s50-vecinos"></span></th>
+              <th class="nr" onclick="sortAAFF50('vec_comp')"    style="cursor:pointer;user-select:none;color:#1E40AF">Vecinos comp. <span id="s50-vec_comp"></span></th>
               <th class="nr" onclick="sortAAFF50('captaciones')" style="cursor:pointer;user-select:none;color:var(--green)">Captaciones <span id="s50-captaciones"></span></th>
-              <th class="nr" onclick="sortAAFF50('ventas')"     style="cursor:pointer;user-select:none;color:var(--green)">Ventas <span id="s50-ventas"></span></th>
-              <th class="nr" onclick="sortAAFF50('msgs')"       style="cursor:pointer;user-select:none">Msgs enviados <span id="s50-msgs"></span></th>
-              <th class="nr" onclick="sortAAFF50('interes')"    style="cursor:pointer;user-select:none;color:var(--amber)">% Interés <span id="s50-interes"></span></th>
-              <th onclick="sortAAFF50('dias')"     style="cursor:pointer;user-select:none">Último contacto <span id="s50-dias"></span></th>
-              <th onclick="sortAAFF50('mkt')"      style="cursor:pointer;user-select:none">Plan MKT <span id="s50-mkt"></span></th>
+              <th class="nr" onclick="sortAAFF50('ventas')"      style="cursor:pointer;user-select:none;color:var(--green)">Ventas <span id="s50-ventas"></span></th>
+              <th class="nr" onclick="sortAAFF50('generado')"    style="cursor:pointer;user-select:none;color:var(--amber)">Generado <span id="s50-generado"></span></th>
+              <th class="nr" onclick="sortAAFF50('cobrado')"     style="cursor:pointer;user-select:none;color:var(--green)">Cobrado <span id="s50-cobrado"></span></th>
+              <th class="nr" onclick="sortAAFF50('comision')"    style="cursor:pointer;user-select:none">Comisión <span id="s50-comision"></span></th>
+              <th class="nr" onclick="sortAAFF50('msgs')"        style="cursor:pointer;user-select:none">Msjs enviados <span id="s50-msgs"></span></th>
+              <th class="nr" onclick="sortAAFF50('interes')"     style="cursor:pointer;user-select:none;color:var(--amber)">% Interés <span id="s50-interes"></span></th>
+              <th onclick="sortAAFF50('dias')"        style="cursor:pointer;user-select:none">Último contacto <span id="s50-dias"></span></th>
+              <th onclick="sortAAFF50('mkt')"         style="cursor:pointer;user-select:none">Plan MKT <span id="s50-mkt"></span></th>
             </tr></thead>
-            <tbody id="a50-tbody"><tr><td colspan="12" class="loading">Cargando...</td></tr></tbody>
+            <tbody id="a50-tbody"><tr><td colspan="16" class="loading">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1111,6 +1123,14 @@
               <table>
                 <thead><tr><th>Fecha</th><th>Temática</th><th>Medio</th><th class="nr">Recibidos</th><th class="nr">Interés</th><th class="nr">Rechazo</th></tr></thead>
                 <tbody id="a50-com-tbody"></tbody>
+                <tfoot id="a50-com-tfoot" style="display:none">
+                  <tr style="background:var(--cream);font-weight:700;border-top:2px solid var(--border)">
+                    <td colspan="3" style="padding:6px 8px;font-size:11px;color:var(--muted)">Total</td>
+                    <td class="td-right" id="a50-sum-recibidos">—</td>
+                    <td class="td-right" style="color:var(--green)" id="a50-sum-interes">—</td>
+                    <td class="td-right" style="color:var(--red)" id="a50-sum-rechazo">—</td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </div>

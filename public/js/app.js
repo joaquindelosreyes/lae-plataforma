@@ -1952,13 +1952,16 @@ async function loadDemandas() {
 // ── AAFF 50-50 ────────────────────────────────────────
 let _aaffSelId = null;
 
+const fmtEur = v => Number(v||0).toLocaleString('es-ES', { minimumFractionDigits:0, maximumFractionDigits:0 }) + ' €';
+
 async function loadAAFF50() {
   try {
-    const [sumRes, listRes, ofRes, medRes] = await Promise.all([
+    const [sumRes, listRes, ofRes, medRes, filRes] = await Promise.all([
       fetch(`${API}/api/aaff50/resumen`).then(r => r.json()),
       fetch(`${API}/api/aaff50`).then(r => r.json()),
       fetch(`${API}/api/aaff50/stats/oficinas`).then(r => r.json()),
       fetch(`${API}/api/aaff50/stats/medios`).then(r => r.json()),
+      fetch(`${API}/api/aaff50/filtros`).then(r => r.json()),
     ]);
 
     // KPIs
@@ -1973,6 +1976,22 @@ async function loadAAFF50() {
       set('a50-ventas',      s.ventas_totales||0);
       set('a50-impactados',  (s.vecinos_impactados||0).toLocaleString('es-ES'));
       set('a50-tasa',        (s.tasa_interes||0) + '%');
+    }
+
+    // Poblar filtros
+    if (filRes.success) {
+      const selOf = document.getElementById('a50-fil-oficina');
+      const selRe = document.getElementById('a50-fil-resp');
+      if (selOf) {
+        const prev = selOf.value;
+        selOf.innerHTML = '<option value="">Todas las oficinas</option>' +
+          filRes.data.oficinas.map(o => `<option value="${o.id}"${o.id==prev?' selected':''}>${o.nombre}</option>`).join('');
+      }
+      if (selRe) {
+        const prev = selRe.value;
+        selRe.innerHTML = '<option value="">Todos los responsables</option>' +
+          filRes.data.responsables.map(r => `<option value="${r.id}"${r.id==prev?' selected':''}>${r.nombre}</option>`).join('');
+      }
     }
 
     // Por oficina
@@ -1996,10 +2015,11 @@ async function loadAAFF50() {
         const t = parseInt(m.total)||0;
         const w = Math.round(t/max*100);
         const tasa = parseFloat(m.tasa)||0;
+        const isOtros = m.medio === 'Otros';
         return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
-          <span style="width:130px;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.medio}</span>
+          <span style="width:130px;font-size:11px;color:${isOtros?'var(--muted)':'inherit'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.medio}</span>
           <div style="flex:1;height:10px;background:var(--border);border-radius:3px;overflow:hidden">
-            <div style="width:${w}%;height:100%;background:var(--navy);border-radius:3px"></div>
+            <div style="width:${w}%;height:100%;background:${isOtros?'var(--border-dark,#ccc)':'var(--navy)'};border-radius:3px"></div>
           </div>
           <span style="font-size:11px;font-weight:600;width:28px;text-align:right">${t}</span>
           <span style="font-size:10px;color:var(--amber);width:38px;text-align:right">${tasa}% int.</span>
@@ -2008,35 +2028,23 @@ async function loadAAFF50() {
     }
 
     // Tabla despachos
-    const tbody = document.getElementById('a50-tbody');
-    const cnt = document.getElementById('a50-count');
-    if (tbody && listRes.success) {
-      const lista = listRes.data;
-      if (cnt) cnt.textContent = lista.length + ' despachos';
-      renderA50Tabla(lista);
-      // Keep old render for reference but use new sortable version
-      if (false) lista.map(d => {
-        const dias = d.dias_ultimo_contacto;
-        const diasCol = dias == null ? 'var(--muted)' : dias > 30 ? 'var(--red)' : dias > 14 ? 'var(--amber)' : 'var(--green)';
-        const diasTxt = dias == null ? 'Sin contacto' : dias === 0 ? 'Hoy' : dias + 'd';
-        const tasa = parseFloat(d.tasa_interes)||0;
-        return `<tr style="cursor:pointer" onclick="abrirDespacho50(${d.id})">
-          <td><strong>${d.nombre}</strong><div style="font-size:10px;color:var(--muted)">${d.ciudad||'—'} · ${d.dni||d.cif||'—'}</div></td>
-          <td><span class="badge badge-gray">${d.oficina_nombre||'—'}</span></td>
-          <td style="font-size:11px;color:var(--muted)">${d.observaciones||'—'}</td>
-          <td class="td-right">${d.comunidades_totales||0}</td>
-          <td class="td-right" style="color:#1E40AF">${d.comunidades_compartidas||0}</td>
-          <td class="td-right" style="color:#1E40AF">${(d.vecinos_compartidos||0).toLocaleString('es-ES')}</td>
-          <td class="td-right" style="color:var(--green);font-weight:600">${d.captaciones_cerradas||0}</td>
-          <td class="td-right" style="color:var(--green);font-weight:600">${d.ventas_cerradas||0}</td>
-          <td class="td-right">${d.total_comunicaciones||0}</td>
-          <td class="td-right"><span style="color:${tasa>=5?'var(--green)':tasa>=2?'var(--amber)':'var(--red)'};font-weight:600">${tasa}%</span></td>
-          <td style="color:${diasCol};font-size:11px;font-weight:500">${diasTxt}</td>
-          <td>${d.plan_mkt?'<span class="badge badge-green">✓ Sí</span>':'<span class="badge badge-gray">No</span>'}</td>
-        </tr>`;
-      }).join('');
+    if (listRes.success) {
+      renderA50Tabla(listRes.data);
     }
   } catch(e) { console.warn('Error AAFF50:', e.message); }
+}
+
+function filtrarA50() {
+  const ofId   = document.getElementById('a50-fil-oficina')?.value;
+  const respId = document.getElementById('a50-fil-resp')?.value;
+  const filtered = _a50Data.filter(d => {
+    if (ofId   && String(d.oficina_id) !== ofId)                return false;
+    if (respId && String(d.consultor_responsable_id) !== respId) return false;
+    return true;
+  });
+  const cnt = document.getElementById('a50-count');
+  if (cnt) cnt.textContent = filtered.length + ' despachos';
+  renderA50Tabla(filtered, true);
 }
 
 async function abrirDespacho50(id) {
@@ -2044,35 +2052,38 @@ async function abrirDespacho50(id) {
   const det = document.getElementById('a50-detalle');
   if (det) det.style.display = 'block';
   try {
-    const [dRes, comRes] = await Promise.all([
-      fetch(`${API}/api/aaff50`).then(r => r.json()),
-      fetch(`${API}/api/aaff50/${id}/comunicaciones`).then(r => r.json()),
-    ]);
-    const d = (dRes.data||[]).find(x => x.id === id);
+    const d = _a50Data.find(x => x.id === id);
+    const comRes = await fetch(`${API}/api/aaff50/${id}/comunicaciones`).then(r => r.json());
+
     if (d) {
       set('a50-det-nombre', d.nombre);
       const info = document.getElementById('a50-det-info');
       if (info) info.innerHTML = `
         <div class="mini"><span class="ml2">Ciudad</span><span class="mv2">${d.ciudad||'—'}</span></div>
         <div class="mini"><span class="ml2">Oficina LAE</span><span class="mv2">${d.oficina_nombre||'—'}</span></div>
-        <div class="mini"><span class="ml2">Responsable</span><span class="mv2">${d.observaciones||'—'}</span></div>
+        <div class="mini"><span class="ml2">Responsable</span><span class="mv2">${d.responsable_nombre||'—'}</span></div>
         <div class="mini"><span class="ml2">DNI/CIF</span><span class="mv2">${d.dni||d.cif||'—'}</span></div>
         <div class="mini"><span class="ml2">Comunidades totales</span><span class="mv2">${d.comunidades_totales||0}</span></div>
         <div class="mini"><span class="ml2">Administrados</span><span class="mv2">${(d.administrados||0).toLocaleString('es-ES')}</span></div>
         <div class="mini"><span class="ml2">Com. compartidas</span><span class="mv2" style="color:#1E40AF">${d.comunidades_compartidas||0}</span></div>
         <div class="mini"><span class="ml2">Vecinos compartidos</span><span class="mv2" style="color:#1E40AF">${(d.vecinos_compartidos||0).toLocaleString('es-ES')}</span></div>
-        <div class="mini"><span class="ml2">Captaciones cerradas</span><span class="mv2" style="color:var(--green)">${d.captaciones_cerradas||0}</span></div>
-        <div class="mini"><span class="ml2">Ventas cerradas</span><span class="mv2" style="color:var(--green)">${d.ventas_cerradas||0}</span></div>
+        <div class="mini"><span class="ml2">Captaciones (Inmovilla)</span><span class="mv2" style="color:var(--green)">${d.captaciones_inmovilla||0}</span></div>
+        <div class="mini"><span class="ml2">Cierres (Inmovilla)</span><span class="mv2" style="color:var(--green)">${d.cierres_inmovilla||0}</span></div>
+        <div class="mini"><span class="ml2">Generado</span><span class="mv2" style="color:var(--amber)">${fmtEur(d.generado)}</span></div>
+        <div class="mini"><span class="ml2">Cobrado</span><span class="mv2" style="color:var(--green)">${fmtEur(d.cobrado)}</span></div>
+        <div class="mini"><span class="ml2">Comisión AAFF</span><span class="mv2">${fmtEur(d.comision_aaff)}</span></div>
         <div class="mini"><span class="ml2">Plan MKT</span><span class="mv2">${d.plan_mkt?'✓ Sí':'No'}</span></div>
         <div class="mini"><span class="ml2">Firma contrato</span><span class="mv2">${d.fecha_firma?fmtFecha(d.fecha_firma):'—'}</span></div>
       `;
     }
 
     const tCom = document.getElementById('a50-com-tbody');
+    const tFoot = document.getElementById('a50-com-tfoot');
     if (tCom && comRes.success) {
       const lista = comRes.data;
       if (!lista.length) {
         tCom.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);font-style:italic;padding:12px">Sin comunicaciones registradas</td></tr>';
+        if (tFoot) tFoot.style.display = 'none';
       } else {
         tCom.innerHTML = lista.map(c => `<tr>
           <td>${c.fecha?fmtFecha(c.fecha):'—'}</td>
@@ -2082,6 +2093,16 @@ async function abrirDespacho50(id) {
           <td class="td-right" style="color:var(--green)">${c.vecinos_interes||0}</td>
           <td class="td-right" style="color:var(--red)">${c.vecinos_rechazo||0}</td>
         </tr>`).join('');
+        // Totals
+        if (tFoot) {
+          const sumRec = lista.reduce((s,c)=>s+(parseInt(c.vecinos_recibido)||0),0);
+          const sumInt = lista.reduce((s,c)=>s+(parseInt(c.vecinos_interes)||0),0);
+          const sumRec2 = lista.reduce((s,c)=>s+(parseInt(c.vecinos_rechazo)||0),0);
+          document.getElementById('a50-sum-recibidos').textContent = sumRec.toLocaleString('es-ES');
+          document.getElementById('a50-sum-interes').textContent   = sumInt.toLocaleString('es-ES');
+          document.getElementById('a50-sum-rechazo').textContent   = sumRec2.toLocaleString('es-ES');
+          tFoot.style.display = '';
+        }
       }
     }
     det?.scrollIntoView({ behavior:'smooth', block:'nearest' });
@@ -2228,52 +2249,68 @@ function renderActComerciales() {
 // ── AAFF 50-50 SORT ───────────────────────────────────
 let _a50SortCol = 'nombre', _a50SortAsc = true, _a50Data = [];
 
+const A50_COLS = ['nombre','oficina','resp','com_total','com_comp','vecinos','vec_comp','captaciones','ventas','generado','cobrado','comision','msgs','interes','dias','mkt'];
+
 function sortAAFF50(col) {
   if (_a50SortCol === col) { _a50SortAsc = !_a50SortAsc; }
   else { _a50SortCol = col; _a50SortAsc = ['nombre','oficina','resp','mkt'].includes(col); }
-  ['nombre','oficina','resp','com_total','com_comp','vecinos','captaciones','ventas','msgs','interes','dias','mkt'].forEach(c => {
+  A50_COLS.forEach(c => {
     const el = document.getElementById('s50-' + c);
     if (el) el.textContent = c === col ? (_a50SortAsc ? ' ↑' : ' ↓') : '';
   });
-  if (_a50Data.length) renderA50Tabla(_a50Data);
+  if (_a50Data.length) renderA50Tabla(_a50Data, true);
 }
 
-function renderA50Tabla(lista) {
-  _a50Data = lista;
+function renderA50Tabla(lista, skipSave) {
+  if (!skipSave) _a50Data = lista;
   const tbody = document.getElementById('a50-tbody');
+  const cnt   = document.getElementById('a50-count');
   if (!tbody) return;
+  if (cnt) cnt.textContent = lista.length + ' despachos';
+
   const sorted = [...lista].sort((a, b) => {
     let va, vb;
-    if (_a50SortCol === 'nombre')      { va = a.nombre||''; vb = b.nombre||''; }
-    else if (_a50SortCol === 'oficina'){ va = a.oficina_nombre||''; vb = b.oficina_nombre||''; }
-    else if (_a50SortCol === 'resp')   { va = a.observaciones||''; vb = b.observaciones||''; }
-    else if (_a50SortCol === 'com_total') { va = parseInt(a.comunidades_totales)||0; vb = parseInt(b.comunidades_totales)||0; }
-    else if (_a50SortCol === 'com_comp')  { va = parseInt(a.comunidades_compartidas)||0; vb = parseInt(b.comunidades_compartidas)||0; }
-    else if (_a50SortCol === 'vecinos')   { va = parseInt(a.vecinos_compartidos)||0; vb = parseInt(b.vecinos_compartidos)||0; }
-    else if (_a50SortCol === 'captaciones') { va = parseInt(a.captaciones_cerradas)||0; vb = parseInt(b.captaciones_cerradas)||0; }
-    else if (_a50SortCol === 'ventas')    { va = parseInt(a.ventas_cerradas)||0; vb = parseInt(b.ventas_cerradas)||0; }
-    else if (_a50SortCol === 'msgs')      { va = parseInt(a.total_comunicaciones)||0; vb = parseInt(b.total_comunicaciones)||0; }
-    else if (_a50SortCol === 'interes')   { va = parseFloat(a.tasa_interes)||0; vb = parseFloat(b.tasa_interes)||0; }
-    else if (_a50SortCol === 'dias')      { va = parseInt(a.dias_ultimo_contacto)||9999; vb = parseInt(b.dias_ultimo_contacto)||9999; }
-    else if (_a50SortCol === 'mkt')       { va = a.plan_mkt?1:0; vb = b.plan_mkt?1:0; }
+    if (_a50SortCol === 'nombre')        { va = a.nombre||''; vb = b.nombre||''; }
+    else if (_a50SortCol === 'oficina')  { va = a.oficina_nombre||''; vb = b.oficina_nombre||''; }
+    else if (_a50SortCol === 'resp')     { va = a.responsable_nombre||''; vb = b.responsable_nombre||''; }
+    else if (_a50SortCol === 'com_total')  { va = parseInt(a.comunidades_totales)||0;    vb = parseInt(b.comunidades_totales)||0; }
+    else if (_a50SortCol === 'com_comp')   { va = parseInt(a.comunidades_compartidas)||0; vb = parseInt(b.comunidades_compartidas)||0; }
+    else if (_a50SortCol === 'vecinos')    { va = parseInt(a.administrados)||0;           vb = parseInt(b.administrados)||0; }
+    else if (_a50SortCol === 'vec_comp')   { va = parseInt(a.vecinos_compartidos)||0;     vb = parseInt(b.vecinos_compartidos)||0; }
+    else if (_a50SortCol === 'captaciones'){ va = parseInt(a.captaciones_inmovilla)||0;   vb = parseInt(b.captaciones_inmovilla)||0; }
+    else if (_a50SortCol === 'ventas')     { va = parseInt(a.cierres_inmovilla)||0;       vb = parseInt(b.cierres_inmovilla)||0; }
+    else if (_a50SortCol === 'generado')   { va = parseFloat(a.generado)||0;              vb = parseFloat(b.generado)||0; }
+    else if (_a50SortCol === 'cobrado')    { va = parseFloat(a.cobrado)||0;               vb = parseFloat(b.cobrado)||0; }
+    else if (_a50SortCol === 'comision')   { va = parseFloat(a.comision_aaff)||0;         vb = parseFloat(b.comision_aaff)||0; }
+    else if (_a50SortCol === 'msgs')       { va = parseInt(a.total_comunicaciones)||0;    vb = parseInt(b.total_comunicaciones)||0; }
+    else if (_a50SortCol === 'interes')    { va = parseFloat(a.tasa_interes)||0;          vb = parseFloat(b.tasa_interes)||0; }
+    else if (_a50SortCol === 'dias')       { va = parseInt(a.dias_ultimo_contacto)||9999; vb = parseInt(b.dias_ultimo_contacto)||9999; }
+    else if (_a50SortCol === 'mkt')        { va = a.plan_mkt?1:0; vb = b.plan_mkt?1:0; }
     if (typeof va === 'string') return _a50SortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     return _a50SortAsc ? va - vb : vb - va;
   });
-  const max = Math.max(...sorted.map(d => parseInt(d.total_comunicaciones)||0), 1);
+
   tbody.innerHTML = sorted.map(d => {
-    const dias = d.dias_ultimo_contacto;
+    const dias    = d.dias_ultimo_contacto;
     const diasCol = dias == null ? 'var(--muted)' : dias > 30 ? 'var(--red)' : dias > 14 ? 'var(--amber)' : 'var(--green)';
     const diasTxt = dias == null ? 'Sin contacto' : dias === 0 ? 'Hoy' : dias + 'd';
-    const tasa = parseFloat(d.tasa_interes)||0;
+    const tasa    = parseFloat(d.tasa_interes)||0;
+    const gen     = parseFloat(d.generado)||0;
+    const cob     = parseFloat(d.cobrado)||0;
+    const com     = parseFloat(d.comision_aaff)||0;
     return `<tr style="cursor:pointer" onclick="abrirDespacho50(${d.id})">
       <td><strong>${d.nombre}</strong><div style="font-size:10px;color:var(--muted)">${d.ciudad||'—'} · ${d.dni||d.cif||'—'}</div></td>
       <td><span class="badge badge-gray">${d.oficina_nombre||'—'}</span></td>
-      <td style="font-size:11px;color:var(--muted)">${d.observaciones||'—'}</td>
+      <td style="font-size:11px">${d.responsable_nombre||'—'}</td>
       <td class="td-right">${d.comunidades_totales||0}</td>
       <td class="td-right" style="color:#1E40AF">${d.comunidades_compartidas||0}</td>
+      <td class="td-right">${(d.administrados||0).toLocaleString('es-ES')}</td>
       <td class="td-right" style="color:#1E40AF">${(d.vecinos_compartidos||0).toLocaleString('es-ES')}</td>
-      <td class="td-right" style="color:var(--green);font-weight:600">${d.captaciones_cerradas||0}</td>
-      <td class="td-right" style="color:var(--green);font-weight:600">${d.ventas_cerradas||0}</td>
+      <td class="td-right" style="color:var(--green);font-weight:600">${d.captaciones_inmovilla||0}</td>
+      <td class="td-right" style="color:var(--green);font-weight:600">${d.cierres_inmovilla||0}</td>
+      <td class="td-right" style="color:var(--amber);font-weight:600">${gen>0?fmtEur(gen):'—'}</td>
+      <td class="td-right" style="color:var(--green);font-weight:600">${cob>0?fmtEur(cob):'—'}</td>
+      <td class="td-right">${com>0?fmtEur(com):'—'}</td>
       <td class="td-right">${d.total_comunicaciones||0}</td>
       <td class="td-right"><span style="color:${tasa>=5?'var(--green)':tasa>=2?'var(--amber)':'var(--red)'};font-weight:600">${tasa}%</span></td>
       <td style="color:${diasCol};font-size:11px;font-weight:500">${diasTxt}</td>
