@@ -79,34 +79,69 @@ function nav(viewId) {
   if (viewId === 'compromisos')      loadCompromisosPendientes();
 }
 
-// ── FILTRO FECHAS ────────────────────────────────────
-let _año = 2026, _periodo = 'year';
+// ── FILTRO FECHAS (multi-selección) ──────────────────
+let _año = 2026;
+let _periodos = new Set(['year']);
 
 const DIAS_MES = [31,28,31,30,31,30,31,31,30,31,30,31];
 function diasMes(m, a) { return (m===2 && a%4===0) ? 29 : DIAS_MES[m-1]; }
 function pad(n) { return String(n).padStart(2,'0'); }
 
+function getPeriodoRange(p, a) {
+  if (p === 'year') return { desde: `${a}-01-01`, hasta: `${a}-12-31` };
+  if (p === '1t')   return { desde: `${a}-01-01`, hasta: `${a}-03-31` };
+  if (p === '2t')   return { desde: `${a}-04-01`, hasta: `${a}-06-30` };
+  if (p === '3t')   return { desde: `${a}-07-01`, hasta: `${a}-09-30` };
+  if (p === '4t')   return { desde: `${a}-10-01`, hasta: `${a}-12-31` };
+  const m = parseInt(p.replace('m', ''));
+  return { desde: `${a}-${pad(m)}-01`, hasta: `${a}-${pad(m)}-${diasMes(m,a)}` };
+}
+
+function _syncBotones() {
+  const keys = ['year','1t','2t','3t','4t','m1','m2','m3','m4','m5','m6','m7','m8','m9','m10','m11','m12'];
+  keys.forEach(k => {
+    const el = document.getElementById('p-' + k);
+    if (el) el.classList.toggle('active', _periodos.has(k));
+  });
+}
+
 function setAño(a) {
   _año = a;
-  // Marcar año activo
   [2024,2025,2026].forEach(y => {
     const el = document.getElementById('yr-' + y);
     if (el) el.classList.toggle('active', y === a);
   });
+  _periodos = new Set(['year']);
+  _syncBotones();
   aplicarFiltro();
 }
 
 function setPeriodo(p) {
-  _periodo = p;
-  ['year','1t2t','1t','2t','3t','4t','m1','m2','m3','m4','m5','m6','m7','m8','m9','m10','m11','m12'].forEach(k => {
-    const el = document.getElementById('p-' + k);
-    if (el) el.classList.toggle('active', k === p);
-  });
+  // Solo para el botón "Año" — resetea a año completo
+  _periodos = new Set(['year']);
+  _syncBotones();
+  aplicarFiltro();
+}
+
+function togglePeriodo(p) {
+  // Desactivar "Año" si estaba seleccionado
+  _periodos.delete('year');
+  // Toggle del período pulsado
+  if (_periodos.has(p)) {
+    _periodos.delete(p);
+  } else {
+    _periodos.add(p);
+  }
+  // Si queda vacío, volver a año completo
+  if (_periodos.size === 0) {
+    _periodos.add('year');
+  }
+  _syncBotones();
   aplicarFiltro();
 }
 
 const PERIODO_LABELS = {
-  year:'Objetivo año', '1t2t':'Objetivo 1T+2T',
+  year:'Objetivo año',
   '1t':'Objetivo 1T', '2t':'Objetivo 2T', '3t':'Objetivo 3T', '4t':'Objetivo 4T',
   m1:'Objetivo 1T', m2:'Objetivo 1T', m3:'Objetivo 1T',
   m4:'Objetivo 2T', m5:'Objetivo 2T', m6:'Objetivo 2T',
@@ -117,25 +152,26 @@ const PERIODO_LABELS = {
 function aplicarFiltro() {
   const a = _año;
   let desde, hasta;
-  if (_periodo === 'year')      { desde = `${a}-01-01`; hasta = `${a}-12-31`; }
-  else if (_periodo === '1t2t') { desde = `${a}-01-01`; hasta = `${a}-06-30`; }
-  else if (_periodo === '1t')   { desde = `${a}-01-01`; hasta = `${a}-03-31`; }
-  else if (_periodo === '2t')   { desde = `${a}-04-01`; hasta = `${a}-06-30`; }
-  else if (_periodo === '3t')   { desde = `${a}-07-01`; hasta = `${a}-09-30`; }
-  else if (_periodo === '4t')   { desde = `${a}-10-01`; hasta = `${a}-12-31`; }
-  else {
-    const m = parseInt(_periodo.replace('m',''));
-    desde = `${a}-${pad(m)}-01`;
-    hasta = `${a}-${pad(m)}-${diasMes(m,a)}`;
+
+  if (_periodos.has('year') || _periodos.size === 0) {
+    desde = `${a}-01-01`;
+    hasta = `${a}-12-31`;
+  } else {
+    const ranges = [..._periodos].map(p => getPeriodoRange(p, a));
+    desde = ranges.map(r => r.desde).sort()[0];
+    hasta = ranges.map(r => r.hasta).sort().reverse()[0];
   }
+
   document.getElementById('date-from').value = desde;
   document.getElementById('date-to').value   = hasta;
 
-  // Actualizar labels del dashboard
+  // Labels del dashboard
+  const isYear = _periodos.has('year') || _periodos.size === 0;
+  const labelBase = isYear ? 'Objetivo año' : (_periodos.size === 1 ? (PERIODO_LABELS[[..._periodos][0]] || 'Objetivo') : 'Objetivo período');
   const lbl = document.getElementById('kpi-objetivo-label');
-  if (lbl) lbl.textContent = (PERIODO_LABELS[_periodo] || 'Objetivo') + ' ' + a;
+  if (lbl) lbl.textContent = labelBase + ' ' + a;
   const sub = document.getElementById('kpi-pct-sub');
-  if (sub) sub.textContent = _periodo === 'year' ? `vs objetivo anual ${a}` : `vs ${PERIODO_LABELS[_periodo]||'objetivo'} ${a}`;
+  if (sub) sub.textContent = isYear ? `vs objetivo anual ${a}` : `vs ${labelBase} ${a}`;
 
   recargarVistaActiva();
 }

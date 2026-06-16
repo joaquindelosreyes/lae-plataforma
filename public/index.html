@@ -119,30 +119,29 @@
           <button class="dsc active" id="yr-2026" onclick="setAño(2026)">2026</button>
         </div>
         <div style="width:1px;height:16px;background:var(--border)"></div>
-        <!-- Período -->
+        <!-- Período — multi-selección -->
         <div style="display:flex;gap:3px" id="period-btns">
-          <button class="dsc active" id="p-year" onclick="setPeriodo('year')">Año</button>
-          <button class="dsc" id="p-1t2t" onclick="setPeriodo('1t2t')">1T+2T</button>
-          <button class="dsc" id="p-1t" onclick="setPeriodo('1t')">1T</button>
-          <button class="dsc" id="p-2t" onclick="setPeriodo('2t')">2T</button>
-          <button class="dsc" id="p-3t" onclick="setPeriodo('3t')">3T</button>
-          <button class="dsc" id="p-4t" onclick="setPeriodo('4t')">4T</button>
+          <button class="dsc active" id="p-year" onclick="setPeriodo('year')" title="Todo el año (resetea selección)">Año</button>
+          <button class="dsc" id="p-1t" onclick="togglePeriodo('1t')">1T</button>
+          <button class="dsc" id="p-2t" onclick="togglePeriodo('2t')">2T</button>
+          <button class="dsc" id="p-3t" onclick="togglePeriodo('3t')">3T</button>
+          <button class="dsc" id="p-4t" onclick="togglePeriodo('4t')">4T</button>
         </div>
         <div style="width:1px;height:16px;background:var(--border)"></div>
-        <!-- Meses -->
+        <!-- Meses — multi-selección -->
         <div style="display:flex;gap:3px">
-          <button class="dsc" id="p-m1" onclick="setPeriodo('m1')">Ene</button>
-          <button class="dsc" id="p-m2" onclick="setPeriodo('m2')">Feb</button>
-          <button class="dsc" id="p-m3" onclick="setPeriodo('m3')">Mar</button>
-          <button class="dsc" id="p-m4" onclick="setPeriodo('m4')">Abr</button>
-          <button class="dsc" id="p-m5" onclick="setPeriodo('m5')">May</button>
-          <button class="dsc" id="p-m6" onclick="setPeriodo('m6')">Jun</button>
-          <button class="dsc" id="p-m7" onclick="setPeriodo('m7')">Jul</button>
-          <button class="dsc" id="p-m8" onclick="setPeriodo('m8')">Ago</button>
-          <button class="dsc" id="p-m9" onclick="setPeriodo('m9')">Sep</button>
-          <button class="dsc" id="p-m10" onclick="setPeriodo('m10')">Oct</button>
-          <button class="dsc" id="p-m11" onclick="setPeriodo('m11')">Nov</button>
-          <button class="dsc" id="p-m12" onclick="setPeriodo('m12')">Dic</button>
+          <button class="dsc" id="p-m1" onclick="togglePeriodo('m1')">Ene</button>
+          <button class="dsc" id="p-m2" onclick="togglePeriodo('m2')">Feb</button>
+          <button class="dsc" id="p-m3" onclick="togglePeriodo('m3')">Mar</button>
+          <button class="dsc" id="p-m4" onclick="togglePeriodo('m4')">Abr</button>
+          <button class="dsc" id="p-m5" onclick="togglePeriodo('m5')">May</button>
+          <button class="dsc" id="p-m6" onclick="togglePeriodo('m6')">Jun</button>
+          <button class="dsc" id="p-m7" onclick="togglePeriodo('m7')">Jul</button>
+          <button class="dsc" id="p-m8" onclick="togglePeriodo('m8')">Ago</button>
+          <button class="dsc" id="p-m9" onclick="togglePeriodo('m9')">Sep</button>
+          <button class="dsc" id="p-m10" onclick="togglePeriodo('m10')">Oct</button>
+          <button class="dsc" id="p-m11" onclick="togglePeriodo('m11')">Nov</button>
+          <button class="dsc" id="p-m12" onclick="togglePeriodo('m12')">Dic</button>
         </div>
         <!-- Inputs ocultos para rango libre -->
         <input type="hidden" id="date-from" value="2026-01-01">
