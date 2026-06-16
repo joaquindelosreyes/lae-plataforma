@@ -30,7 +30,18 @@ router.get('/', async (req, res) => {
       ORDER BY o.nombre
     `, [año]);
 
-    // 2. Captaciones exclusivas activas por oficina (desde tabla captaciones si existe)
+    // 2. Ingresos generados (pipeline) por oficina
+    const { rows: genRows } = await pool.query(`
+      SELECT oficina_id, COALESCE(SUM(honorarios_lae), 0) AS generado
+      FROM operaciones
+      WHERE estado = 'pipeline' AND EXTRACT(YEAR FROM fecha) = $1
+      GROUP BY oficina_id
+    `, [año]).catch(() => ({ rows: [] }));
+
+    const genMap = {};
+    genRows.forEach(g => { genMap[g.oficina_id] = parseFloat(g.generado); });
+
+    // 3. Captaciones exclusivas activas por oficina (desde tabla captaciones si existe)
     const { rows: capt } = await pool.query(`
       SELECT oficina_id, COUNT(*) AS excl_activas
       FROM captaciones
@@ -41,7 +52,7 @@ router.get('/', async (req, res) => {
     const captMap = {};
     capt.forEach(c => { captMap[c.oficina_id] = parseInt(c.excl_activas); });
 
-    // 3. AAFF activos desde aaff_despachos (más actualizado que seguimiento)
+    // 4. AAFF activos desde aaff_despachos (más actualizado que seguimiento)
     const { rows: aaffRows } = await pool.query(`
       SELECT oficina_id, COUNT(*) FILTER (WHERE estado='activo') AS activos, COUNT(*) AS total
       FROM aaff_despachos GROUP BY oficina_id
@@ -76,10 +87,12 @@ router.get('/', async (req, res) => {
       const aaffObj     = aaffMap[o.id];
       const aaffActivos = aaffObj ? aaffObj.activos : aaffActSeg;
       const aaffTotal   = aaffObj ? aaffObj.total   : null;
+      const generado    = genMap[o.id] ?? null;
 
       // % cumplimiento de cada palanca
-      const pctHonor   = Math.round(cobrado / objAnual * 100 * 10) / 10;
-      const pctAAFF    = aaffActivos > 0 ? Math.round(aaffActivos / objAAFF * 100 * 10) / 10 : 0;
+      const pctHonor    = Math.round(cobrado / objAnual * 100 * 10) / 10;
+      const pctAAFF     = aaffActivos > 0 ? Math.round(aaffActivos / objAAFF * 100 * 10) / 10 : 0;
+      const pctGenerado = generado !== null ? Math.round(generado / objAnual * 100 * 10) / 10 : 0;
 
       // Para captaciones y cierres, estimamos objetivo proporcional desde planes
       // (sin datos históricos de captaciones usamos seguimiento)
@@ -87,10 +100,11 @@ router.get('/', async (req, res) => {
       const cierresPct = cierres > 0 ? Math.round(cierres / Math.max(cierres * (100/ritmo), 1) * ritmo * 10) / 10 : 0;
 
       const palancas = {
-        honor_lae:   { pct: pctHonor,  sem: semaforo(pctHonor, ritmo),   icono: icono(semaforo(pctHonor, ritmo)),   valor: cobrado },
-        captaciones: { pct: captPct,   sem: captTotSeg > 0 ? semaforo(captPct, ritmo) : 'sin_datos', icono: captTotSeg > 0 ? icono(semaforo(captPct, ritmo)) : '—', valor: captTotSeg },
-        cierres:     { pct: cierresPct, sem: cierres > 0 ? semaforo(cierresPct, ritmo) : 'sin_datos', icono: cierres > 0 ? icono(semaforo(cierresPct, ritmo)) : '—', valor: cierres },
-        aaff_activos:{ pct: pctAAFF,   sem: semaforo(pctAAFF, ritmo),    icono: icono(semaforo(pctAAFF, ritmo)),    valor: aaffActivos },
+        honor_lae:   { pct: pctHonor,    sem: semaforo(pctHonor, ritmo),    icono: icono(semaforo(pctHonor, ritmo)),    valor: cobrado },
+        generado:    { pct: pctGenerado, sem: generado !== null ? semaforo(pctGenerado, ritmo) : 'sin_datos', icono: generado !== null ? icono(semaforo(pctGenerado, ritmo)) : '—', valor: generado ?? 0 },
+        captaciones: { pct: captPct,     sem: captTotSeg > 0 ? semaforo(captPct, ritmo) : 'sin_datos', icono: captTotSeg > 0 ? icono(semaforo(captPct, ritmo)) : '—', valor: captTotSeg },
+        cierres:     { pct: cierresPct,  sem: cierres > 0 ? semaforo(cierresPct, ritmo) : 'sin_datos', icono: cierres > 0 ? icono(semaforo(cierresPct, ritmo)) : '—', valor: cierres },
+        aaff_activos:{ pct: pctAAFF,     sem: semaforo(pctAAFF, ritmo),     icono: icono(semaforo(pctAAFF, ritmo)),     valor: aaffActivos },
         cartera_excl:{ pct: exclActivas !== null ? Math.round(exclActivas / Math.max(exclActivas*(100/ritmo),1)*ritmo*10)/10 : 0,
                        sem: exclActivas !== null ? semaforo(Math.round(exclActivas/(Math.max(exclActivas*(100/ritmo),1))*ritmo*10)/10, ritmo) : 'sin_datos',
                        icono: exclActivas !== null ? icono(semaforo(0, 1)) : '—', valor: exclActivas ?? captTotSeg }
@@ -104,7 +118,7 @@ router.get('/', async (req, res) => {
     });
 
     // Resumen por palanca (media de red)
-    const palancaKeys = ['honor_lae','captaciones','cierres','aaff_activos','cartera_excl'];
+    const palancaKeys = ['honor_lae','generado','captaciones','cierres','aaff_activos','cartera_excl'];
     const resumenPalancas = {};
     palancaKeys.forEach(k => {
       const vals = oficinas.map(o => o.palancas[k].pct).filter(p => p > 0);

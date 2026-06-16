@@ -885,8 +885,8 @@ async function loadPalancas() {
     const el = id => document.getElementById(id);
     const bg  = { verde:'#f0faf3', ambar:'#fffbeb', rojo:'#fff5f5', sin_datos:'transparent' };
     const col = { verde:'#16a34a', ambar:'#d97706', rojo:'#dc2626', sin_datos:'#9ca3af' };
-    const palancaKeys = ['honor_lae','captaciones','cierres','aaff_activos','cartera_excl'];
-    const lbl = { honor_lae:'Honor. LAE', captaciones:'Captaciones', cierres:'Cierres', aaff_activos:'AAFF activos', cartera_excl:'Cartera excl.' };
+    const palancaKeys = ['honor_lae','generado','captaciones','cierres','aaff_activos','cartera_excl'];
+    const lbl = { honor_lae:'Honor. LAE', generado:'Generado', captaciones:'Captaciones', cierres:'Cierres', aaff_activos:'AAFF activos', cartera_excl:'Cartera excl.' };
 
     if (el('palanca-ritmo')) el('palanca-ritmo').textContent = d.ritmo_esperado + '%';
     if (el('palanca-cnt-verde')) el('palanca-cnt-verde').textContent = d.contadores.verde;
