@@ -11,11 +11,10 @@ router.get('/', async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// GET /api/reuniones/compromisos-abiertos?desde=&hasta=
+// GET /api/reuniones/compromisos-abiertos
 router.get('/compromisos-abiertos', async (req, res) => {
   try {
-    const { desde, hasta } = req.query;
-    const data = await Reunion.compromisosAbiertos({ desde, hasta });
+    const data = await Reunion.compromisosAbiertos();
     res.json({ success: true, data });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -29,28 +28,10 @@ router.get('/plantillas', async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// PUT /api/reuniones/plantillas/:id
-router.put('/plantillas/:id', async (req, res) => {
-  try {
-    const pool = require('../db/pool');
-    const { participantes, orden_dia } = req.body;
-    const { rows } = await pool.query(
-      'UPDATE plantillas_reunion SET participantes=$1, orden_dia=$2 WHERE id=$3 RETURNING *',
-      [participantes, orden_dia, req.params.id]
-    );
-    res.json({ success: true, data: rows[0] });
-  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
-});
-
-// GET /api/reuniones/actas?desde=&hasta=
+// GET /api/reuniones/actas
 router.get('/actas', async (req, res) => {
   try {
     const pool = require('../db/pool');
-    const { desde, hasta } = req.query;
-    let where = '1=1';
-    const params = [];
-    if (desde) { where += ` AND r.fecha >= $${params.length+1}`; params.push(desde); }
-    if (hasta) { where += ` AND r.fecha <= $${params.length+1}`; params.push(hasta); }
     const { rows } = await pool.query(`
       SELECT r.*, o.nombre AS oficina_nombre,
         COUNT(c.id) AS total_compromisos,
@@ -58,10 +39,9 @@ router.get('/actas', async (req, res) => {
       FROM reuniones r
       LEFT JOIN oficinas o ON o.id = r.oficina_id
       LEFT JOIN compromisos c ON c.reunion_id = r.id
-      WHERE ${where}
       GROUP BY r.id, o.nombre
-      ORDER BY r.fecha DESC LIMIT 100
-    `, params);
+      ORDER BY r.fecha DESC LIMIT 50
+    `);
     res.json({ success: true, data: rows });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });

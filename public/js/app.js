@@ -98,8 +98,7 @@ function setAño(a) {
 
 function setPeriodo(p) {
   _periodo = p;
-  // Marcar período activo
-  ['year','1t','2t','3t','4t','m1','m2','m3','m4','m5','m6','m7','m8','m9','m10','m11','m12'].forEach(k => {
+  ['year','1t2t','1t','2t','3t','4t','m1','m2','m3','m4','m5','m6','m7','m8','m9','m10','m11','m12'].forEach(k => {
     const el = document.getElementById('p-' + k);
     if (el) el.classList.toggle('active', k === p);
   });
@@ -107,9 +106,8 @@ function setPeriodo(p) {
 }
 
 const PERIODO_LABELS = {
-  year:'Objetivo año', '1t':'Objetivo 1T', '2t':'Objetivo 2T',
-  '3t':'Objetivo 3T', '4t':'Objetivo 4T',
-  // Meses → muestran el trimestre al que pertenecen
+  year:'Objetivo año', '1t2t':'Objetivo 1T+2T',
+  '1t':'Objetivo 1T', '2t':'Objetivo 2T', '3t':'Objetivo 3T', '4t':'Objetivo 4T',
   m1:'Objetivo 1T', m2:'Objetivo 1T', m3:'Objetivo 1T',
   m4:'Objetivo 2T', m5:'Objetivo 2T', m6:'Objetivo 2T',
   m7:'Objetivo 3T', m8:'Objetivo 3T', m9:'Objetivo 3T',
@@ -119,11 +117,12 @@ const PERIODO_LABELS = {
 function aplicarFiltro() {
   const a = _año;
   let desde, hasta;
-  if (_periodo === 'year')    { desde = `${a}-01-01`; hasta = `${a}-12-31`; }
-  else if (_periodo === '1t') { desde = `${a}-01-01`; hasta = `${a}-03-31`; }
-  else if (_periodo === '2t') { desde = `${a}-04-01`; hasta = `${a}-06-30`; }
-  else if (_periodo === '3t') { desde = `${a}-07-01`; hasta = `${a}-09-30`; }
-  else if (_periodo === '4t') { desde = `${a}-10-01`; hasta = `${a}-12-31`; }
+  if (_periodo === 'year')      { desde = `${a}-01-01`; hasta = `${a}-12-31`; }
+  else if (_periodo === '1t2t') { desde = `${a}-01-01`; hasta = `${a}-06-30`; }
+  else if (_periodo === '1t')   { desde = `${a}-01-01`; hasta = `${a}-03-31`; }
+  else if (_periodo === '2t')   { desde = `${a}-04-01`; hasta = `${a}-06-30`; }
+  else if (_periodo === '3t')   { desde = `${a}-07-01`; hasta = `${a}-09-30`; }
+  else if (_periodo === '4t')   { desde = `${a}-10-01`; hasta = `${a}-12-31`; }
   else {
     const m = parseInt(_periodo.replace('m',''));
     desde = `${a}-${pad(m)}-01`;
@@ -186,17 +185,19 @@ async function loadDashboard() {
     const objetivo = parseFloat(r.objetivo_total) || 0;
     const pct      = parseFloat(r.pct_cumplimiento) || 0;
 
-    // Los 5 conceptos de honorarios en orden
-    set('kpi-honor-brutos', fmtK(r.honor_brutos_total || cobrado)); // fallback a cobrado si no hay brutos
+    const generado = parseFloat(r.generado_total) || 0;
+    const pctGen   = objetivo > 0 ? Math.round(generado / objetivo * 1000) / 10 : 0;
+
+    set('kpi-generado',     fmtK(generado));
+    set('kpi-gen-brutos',   fmtK(r.generados_brutos_total || generado));
     set('kpi-cobrado',      fmtK(cobrado));
-    set('kpi-gen-brutos',   fmtK(r.generados_brutos_total || r.generado_total || 0));
-    set('kpi-generado',     fmtK(r.generado_total || 0));
+    set('kpi-honor-brutos', fmtK(r.honor_brutos_total || cobrado));
     set('kpi-pendientes',   fmtK(r.pendientes_total || 0));
-    // Métricas
-    set('kpi-objetivo',    fmtK(objetivo));
-    set('kpi-pct',         pct + '%');
-    set('kpi-cierres',     r.cierres_total || 0);
-    set('kpi-captaciones', r.captaciones_total || 0);
+    set('kpi-objetivo',     fmtK(objetivo));
+    set('kpi-pct-gen',      pctGen + '%');
+    set('kpi-pct',          pct + '%');
+    set('kpi-cierres',      r.cierres_total || 0);
+    set('kpi-captaciones',  r.captaciones_total || 0);
 
     // Guardar datos para ordenación
     window._dashOficinas = oficinas.data || oficinas;
@@ -213,8 +214,7 @@ function sortDash(col) {
     _sortCol = col;
     _sortAsc = col === 'nombre'; // texto asc por defecto, números desc
   }
-  // Actualizar flechas
-  ['nombre','objetivo','cobrado','pct','cierres','captaciones'].forEach(c => {
+  ['nombre','objetivo','generado','cobrado','pct','cierres','captaciones'].forEach(c => {
     const el = document.getElementById('sort-' + c);
     if (el) el.textContent = c === col ? (_sortAsc ? ' ↑' : ' ↓') : '';
   });
@@ -229,6 +229,7 @@ function renderDashOficinas(lista) {
       let va, vb;
       if (_sortCol === 'nombre')       { va = a.nombre; vb = b.nombre; }
       else if (_sortCol === 'objetivo'){ va = parseFloat(a.objetivo_anual)||0; vb = parseFloat(b.objetivo_anual)||0; }
+      else if (_sortCol === 'generado') { va = parseFloat(a.total_generado)||0; vb = parseFloat(b.total_generado)||0; }
       else if (_sortCol === 'cobrado') { va = parseFloat(a.total_cobrado)||0; vb = parseFloat(b.total_cobrado)||0; }
       else if (_sortCol === 'pct')     { va = parseFloat(a.pct_cumplimiento)||0; vb = parseFloat(b.pct_cumplimiento)||0; }
       else if (_sortCol === 'cierres') { va = parseInt(a.total_cierres)||0; vb = parseInt(b.total_cierres)||0; }
@@ -238,20 +239,22 @@ function renderDashOficinas(lista) {
     });
 
     const max = Math.max(...sorted.map(o => parseFloat(o.total_cobrado) || 0), 1);
-    let totObj=0, totCob=0, totCierres=0, totCap=0;
-      const filas = sorted.map(o => {
+    let totObj=0, totGen=0, totCob=0, totCierres=0, totCap=0;
+    const filas = sorted.map(o => {
+        const gen = parseFloat(o.total_generado) || 0;
         const cob = parseFloat(o.total_cobrado) || 0;
         const obj = parseFloat(o.objetivo_periodo || o.objetivo_anual) || 0;
         const p   = parseFloat(o.pct_cumplimiento) || 0;
         const w   = Math.round(cob / max * 100);
         const barColor = p >= 90 ? 'var(--green)' : p >= 60 ? 'var(--amber)' : 'var(--red)';
-        totObj += obj; totCob += cob;
+        totObj += obj; totGen += gen; totCob += cob;
         totCierres += parseInt(o.total_cierres)||0;
         totCap += parseInt(o.total_captaciones)||0;
         return `<tr>
           <td><span class="sem ${semClass(p)}"></span></td>
           <td><strong>${o.nombre}</strong></td>
           <td class="td-right">${fmtK(obj)}</td>
+          <td class="td-right" style="color:var(--amber)">${fmtK(gen)}</td>
           <td class="td-right">${fmtK(cob)}</td>
           <td>
             <div style="display:flex;align-items:center;gap:8px;min-width:120px">
@@ -271,6 +274,7 @@ function renderDashOficinas(lista) {
         <td></td>
         <td style="font-weight:700;color:var(--navy)">RED TOTAL</td>
         <td class="td-right" style="font-weight:700">${fmtK(totObj)}</td>
+        <td class="td-right" style="font-weight:700;color:var(--amber)">${fmtK(totGen)}</td>
         <td class="td-right" style="font-weight:700">${fmtK(totCob)}</td>
         <td>
           <div style="display:flex;align-items:center;gap:8px;min-width:120px">
@@ -400,6 +404,14 @@ async function initNuevaOp() {
   } catch(e) {}
 }
 
+function onCanalChange() {
+  const canal = document.getElementById('nop-canal')?.value;
+  const aaffRow = document.getElementById('nop-aaff-row');
+  const prescRow = document.getElementById('nop-prescriptor-row');
+  if (aaffRow)  aaffRow.style.display  = canal === 'aaff'        ? 'grid' : 'none';
+  if (prescRow) prescRow.style.display = canal === 'prescriptor' ? 'grid' : 'none';
+}
+
 function calcNuevaOp() {
   const precio = parseFloat((document.getElementById('nop-precio')?.value||'0').replace(/\./g,'').replace(',','.')) || 0;
   const pct    = parseFloat(document.getElementById('nop-pct')?.value || '5') || 5;
@@ -477,6 +489,8 @@ async function guardarNuevaOp() {
     precio_inmueble: precio, pct_comision: pct,
     comision_bruta: bruta, honorarios_lae: lae,
     canal: document.getElementById('nop-canal')?.value || 'directa',
+    aaff_nombre: document.getElementById('nop-aaff-nombre')?.value || null,
+    prescriptor_nombre: document.getElementById('nop-prescriptor-nombre')?.value || null,
     compartida: comp, split_pct: split,
     agencia_externa: document.getElementById('nop-agencia')?.value || null,
     estado: document.getElementById('nop-estado')?.value || 'cobrada',
@@ -504,67 +518,74 @@ async function guardarNuevaOp() {
 }
 
 // ── CAPTACIONES ──────────────────────────────────────
+let _capAllData = [];
+
 async function loadCaptaciones() {
   const tbody = document.getElementById('cap-tbody');
+  const carteraTbody = document.getElementById('cartera-tbody');
   const kpis  = document.getElementById('cap-kpis');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="9" class="loading">Cargando...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="10" class="loading">Cargando...</td></tr>';
+  if (carteraTbody) carteraTbody.innerHTML = '<tr><td colspan="10" class="loading">Cargando...</td></tr>';
   try {
     const [sumRes, listRes] = await Promise.all([
       fetch(`${API}/api/captaciones/resumen`).then(r => r.json()),
-      fetch(`${API}/api/captaciones?estado=activa`).then(r => r.json())
+      fetch(`${API}/api/captaciones`).then(r => r.json())
     ]);
     const s = sumRes.data || sumRes;
     if (kpis) {
       kpis.innerHTML = `
-        <div class="kpi-card highlight">
-          <div class="kpi-label">Total activas</div>
-          <div class="kpi-value">${s.total||0}</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Exclusivas</div>
-          <div class="kpi-value" style="color:#1E40AF">${s.exclusivas||0}</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Notas encargo</div>
-          <div class="kpi-value" style="color:#7C3AED">${s.notas_encargo||0}</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Valor cartera</div>
-          <div class="kpi-value gold">${fmtK(s.valor_cartera||0)}</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Hon. potenciales</div>
-          <div class="kpi-value green">${fmtK(s.honorarios_potenciales||0)}</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Hon. pot. exclusivas</div>
-          <div class="kpi-value" style="color:#1E40AF">${fmtK(s.hon_pot_exclusivas||0)}</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Hon. pot. N.E.</div>
-          <div class="kpi-value" style="color:#7C3AED">${fmtK(s.hon_pot_ne||0)}</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Excl. viviendas</div>
-          <div class="kpi-value" style="color:#1E40AF">${s.excl_viviendas||0}</div>
-          <div class="kpi-sub">⭐ tipología principal</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Hon. pot. excl. viviendas</div>
-          <div class="kpi-value green">${fmtK(s.hon_pot_excl_viviendas||0)}</div>
-        </div>
+        <div class="kpi-card highlight"><div class="kpi-label">Total activas</div><div class="kpi-value">${s.total||0}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Exclusivas</div><div class="kpi-value" style="color:#1E40AF">${s.exclusivas||0}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Notas encargo</div><div class="kpi-value" style="color:#7C3AED">${s.notas_encargo||0}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Valor cartera</div><div class="kpi-value gold">${fmtK(s.valor_cartera||0)}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Hon. potenciales</div><div class="kpi-value green">${fmtK(s.honorarios_potenciales||0)}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Hon. pot. exclusivas</div><div class="kpi-value" style="color:#1E40AF">${fmtK(s.hon_pot_exclusivas||0)}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Hon. pot. N.E.</div><div class="kpi-value" style="color:#7C3AED">${fmtK(s.hon_pot_ne||0)}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Excl. viviendas</div><div class="kpi-value" style="color:#1E40AF">${s.excl_viviendas||0}</div></div>
+        <div class="kpi-card"><div class="kpi-label">Hon. pot. excl. viv.</div><div class="kpi-value green">${fmtK(s.hon_pot_excl_viviendas||0)}</div></div>
       `;
     }
     const lista = listRes.data || listRes;
     if (!Array.isArray(lista) || !lista.length) {
-      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">🏠</div><h3>Sin captaciones</h3><p>Importa un CSV de Inmovilla para ver las captaciones activas.</p><button class="btn btn-primary" style="margin-top:12px" onclick="nav('importar')">Importar Inmovilla</button></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-state-icon">🏠</div><h3>Sin captaciones</h3><p>Importa un CSV de Inmovilla para ver las captaciones.</p><button class="btn btn-primary" style="margin-top:12px" onclick="nav('importar')">Importar Inmovilla</button></div></td></tr>`;
+      if (carteraTbody) carteraTbody.innerHTML = '<tr><td colspan="10" class="loading">Sin datos</td></tr>';
       return;
     }
-    renderCap(lista);
-    const cnt = document.getElementById('cap-count');
-    if (cnt) cnt.textContent = lista.length + ' captaciones activas';
-  } catch(e) { tbody.innerHTML = `<tr><td colspan="9" class="loading">Error: ${e.message}</td></tr>`; }
+    _capAllData = lista;
+    const consultores = [...new Set(lista.map(c => c.consultor_nombre).filter(Boolean))].sort();
+    const filConsultor = document.getElementById('cap-fil-consultor');
+    if (filConsultor) {
+      filConsultor.innerHTML = '<option value="">Consultor</option>' + consultores.map(n => `<option value="${n}">${n}</option>`).join('');
+    }
+    aplicarFiltrosCap();
+  } catch(e) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="10" class="loading">Error: ${e.message}</td></tr>`;
+  }
+}
+
+function aplicarFiltrosCap() {
+  const filConsultor = document.getElementById('cap-fil-consultor')?.value || '';
+  const filCanal     = document.getElementById('cap-fil-canal')?.value || '';
+  const filEstado    = document.getElementById('cap-fil-estado')?.value || '';
+  const filTipo      = document.getElementById('cap-fil-tipo')?.value || '';
+  const filtrado = _capAllData.filter(c => {
+    if (filConsultor && c.consultor_nombre !== filConsultor) return false;
+    if (filCanal     && (c.medio_contacto || c.canal || '') !== filCanal) return false;
+    if (filEstado    && (c.estado || '') !== filEstado) return false;
+    if (filTipo      && (c.tipologia || '') !== filTipo) return false;
+    return true;
+  });
+  renderCap(filtrado);
+  renderCartera(filtrado.filter(c => (c.estado || 'activa') === 'activa'));
+}
+
+function limpiarFiltrosCap() {
+  ['cap-fil-consultor','cap-fil-canal','cap-fil-estado','cap-fil-tipo'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  aplicarFiltrosCap();
 }
 
 // ── AAFF ─────────────────────────────────────────────
@@ -891,25 +912,27 @@ async function loadPalancas() {
 async function loadIngresosResumen() {
   try {
     const { desde, hasta } = getDateRange();
-    const res = await fetch(`${API}/api/operaciones/resumen?desde=${desde}&hasta=${hasta}`).then(r => r.json());
-    if (!res.success) {
-      console.warn('Ingresos resumen error:', res.error);
-      return;
-    }
-    const s = res.data;
+    const [resOp, ofRes] = await Promise.all([
+      fetch(`${API}/api/operaciones/resumen?desde=${desde}&hasta=${hasta}`).then(r => r.json()),
+      fetch(`${API}/api/oficinas?desde=${desde}&hasta=${hasta}`).then(r => r.json()),
+    ]);
+    if (!resOp.success) { console.warn('Ingresos resumen error:', resOp.error); return; }
+    const s = resOp.data;
     const el = id => document.getElementById(id);
-    if (el('ir-cobrado'))    el('ir-cobrado').textContent    = fmtK(s.cobrado);
-    if (el('ir-pipeline'))   el('ir-pipeline').textContent   = fmtK(s.pipeline);
-    if (el('ir-pendiente'))  el('ir-pendiente').textContent  = fmtK(s.pendiente_escritura);
-    if (el('ir-ops-inmob'))  el('ir-ops-inmob').textContent  = s.ops_inmobiliarias || 0;
-    if (el('ir-ops-atip'))   el('ir-ops-atip').textContent   = s.ops_atipicas || 0;
-    // Barras por canal
+
+    if (el('ir-pipeline'))     el('ir-pipeline').textContent     = fmtK(s.pipeline);
+    if (el('ir-cobrado'))      el('ir-cobrado').textContent      = fmtK(s.cobrado);
+    if (el('ir-pendiente'))    el('ir-pendiente').textContent    = fmtK(s.pendiente_escritura);
+    if (el('ir-ops-venta'))    el('ir-ops-venta').textContent    = s.ops_venta    || s.ops_inmobiliarias || 0;
+    if (el('ir-ops-alquiler')) el('ir-ops-alquiler').textContent = s.ops_alquiler || 0;
+
     const total = parseFloat(s.cobrado) || 1;
     const canales = [
-      { lbl:'Directa', val: s.cobrado_directa, color:'var(--navy)' },
-      { lbl:'AAFF',    val: s.cobrado_aaff,    color:'var(--gold)' },
-      { lbl:'Prescriptor', val: s.cobrado_prescriptor, color:'#7C3AED' },
-      { lbl:'Compartida',  val: s.cobrado_compartida,  color:'#d97706' },
+      { lbl:'Directa',              val: s.cobrado_directa,     color:'var(--navy)' },
+      { lbl:'AAFF',                 val: s.cobrado_aaff,        color:'var(--gold)' },
+      { lbl:'Prescriptor',          val: s.cobrado_prescriptor, color:'#7C3AED' },
+      { lbl:'Compartida (otra inm.)', val: s.cobrado_compartida,color:'#d97706' },
+      { lbl:'Porteros',             val: s.cobrado_porteros,    color:'#059669' },
     ];
     const barDiv = el('ir-canales');
     if (barDiv) {
@@ -917,7 +940,7 @@ async function loadIngresosResumen() {
         const v = parseFloat(c.val) || 0;
         const w = Math.round(v / total * 100);
         return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-          <span style="width:80px;font-size:11px;color:var(--muted)">${c.lbl}</span>
+          <span style="width:110px;font-size:11px;color:var(--muted)">${c.lbl}</span>
           <div style="flex:1;height:12px;background:var(--border);border-radius:3px;overflow:hidden">
             <div style="width:${w}%;height:100%;background:${c.color};border-radius:3px"></div>
           </div>
@@ -926,26 +949,37 @@ async function loadIngresosResumen() {
       }).join('');
     }
 
-    // Panel cobrado por oficina
+    const lista = ofRes.data || ofRes;
+    const genDiv = el('ir-generado-oficina');
+    if (genDiv && Array.isArray(lista)) {
+      const maxG = Math.max(...lista.map(o => parseFloat(o.total_generado)||0), 1);
+      genDiv.innerHTML = lista.filter(o => parseFloat(o.total_generado) > 0).sort((a,b) => (parseFloat(b.total_generado)||0)-(parseFloat(a.total_generado)||0)).map(o => {
+        const v = parseFloat(o.total_generado)||0;
+        const w = Math.round(v/maxG*100);
+        return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span style="width:90px;font-size:11px;color:var(--muted);white-space:nowrap">${o.nombre}</span>
+          <div style="flex:1;height:12px;background:var(--border);border-radius:3px;overflow:hidden">
+            <div style="width:${w}%;height:100%;background:var(--amber);border-radius:3px"></div>
+          </div>
+          <span style="font-size:11px;font-weight:600;color:var(--amber);width:70px;text-align:right">${fmtK(v)}</span>
+        </div>`;
+      }).join('') || '<p style="font-size:12px;color:var(--muted)">Sin datos para este período</p>';
+    }
+
     const ofDiv = el('ir-por-oficina');
-    if (ofDiv) {
-      const { desde, hasta } = getDateRange();
-      const ofRes = await fetch(`${API}/api/oficinas?desde=${desde}&hasta=${hasta}`).then(r => r.json());
-      const lista = ofRes.data || ofRes;
-      if (Array.isArray(lista) && lista.length) {
-        const max = Math.max(...lista.map(o => parseFloat(o.total_cobrado)||0), 1);
-        ofDiv.innerHTML = lista.filter(o => parseFloat(o.total_cobrado) > 0).map(o => {
-          const v = parseFloat(o.total_cobrado)||0;
-          const w = Math.round(v/max*100);
-          return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <span style="width:90px;font-size:11px;color:var(--muted);white-space:nowrap">${o.nombre}</span>
-            <div style="flex:1;height:12px;background:var(--border);border-radius:3px;overflow:hidden">
-              <div style="width:${w}%;height:100%;background:var(--navy);border-radius:3px"></div>
-            </div>
-            <span style="font-size:11px;font-weight:600;color:var(--navy);width:70px;text-align:right">${fmtK(v)}</span>
-          </div>`;
-        }).join('') || '<p style="font-size:12px;color:var(--muted)">Sin datos para este período</p>';
-      }
+    if (ofDiv && Array.isArray(lista)) {
+      const maxC = Math.max(...lista.map(o => parseFloat(o.total_cobrado)||0), 1);
+      ofDiv.innerHTML = lista.filter(o => parseFloat(o.total_cobrado) > 0).sort((a,b) => (parseFloat(b.total_cobrado)||0)-(parseFloat(a.total_cobrado)||0)).map(o => {
+        const v = parseFloat(o.total_cobrado)||0;
+        const w = Math.round(v/maxC*100);
+        return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span style="width:90px;font-size:11px;color:var(--muted);white-space:nowrap">${o.nombre}</span>
+          <div style="flex:1;height:12px;background:var(--border);border-radius:3px;overflow:hidden">
+            <div style="width:${w}%;height:100%;background:var(--navy);border-radius:3px"></div>
+          </div>
+          <span style="font-size:11px;font-weight:600;color:var(--navy);width:70px;text-align:right">${fmtK(v)}</span>
+        </div>`;
+      }).join('') || '<p style="font-size:12px;color:var(--muted)">Sin datos para este período</p>';
     }
   } catch(e) { console.warn('Error ingresos resumen:', e.message); }
 }
@@ -1295,12 +1329,13 @@ function makeSorter(dataKey, colMap, renderFn, sortPrefix, defaultCol, defaultAs
 }
 
 // ── CAPTACIONES SORTABLE ──────────────────────────────
-let _capData = [], _capSortCol = 'meses', _capSortAsc = false;
+let _capData = [], _capSortCol = 'fecha', _capSortAsc = false;
+let _carteraData = [], _carteraSortCol = 'meses', _carteraSortAsc = false;
 
 function sortCap(col) {
   if (_capSortCol === col) { _capSortAsc = !_capSortAsc; }
-  else { _capSortCol = col; _capSortAsc = ['ref','oficina','direccion','mandato','tipologia','tipo_op'].includes(col); }
-  ['ref','oficina','direccion','mandato','tipologia','tipo_op','precio','honor','meses'].forEach(c => {
+  else { _capSortCol = col; _capSortAsc = ['ref','estado','tipologia','tipo_op','oficina','consultor','canal'].includes(col); }
+  ['ref','estado','fecha','tipologia','tipo_op','oficina','consultor','canal','precio','honor'].forEach(c => {
     const el = document.getElementById('cap-sort-' + c);
     if (el) el.textContent = c === _capSortCol ? (_capSortAsc ? ' ↑' : ' ↓') : '';
   });
@@ -1310,39 +1345,103 @@ function sortCap(col) {
 function renderCap(data) {
   if (data) _capData = data;
   const tbody = document.getElementById('cap-tbody');
-  if (!tbody || !_capData.length) return;
+  if (!tbody) return;
+  if (!_capData.length) {
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state" style="padding:20px"><h3>Sin captaciones</h3></div></td></tr>';
+    return;
+  }
   const sorted = [..._capData].sort((a, b) => {
     let va, vb;
     if      (_capSortCol === 'ref')       { va = a.ref||''; vb = b.ref||''; }
-    else if (_capSortCol === 'oficina')   { va = a.oficina_nombre||''; vb = b.oficina_nombre||''; }
-    else if (_capSortCol === 'direccion') { va = a.direccion||''; vb = b.direccion||''; }
-    else if (_capSortCol === 'mandato')   { va = a.mandato||''; vb = b.mandato||''; }
+    else if (_capSortCol === 'estado')    { va = a.estado||''; vb = b.estado||''; }
+    else if (_capSortCol === 'fecha')     { va = a.fecha_captacion||a.created_at||''; vb = b.fecha_captacion||b.created_at||''; }
     else if (_capSortCol === 'tipologia') { va = a.tipologia||''; vb = b.tipologia||''; }
     else if (_capSortCol === 'tipo_op')   { va = a.tipo_operacion||''; vb = b.tipo_operacion||''; }
+    else if (_capSortCol === 'oficina')   { va = a.oficina_nombre||''; vb = b.oficina_nombre||''; }
+    else if (_capSortCol === 'consultor') { va = a.consultor_nombre||''; vb = b.consultor_nombre||''; }
+    else if (_capSortCol === 'canal')     { va = a.medio_contacto||a.canal||''; vb = b.medio_contacto||b.canal||''; }
     else if (_capSortCol === 'precio')    { va = parseFloat(a.precio_captacion)||0; vb = parseFloat(b.precio_captacion)||0; }
     else if (_capSortCol === 'honor')     { va = parseFloat(a.honorarios_potenciales)||0; vb = parseFloat(b.honorarios_potenciales)||0; }
-    else if (_capSortCol === 'meses')     { va = parseFloat(a.meses_activa)||0; vb = parseFloat(b.meses_activa)||0; }
     if (typeof va === 'string') return _capSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     return _capSortAsc ? va - vb : vb - va;
   });
+  const estadoColors = { activa:'var(--green)', vendida:'var(--navy)', retirada:'var(--red)', caducada:'var(--muted)' };
   tbody.innerHTML = sorted.map(c => {
-    const meses = Math.round(parseFloat(c.meses_activa)||0);
-    const mCol  = meses >= 7 ? 'var(--red)' : meses >= 5 ? 'var(--amber)' : 'var(--green)';
+    const estado = c.estado || 'activa';
+    const fecha  = (c.fecha_captacion || c.created_at || '').substring(0,10);
+    const canal  = c.medio_contacto || c.canal || '—';
+    return `<tr>
+      <td style="font-size:10px;color:var(--muted);font-family:monospace">${c.ref||'—'}</td>
+      <td><span style="font-size:11px;font-weight:600;color:${estadoColors[estado]||'var(--text)'}">${estado}</span></td>
+      <td style="font-size:11px">${fecha||'—'}</td>
+      <td><span class="badge badge-gray">${c.tipologia||'—'}</span></td>
+      <td><span class="badge badge-gray">${c.tipo_operacion==='alquiler'?'Alquiler':'C-V'}</span></td>
+      <td style="font-size:12px">${c.oficina_nombre||'—'}</td>
+      <td style="font-size:12px">${c.consultor_nombre||'—'}</td>
+      <td style="font-size:11px;color:var(--muted)">${canal}</td>
+      <td class="td-right">${parseFloat(c.precio_captacion)>0?fmtK(c.precio_captacion):'—'}</td>
+      <td class="td-right" style="color:var(--green)">${parseFloat(c.honorarios_potenciales)>0?fmt(c.honorarios_potenciales):'—'}</td>
+    </tr>`;
+  }).join('');
+  const cnt = document.getElementById('cap-count');
+  if (cnt) cnt.textContent = _capData.length + ' captaciones';
+}
+
+function sortCartera(col) {
+  if (_carteraSortCol === col) { _carteraSortAsc = !_carteraSortAsc; }
+  else { _carteraSortCol = col; _carteraSortAsc = ['ref','oficina','consultor','mandato','canal','tipologia'].includes(col); }
+  ['ref','oficina','consultor','mandato','canal','tipologia','precio','honor','meses','visitas'].forEach(c => {
+    const el = document.getElementById('cart-sort-' + c);
+    if (el) el.textContent = c === _carteraSortCol ? (_carteraSortAsc ? ' ↑' : ' ↓') : '';
+  });
+  renderCartera();
+}
+
+function renderCartera(data) {
+  if (data) _carteraData = data;
+  const tbody = document.getElementById('cartera-tbody');
+  if (!tbody) return;
+  if (!_carteraData.length) {
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state" style="padding:20px"><h3>Sin cartera activa</h3></div></td></tr>';
+    return;
+  }
+  const sorted = [..._carteraData].sort((a, b) => {
+    let va, vb;
+    if      (_carteraSortCol === 'ref')       { va = a.ref||''; vb = b.ref||''; }
+    else if (_carteraSortCol === 'oficina')   { va = a.oficina_nombre||''; vb = b.oficina_nombre||''; }
+    else if (_carteraSortCol === 'consultor') { va = a.consultor_nombre||''; vb = b.consultor_nombre||''; }
+    else if (_carteraSortCol === 'mandato')   { va = a.mandato||''; vb = b.mandato||''; }
+    else if (_carteraSortCol === 'canal')     { va = a.medio_contacto||a.canal||''; vb = b.medio_contacto||b.canal||''; }
+    else if (_carteraSortCol === 'tipologia') { va = a.tipologia||''; vb = b.tipologia||''; }
+    else if (_carteraSortCol === 'precio')    { va = parseFloat(a.precio_captacion)||0; vb = parseFloat(b.precio_captacion)||0; }
+    else if (_carteraSortCol === 'honor')     { va = parseFloat(a.honorarios_potenciales)||0; vb = parseFloat(b.honorarios_potenciales)||0; }
+    else if (_carteraSortCol === 'meses')     { va = parseFloat(a.meses_activa)||0; vb = parseFloat(b.meses_activa)||0; }
+    else if (_carteraSortCol === 'visitas')   { va = parseInt(a.visitas)||0; vb = parseInt(b.visitas)||0; }
+    if (typeof va === 'string') return _carteraSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _carteraSortAsc ? va - vb : vb - va;
+  });
+  tbody.innerHTML = sorted.map(c => {
+    const meses  = Math.round(parseFloat(c.meses_activa)||0);
+    const mCol   = meses >= 7 ? 'var(--red)' : meses >= 5 ? 'var(--amber)' : 'var(--green)';
     const mandTag = c.mandato === 'exclusiva'
       ? '<span class="badge badge-blue">Excl.</span>'
       : '<span class="badge badge-gray">NE</span>';
+    const canal  = c.medio_contacto || c.canal || '—';
     return `<tr>
       <td style="font-size:10px;color:var(--muted);font-family:monospace">${c.ref||'—'}</td>
-      <td>${c.oficina_nombre||'—'}</td>
-      <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.direccion||'—'}</td>
+      <td style="font-size:12px">${c.oficina_nombre||'—'}</td>
+      <td style="font-size:12px">${c.consultor_nombre||'—'}</td>
       <td>${mandTag}</td>
+      <td style="font-size:11px;color:var(--muted)">${canal}</td>
       <td><span class="badge badge-gray">${c.tipologia||'—'}</span></td>
-      <td><span class="badge badge-gray">${c.tipo_operacion==='alquiler'?'Alquiler':'C-V'}</span></td>
       <td class="td-right">${parseFloat(c.precio_captacion)>0?fmtK(c.precio_captacion):'—'}</td>
       <td class="td-right" style="color:var(--green)">${parseFloat(c.honorarios_potenciales)>0?fmt(c.honorarios_potenciales):'—'}</td>
       <td class="td-right" style="color:${mCol};font-weight:600">${meses}m</td>
+      <td class="td-right">${parseInt(c.visitas)||0 > 0 ? parseInt(c.visitas) : '—'}</td>
     </tr>`;
   }).join('');
+  const cnt = document.getElementById('cartera-count');
+  if (cnt) cnt.textContent = _carteraData.length + ' inmuebles activos';
 }
 
 // ── AAFF SORTABLE ─────────────────────────────────────

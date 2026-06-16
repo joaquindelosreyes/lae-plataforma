@@ -9,16 +9,7 @@ router.get('/', async (req, res) => {
       FROM consultores c
       LEFT JOIN oficinas o ON o.id = c.oficina_id
       WHERE c.activo = true
-      ORDER BY o.nombre NULLS LAST,
-        CASE c.puesto
-          WHEN 'Director General' THEN 1
-          WHEN 'Director Consultor' THEN 2
-          WHEN 'Directora Consultora' THEN 2
-          WHEN 'Consultor' THEN 3
-          WHEN 'Consultora' THEN 3
-          WHEN 'Coordinadora' THEN 4
-          ELSE 5 END,
-        c.nombre
+      ORDER BY o.nombre, c.nombre
     `);
     res.json({ success: true, data: rows });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }

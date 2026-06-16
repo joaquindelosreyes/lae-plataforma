@@ -122,6 +122,7 @@
         <!-- Período -->
         <div style="display:flex;gap:3px" id="period-btns">
           <button class="dsc active" id="p-year" onclick="setPeriodo('year')">Año</button>
+          <button class="dsc" id="p-1t2t" onclick="setPeriodo('1t2t')">1T+2T</button>
           <button class="dsc" id="p-1t" onclick="setPeriodo('1t')">1T</button>
           <button class="dsc" id="p-2t" onclick="setPeriodo('2t')">2T</button>
           <button class="dsc" id="p-3t" onclick="setPeriodo('3t')">3T</button>
@@ -154,42 +155,47 @@
 
     <!-- ═══ DASHBOARD ═══ -->
     <div class="view active" id="view-dashboard">
-      <!-- Fila 1: Los 5 conceptos de honorarios -->
+      <!-- Fila 1: Generado primero, luego Bruto -->
       <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:10px">
         <div class="kpi-card highlight">
-          <div class="kpi-label">Honor. brutos</div>
-          <div class="kpi-value" id="kpi-honor-brutos">—</div>
-          <div class="kpi-sub">cobrado período</div>
+          <div class="kpi-label">Generados LAE</div>
+          <div class="kpi-value amber" id="kpi-generado">—</div>
+          <div class="kpi-sub">pipeline neto LAE</div>
         </div>
         <div class="kpi-card highlight">
-          <div class="kpi-label">Honor. LAE</div>
-          <div class="kpi-value green" id="kpi-cobrado">—</div>
-          <div class="kpi-sub">neto después split</div>
-        </div>
-        <div class="kpi-card">
           <div class="kpi-label">Generados brutos</div>
           <div class="kpi-value amber" id="kpi-gen-brutos">—</div>
           <div class="kpi-sub">pipeline bruto</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Generados LAE</div>
-          <div class="kpi-value amber" id="kpi-generado">—</div>
-          <div class="kpi-sub">pipeline neto LAE</div>
+          <div class="kpi-label">Honor. LAE cobrado</div>
+          <div class="kpi-value green" id="kpi-cobrado">—</div>
+          <div class="kpi-sub">neto después split</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">Pendientes</div>
+          <div class="kpi-label">Honor. brutos cobrado</div>
+          <div class="kpi-value" id="kpi-honor-brutos">—</div>
+          <div class="kpi-sub">comisión total período</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Pendientes escritura</div>
           <div class="kpi-value amber" id="kpi-pendientes">—</div>
           <div class="kpi-sub">pend. escritura</div>
         </div>
       </div>
-      <!-- Fila 2: Objetivo y métricas -->
-      <div class="kpi-grid kpi-grid-4" style="margin-bottom:16px">
+      <!-- Fila 2: Objetivo vs Generado y vs Cobrado -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px">
         <div class="kpi-card">
           <div class="kpi-label" id="kpi-objetivo-label">Objetivo anual red</div>
           <div class="kpi-value gold" id="kpi-objetivo">—</div>
         </div>
         <div class="kpi-card">
-          <div class="kpi-label">% Cumplimiento Honor. LAE</div>
+          <div class="kpi-label">% Obj vs Generado LAE</div>
+          <div class="kpi-value amber" id="kpi-pct-gen">—</div>
+          <div class="kpi-sub" id="kpi-pct-gen-sub">vs objetivo período</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">% Obj vs Cobrado LAE</div>
           <div class="kpi-value" id="kpi-pct">—</div>
           <div class="kpi-sub" id="kpi-pct-sub">vs objetivo</div>
         </div>
@@ -214,9 +220,10 @@
               <tr>
                 <th></th>
                 <th onclick="sortDash('nombre')"    style="cursor:pointer;user-select:none">Oficina <span id="sort-nombre"></span></th>
-                <th class="nr" onclick="sortDash('objetivo')" class="td-right" style="cursor:pointer;user-select:none">Objetivo <span id="sort-objetivo"></span></th>
-                <th class="nr" onclick="sortDash('cobrado')" class="td-right" style="cursor:pointer;user-select:none">Cobrado <span id="sort-cobrado"></span></th>
-                <th class="nr" onclick="sortDash('pct')" class="td-right" style="cursor:pointer;user-select:none;min-width:160px">Progreso <span id="sort-pct"></span></th>
+                <th class="nr" onclick="sortDash('objetivo')" style="cursor:pointer;user-select:none">Objetivo <span id="sort-objetivo"></span></th>
+                <th class="nr" onclick="sortDash('generado')" style="cursor:pointer;user-select:none">Generado <span id="sort-generado"></span></th>
+                <th class="nr" onclick="sortDash('cobrado')" style="cursor:pointer;user-select:none">Cobrado <span id="sort-cobrado"></span></th>
+                <th class="nr" onclick="sortDash('pct')" style="cursor:pointer;user-select:none;min-width:160px">Progreso <span id="sort-pct"></span></th>
                 <th class="nr" onclick="sortDash('cierres')" class="td-right" style="cursor:pointer;user-select:none">Cierres <span id="sort-cierres"></span></th>
                 <th class="nr" onclick="sortDash('captaciones')" class="td-right" style="cursor:pointer;user-select:none">Captaciones <span id="sort-captaciones"></span></th>
               </tr>
@@ -318,12 +325,25 @@
               </div>
               <div class="form-group">
                 <label class="form-label">Canal</label>
-                <select id="nop-canal" class="form-select">
+                <select id="nop-canal" class="form-select" onchange="onCanalChange()">
                   <option value="directa">Directa</option>
                   <option value="aaff">AAFF</option>
                   <option value="prescriptor">Prescriptor</option>
-                  <option value="compartida">Compartida</option>
+                  <option value="compartida">Compartida (otra inmobiliaria)</option>
+                  <option value="porteros">Porteros</option>
                 </select>
+              </div>
+            </div>
+            <div class="form-grid form-2" id="nop-aaff-row" style="display:none;margin-bottom:4px">
+              <div class="form-group">
+                <label class="form-label">Nombre AAFF *</label>
+                <input type="text" id="nop-aaff-nombre" class="form-input" placeholder="Nombre del administrador de fincas...">
+              </div>
+            </div>
+            <div class="form-grid form-2" id="nop-prescriptor-row" style="display:none;margin-bottom:4px">
+              <div class="form-group">
+                <label class="form-label">Nombre Prescriptor *</label>
+                <input type="text" id="nop-prescriptor-nombre" class="form-input" placeholder="Nombre del prescriptor...">
               </div>
             </div>
 
@@ -426,9 +446,40 @@
       <div class="kpi-grid" style="grid-template-columns:repeat(9,1fr)" id="cap-kpis">
         <div class="kpi-card"><div class="kpi-label">Cargando...</div><div class="kpi-value">—</div></div>
       </div>
-      <div class="panel">
+
+      <!-- Filtros -->
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center">
+        <select id="cap-fil-consultor" class="form-select" style="width:160px;font-size:12px" onchange="aplicarFiltrosCap()"><option value="">Consultor</option></select>
+        <select id="cap-fil-canal" class="form-select" style="width:160px;font-size:12px" onchange="aplicarFiltrosCap()">
+          <option value="">Canal / Medio</option>
+          <option value="directa">Directa</option>
+          <option value="aaff">AAFF</option>
+          <option value="prescriptor">Prescriptor</option>
+          <option value="portales">Portales</option>
+          <option value="referido">Referido</option>
+        </select>
+        <select id="cap-fil-estado" class="form-select" style="width:140px;font-size:12px" onchange="aplicarFiltrosCap()">
+          <option value="">Estado</option>
+          <option value="activa">Activa</option>
+          <option value="vendida">Vendida</option>
+          <option value="retirada">Retirada</option>
+          <option value="caducada">Caducada</option>
+        </select>
+        <select id="cap-fil-tipo" class="form-select" style="width:140px;font-size:12px" onchange="aplicarFiltrosCap()">
+          <option value="">Tipo</option>
+          <option value="vivienda">Vivienda</option>
+          <option value="local">Local</option>
+          <option value="oficina">Oficina</option>
+          <option value="garaje">Garaje</option>
+          <option value="solar">Solar</option>
+        </select>
+        <button class="btn btn-outline" style="font-size:11px;padding:4px 10px" onclick="limpiarFiltrosCap()">Limpiar</button>
+      </div>
+
+      <!-- Panel 1: Captaciones (eventos de captación) -->
+      <div class="panel" style="margin-bottom:16px">
         <div class="panel-header">
-          <span class="panel-title">Captaciones activas</span>
+          <span class="panel-title">Captaciones</span>
           <span id="cap-count" style="font-size:11px;color:var(--muted)"></span>
         </div>
         <div class="table-wrap">
@@ -436,18 +487,48 @@
             <thead>
               <tr>
                 <th onclick="sortCap('ref')"      style="cursor:pointer;user-select:none">Ref. <span id="cap-sort-ref"></span></th>
-                <th onclick="sortCap('oficina')"  style="cursor:pointer;user-select:none">Oficina <span id="cap-sort-oficina"></span></th>
-                <th onclick="sortCap('direccion')" style="cursor:pointer;user-select:none">Dirección <span id="cap-sort-direccion"></span></th>
-                <th onclick="sortCap('mandato')"  style="cursor:pointer;user-select:none">Mandato <span id="cap-sort-mandato"></span></th>
+                <th onclick="sortCap('estado')"   style="cursor:pointer;user-select:none">Estado <span id="cap-sort-estado"></span></th>
+                <th onclick="sortCap('fecha')"    style="cursor:pointer;user-select:none">Fecha <span id="cap-sort-fecha"></span></th>
                 <th onclick="sortCap('tipologia')" style="cursor:pointer;user-select:none">Tipo <span id="cap-sort-tipologia"></span></th>
                 <th onclick="sortCap('tipo_op')"  style="cursor:pointer;user-select:none">Op. <span id="cap-sort-tipo_op"></span></th>
+                <th onclick="sortCap('oficina')"  style="cursor:pointer;user-select:none">Oficina <span id="cap-sort-oficina"></span></th>
+                <th onclick="sortCap('consultor')" style="cursor:pointer;user-select:none">Consultor <span id="cap-sort-consultor"></span></th>
+                <th onclick="sortCap('canal')"    style="cursor:pointer;user-select:none">Medio <span id="cap-sort-canal"></span></th>
                 <th class="nr" onclick="sortCap('precio')"   style="cursor:pointer;user-select:none">Precio <span id="cap-sort-precio"></span></th>
                 <th class="nr" onclick="sortCap('honor')"    style="cursor:pointer;user-select:none">Honor. pot. <span id="cap-sort-honor"></span></th>
-                <th class="nr" onclick="sortCap('meses')"    style="cursor:pointer;user-select:none">Antigüedad <span id="cap-sort-meses"></span></th>
               </tr>
             </thead>
             <tbody id="cap-tbody">
-              <tr><td colspan="9" class="loading">Cargando...</td></tr>
+              <tr><td colspan="10" class="loading">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Panel 2: Cartera (stock activo) -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Cartera activa</span>
+          <span id="cartera-count" style="font-size:11px;color:var(--muted)"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th onclick="sortCartera('ref')"       style="cursor:pointer;user-select:none">Ref. <span id="cart-sort-ref"></span></th>
+                <th onclick="sortCartera('oficina')"   style="cursor:pointer;user-select:none">Oficina <span id="cart-sort-oficina"></span></th>
+                <th onclick="sortCartera('consultor')" style="cursor:pointer;user-select:none">Consultor <span id="cart-sort-consultor"></span></th>
+                <th onclick="sortCartera('mandato')"   style="cursor:pointer;user-select:none">Mandato <span id="cart-sort-mandato"></span></th>
+                <th onclick="sortCartera('canal')"     style="cursor:pointer;user-select:none">Medio <span id="cart-sort-canal"></span></th>
+                <th onclick="sortCartera('tipologia')" style="cursor:pointer;user-select:none">Tipo <span id="cart-sort-tipologia"></span></th>
+                <th class="nr" onclick="sortCartera('precio')"   style="cursor:pointer;user-select:none">Precio <span id="cart-sort-precio"></span></th>
+                <th class="nr" onclick="sortCartera('honor')"    style="cursor:pointer;user-select:none">Honor. pot. <span id="cart-sort-honor"></span></th>
+                <th class="nr" onclick="sortCartera('meses')"    style="cursor:pointer;user-select:none">Antigüedad <span id="cart-sort-meses"></span></th>
+                <th class="nr" onclick="sortCartera('visitas')"  style="cursor:pointer;user-select:none">Visitas <span id="cart-sort-visitas"></span></th>
+              </tr>
+            </thead>
+            <tbody id="cartera-tbody">
+              <tr><td colspan="10" class="loading">Cargando...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1041,17 +1122,21 @@
 
     <!-- ═══ INGRESOS RESUMEN ═══ -->
     <div class="view" id="view-ingresos-resumen">
-      <div class="kpi-grid kpi-grid-4" style="grid-template-columns:repeat(5,1fr)">
-        <div class="kpi-card highlight"><div class="kpi-label">Honor. LAE cobrado</div><div class="kpi-value" id="ir-cobrado">—</div><div class="kpi-sub">período seleccionado</div></div>
-        <div class="kpi-card"><div class="kpi-label">Pipeline generado</div><div class="kpi-value amber" id="ir-pipeline">—</div></div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:10px">
+        <div class="kpi-card highlight"><div class="kpi-label">Pipeline generado LAE</div><div class="kpi-value amber" id="ir-pipeline">—</div><div class="kpi-sub">ops. firmadas no cobradas</div></div>
+        <div class="kpi-card highlight"><div class="kpi-label">Honor. LAE cobrado</div><div class="kpi-value green" id="ir-cobrado">—</div><div class="kpi-sub">período seleccionado</div></div>
         <div class="kpi-card"><div class="kpi-label">Pendiente escritura</div><div class="kpi-value amber" id="ir-pendiente">—</div></div>
-        <div class="kpi-card"><div class="kpi-label">Ops. inmobiliarias</div><div class="kpi-value" id="ir-ops-inmob">—</div></div>
-        <div class="kpi-card"><div class="kpi-label">Ops. atípicas</div><div class="kpi-value" id="ir-ops-atip">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Ops. Venta</div><div class="kpi-value" id="ir-ops-venta">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Ops. Alquiler</div><div class="kpi-value" id="ir-ops-alquiler">—</div></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
         <div class="panel">
           <div class="panel-header"><span class="panel-title">Honorarios por canal</span></div>
           <div class="panel-body" id="ir-canales"><div class="loading">Cargando...</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Generado por oficina — período</span></div>
+          <div class="panel-body" id="ir-generado-oficina"><div class="loading">Cargando...</div></div>
         </div>
         <div class="panel">
           <div class="panel-header"><span class="panel-title">Cobrado por oficina — período</span></div>

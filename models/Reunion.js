@@ -79,20 +79,16 @@ const Reunion = {
     await pool.query('DELETE FROM compromisos WHERE id=$1', [id]);
   },
 
-  async compromisosAbiertos({ desde, hasta } = {}) {
-    let where = ['c.completado = false'];
-    const params = [];
-    if (desde) { where.push(`r.fecha >= $${params.length+1}`); params.push(desde); }
-    if (hasta) { where.push(`r.fecha <= $${params.length+1}`); params.push(hasta); }
+  async compromisosAbiertos() {
     const { rows } = await pool.query(`
       SELECT c.*, r.fecha AS reunion_fecha, o.nombre AS oficina_nombre
       FROM compromisos c
       JOIN reuniones r ON r.id = c.reunion_id
       LEFT JOIN oficinas o ON o.id = r.oficina_id
-      WHERE ${where.join(' AND ')}
+      WHERE c.completado = false
       ORDER BY c.plazo NULLS LAST, c.created_at
-      LIMIT 100
-    `, params);
+      LIMIT 20
+    `);
     return rows;
   }
 };
