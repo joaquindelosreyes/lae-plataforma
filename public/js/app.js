@@ -2142,15 +2142,11 @@ let _actData = [], _actSortCol = 'total', _actSortAsc = false;
 
 async function loadActividad() {
   try {
-    const { desde, hasta } = getDateRange();
-    const q = `desde=${desde}&hasta=${hasta}`;
-    const año = new Date().getFullYear();
-
     const [sumRes, comRes, tipoRes, propRes] = await Promise.all([
-      fetch(`${API}/api/actividad/resumen?${q}`).then(r => r.json()),
-      fetch(`${API}/api/actividad/por-comercial?${q}`).then(r => r.json()),
-      fetch(`${API}/api/actividad/por-tipo?${q}`).then(r => r.json()),
-      fetch(`${API}/api/actividad/propiedades-activas?${q}`).then(r => r.json()),
+      fetch(`${API}/api/actividad/resumen`).then(r => r.json()),
+      fetch(`${API}/api/actividad/por-comercial`).then(r => r.json()),
+      fetch(`${API}/api/actividad/por-tipo`).then(r => r.json()),
+      fetch(`${API}/api/actividad/propiedades-activas`).then(r => r.json()),
     ]);
 
     // KPIs
@@ -2220,7 +2216,8 @@ function sortActividad(col) {
 
 function renderActComerciales() {
   const tbody = document.getElementById('act-comerciales-tbody');
-  if (!tbody || !_actData.length) return;
+  if (!tbody) return;
+  if (!_actData.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px">Sin datos</td></tr>'; return; }
   const sorted = [..._actData].sort((a,b) => {
     const va = _actSortCol==='comercial' ? (a.comercial||'') : (parseInt(a.total)||0);
     const vb = _actSortCol==='comercial' ? (b.comercial||'') : (parseInt(b.total)||0);
