@@ -217,4 +217,68 @@ async function recalcularSeguimiento(pool) {
   `);
 }
 
+// POST /api/import/demandas
+router.post('/demandas', upload.single('archivo'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ success: false, error: 'No se recibió archivo' });
+  try {
+    const content = req.file.buffer.toString('latin1');
+    // Limpiar HTML del campo Título antes de parsear
+    const cleanContent = content.replace(/<[^>]*>/g, '').replace(/\[amp,\]/g, '&');
+    const rows = parse(cleanContent, { delimiter:';', columns:true, skip_empty_lines:true, trim:true, relax_column_count:true, relax_quotes:true });
+
+    const { rows: oficinas } = await pool.query('SELECT id, nombre FROM oficinas');
+    const oficinaMap = {};
+    oficinas.forEach(o => { oficinaMap[o.nombre] = o.id; });
+
+    const stats = { insertadas: 0, actualizadas: 0, errores: 0, ignoradas: 0 };
+
+    for (const row of rows) {
+      try {
+        const sucursal = (row['Sucursal']||'').trim();
+        const oficinaNombre = SUCURSAL_MAP[sucursal];
+        const oficina_id = oficinaNombre ? (oficinaMap[oficinaNombre] || null) : null;
+
+        const parseDate = s => {
+          if (!s || s.startsWith('0000')) return null;
+          const d = s.split(' ')[0];
+          return d.match(/^\d{4}-\d{2}-\d{2}$/) ? d : null;
+        };
+
+        const situacion = (row['Situación']||row['Situacion']||'').trim();
+        const medio = (row['Medio Contacto']||'').trim();
+        const consultor = [row['Nombre Captador']||'', row['Apellidos Captador']||''].filter(Boolean).join(' ').trim();
+        const cliente = [row['Nombre Cliente']||'', row['Apellidos']||''].filter(Boolean).join(' ').trim();
+
+        await pool.query(`
+          INSERT INTO demandas (
+            sucursal, oficina_id, consultor_nombre, cliente_nombre,
+            fecha_alta_cliente, fecha_alta_demanda, fecha_act_demanda, fecha_cierre,
+            medio_contacto, tipo_cliente, situacion, titulo, email, observacion
+          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+          ON CONFLICT DO NOTHING
+        `, [
+          sucursal, oficina_id, consultor || null, cliente || null,
+          parseDate(row['Fecha Alta Clientes']),
+          parseDate(row['Fecha Alta Demandas']),
+          parseDate(row['Fecha Act Demandas']),
+          parseDate(row['Fecha Cierre Operación']||row['Fecha Cierre Operacion']),
+          medio || null,
+          (row['Tipo Cliente']||'').trim() || null,
+          situacion || null,
+          (row['Título demanda']||row['Titulo demanda']||'').trim().slice(0,500) || null,
+          (row['Email Cliente']||'').trim() || null,
+          (row['Observación']||row['Observacion']||'').trim().slice(0,1000) || null
+        ]);
+        stats.insertadas++;
+      } catch(e) {
+        stats.errores++;
+      }
+    }
+
+    res.json({ success: true, stats, mensaje: `${stats.insertadas} demandas importadas` });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 module.exports = router;

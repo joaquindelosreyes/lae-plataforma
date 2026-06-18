@@ -36,6 +36,15 @@ router.get('/por-oficina', async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// GET /api/captaciones/vivienda-excl-por-oficina
+router.get('/vivienda-excl-por-oficina', async (req, res) => {
+  try {
+    const { desde, hasta } = req.query;
+    const data = await Captacion.porOficinaViviendaExcl({ desde, hasta });
+    res.json({ success: true, data });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 // GET /api/captaciones/evolucion?año=2026
 router.get('/evolucion', async (req, res) => {
   try {
