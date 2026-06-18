@@ -5,6 +5,13 @@ const pool     = require('../db/pool');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
+// Migración idempotente: columna fuente para distinguir Inmovilla vs manual
+pool.query(`
+  ALTER TABLE captaciones  ADD COLUMN IF NOT EXISTS fuente VARCHAR(20) DEFAULT 'manual';
+  ALTER TABLE operaciones   ADD COLUMN IF NOT EXISTS fuente VARCHAR(20) DEFAULT 'manual';
+  ALTER TABLE demandas      ADD COLUMN IF NOT EXISTS fuente VARCHAR(20) DEFAULT 'inmovilla';
+`).catch(() => {});
+
 // Mapa sucursal_id → nombre oficina LAE
 const SUCURSAL_MAP = {
   '10385': 'San Sebastián',
@@ -20,23 +27,19 @@ const SUCURSAL_MAP = {
   '13442': 'Castellón',
 };
 
-// Estados que indican captación activa en cartera
 const ESTADOS_ACTIVOS = new Set([
   'Libre','Reservado','Señalizada','Contrato Arras',
   'En Trámites','Pendiente de Firma','No Libre','Sólo Seguimiento'
 ]);
 
-// Estados que indican operación cerrada
 const ESTADOS_CERRADOS = new Set(['Vendida','Alquilada']);
 
-// Tipo operacion Inmovilla → tipo LAE
 function mapTipoOp(tipoInmovilla) {
   const t = (tipoInmovilla || '').toLowerCase();
   if (t.includes('alquil')) return 'alquiler';
   return 'cv';
 }
 
-// Tipo inmueble Inmovilla → tipología LAE
 function mapTipologia(tipo) {
   const t = (tipo || '').toLowerCase();
   if (t.includes('apart') || t.includes('piso') || t.includes('ático') || t.includes('atico') || t.includes('estudio') || t.includes('casa') || t.includes('chalet') || t.includes('villa') || t.includes('bungal') || t.includes('duplex') || t.includes('dúplex')) return 'vivienda';
@@ -47,15 +50,17 @@ function mapTipologia(tipo) {
   if (t.includes('oficina') || t.includes('despacho')) return 'oficina';
   if (t.includes('nave') || t.includes('industrial') || t.includes('almac')) return 'nave';
   if (t.includes('finca') || t.includes('rústic') || t.includes('rustic')) return 'finca';
-  return 'vivienda'; // default
+  return 'vivienda';
 }
 
 // POST /api/import/inmovilla
+// Estrategia: reemplaza completamente los datos de Inmovilla.
+// Las operaciones manuales (fuente='manual') no se tocan.
 router.post('/inmovilla', upload.single('archivo'), async (req, res) => {
   if (!req.file) return res.status(400).json({ success: false, error: 'No se recibió ningún archivo' });
 
+  const client = await pool.connect();
   try {
-    // Parsear CSV (separador ;, encoding latin-1)
     const content = req.file.buffer.toString('latin1');
     const rows = parse(content, {
       delimiter: ';',
@@ -65,22 +70,26 @@ router.post('/inmovilla', upload.single('archivo'), async (req, res) => {
       relax_column_count: true,
     });
 
-    // Cargar oficinas de la BD para mapear por nombre
-    const { rows: oficinas } = await pool.query('SELECT id, nombre FROM oficinas');
+    const { rows: oficinas } = await client.query('SELECT id, nombre FROM oficinas');
     const oficinaMap = {};
     oficinas.forEach(o => { oficinaMap[o.nombre] = o.id; });
 
-    // Cargar consultores existentes
-    const { rows: consultores } = await pool.query('SELECT id, nombre FROM consultores');
+    const { rows: consultores } = await client.query('SELECT id, nombre FROM consultores');
     const consultorMap = {};
     consultores.forEach(c => { consultorMap[c.nombre.toLowerCase()] = c.id; });
 
-    const stats = { captaciones_nuevas: 0, captaciones_actualizadas: 0, operaciones_nuevas: 0, errores: 0, ignoradas: 0 };
+    await client.query('BEGIN');
+
+    // Borrar datos previos de Inmovilla — las entradas manuales se conservan
+    await client.query(`DELETE FROM captaciones WHERE fuente = 'inmovilla'`);
+    await client.query(`DELETE FROM operaciones  WHERE fuente = 'inmovilla'`);
+
+    const stats = { captaciones_nuevas: 0, operaciones_nuevas: 0, errores: 0, ignoradas: 0 };
     const errores = [];
 
     for (const row of rows) {
       try {
-        const sucursal    = (row['Sucursal'] || '').trim();
+        const sucursal      = (row['Sucursal'] || '').trim();
         const oficinaNombre = SUCURSAL_MAP[sucursal];
         if (!oficinaNombre) { stats.ignoradas++; continue; }
 
@@ -99,14 +108,10 @@ router.post('/inmovilla', upload.single('archivo'), async (req, res) => {
         const pctComision = parseFloat((row['Porcentaje'] || '5').replace(',', '.')) || 5;
         const comision    = parseFloat((row['Comisión'] || '0').replace(',', '.')) || 0;
 
-        // Resolver consultor
         const captadoPor = (row['Captado por'] || '').trim().toLowerCase();
-        const consultor_id = consultorMap[captadoPor] || null;
-
-        // Si el consultor no existe, crearlo
-        let resolvedConsultor = consultor_id;
+        let resolvedConsultor = consultorMap[captadoPor] || null;
         if (!resolvedConsultor && captadoPor) {
-          const { rows: newCons } = await pool.query(
+          const { rows: newCons } = await client.query(
             'INSERT INTO consultores (nombre, oficina_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id',
             [row['Captado por'].trim(), oficina_id]
           );
@@ -116,55 +121,35 @@ router.post('/inmovilla', upload.single('archivo'), async (req, res) => {
           }
         }
 
-        const tipologia   = mapTipologia(tipo);
-        const tipoOpLAE   = mapTipoOp(tipoOp);
-        const mandato     = exclusiva ? 'exclusiva' : 'nota_encargo';
-        const honorarios  = comision > 0 ? comision : (precioVenta * pctComision / 100);
+        const tipologia  = mapTipologia(tipo);
+        const tipoOpLAE  = mapTipoOp(tipoOp);
+        const mandato    = exclusiva ? 'exclusiva' : 'nota_encargo';
+        const honorarios = comision > 0 ? comision : (precioVenta * pctComision / 100);
 
         if (ESTADOS_ACTIVOS.has(estado)) {
-          // → CAPTACIÓN ACTIVA
-          const estadoCap = estado === 'Libre' ? 'activa' :
-                            estado === 'Reservado' || estado === 'Señalizada' ? 'activa' :
-                            estado === 'Contrato Arras' || estado === 'En Trámites' || estado === 'Pendiente de Firma' ? 'activa' : 'activa';
-
-          await pool.query(`
+          await client.query(`
             INSERT INTO captaciones (ref, fecha_captacion, direccion, oficina_id, consultor_id,
               mandato, tipologia, tipo_operacion, precio_captacion, pct_honorarios,
-              honorarios_potenciales, estado)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
-            ON CONFLICT (ref) DO UPDATE SET
-              estado = EXCLUDED.estado,
-              precio_captacion = EXCLUDED.precio_captacion,
-              honorarios_potenciales = EXCLUDED.honorarios_potenciales,
-              updated_at = NOW()
+              honorarios_potenciales, estado, fuente)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'activa','inmovilla')
           `, [ref, fechaAlta, direccion, oficina_id, resolvedConsultor,
-              mandato, tipologia, tipoOpLAE, precioVenta, pctComision,
-              honorarios, estadoCap]);
-
+              mandato, tipologia, tipoOpLAE, precioVenta, pctComision, honorarios]);
           stats.captaciones_nuevas++;
 
         } else if (ESTADOS_CERRADOS.has(estado)) {
-          // → OPERACIÓN CERRADA
           const fechaOp = (fechaCierre && fechaCierre !== '0000-00-00') ? fechaCierre : fechaAlta;
           if (!fechaOp || fechaOp === '0000-00-00') { stats.ignoradas++; continue; }
-
-          // Solo importar operaciones del año en curso o anterior
           const añoOp = parseInt((fechaOp || '').split('-')[0]);
           if (añoOp < 2023) { stats.ignoradas++; continue; }
 
-          await pool.query(`
+          await client.query(`
             INSERT INTO operaciones (ref, fecha, tipo_ingreso, tipo_operacion,
               oficina_id, direccion, precio_inmueble, pct_comision,
-              comision_bruta, honorarios_lae, canal, estado, fecha_cobro)
-            VALUES ($1,$2,'inmobiliaria',$3,$4,$5,$6,$7,$8,$9,'directa','cobrada',$10)
-            ON CONFLICT (ref) DO UPDATE SET
-              honorarios_lae = EXCLUDED.honorarios_lae,
-              estado = 'cobrada',
-              updated_at = NOW()
+              comision_bruta, honorarios_lae, canal, estado, fecha_cobro, fuente)
+            VALUES ($1,$2,'inmobiliaria',$3,$4,$5,$6,$7,$8,$9,'directa','cobrada',$10,'inmovilla')
           `, [ref + '-OP', fechaOp, tipoOpLAE, oficina_id, direccion,
               precioVenta, pctComision, honorarios, honorarios,
               (fechaCierre && fechaCierre !== '0000-00-00') ? fechaCierre : null]);
-
           stats.operaciones_nuevas++;
 
         } else {
@@ -177,23 +162,157 @@ router.post('/inmovilla', upload.single('archivo'), async (req, res) => {
       }
     }
 
-    // Actualizar seguimiento con los datos importados
+    await client.query('COMMIT');
     await recalcularSeguimiento(pool);
 
     res.json({
       success: true,
       stats,
       errores_muestra: errores,
-      mensaje: `Importación completada: ${stats.captaciones_nuevas} captaciones, ${stats.operaciones_nuevas} operaciones`
+      mensaje: `Importación completada: ${stats.captaciones_nuevas} captaciones, ${stats.operaciones_nuevas} operaciones`,
     });
 
   } catch (e) {
+    await client.query('ROLLBACK').catch(() => {});
     console.error('Error importación:', e);
     res.status(500).json({ success: false, error: e.message });
+  } finally {
+    client.release();
   }
 });
 
-// Recalcula la tabla seguimiento desde operaciones reales
+// POST /api/import/actividad
+// Reemplaza completamente la tabla actividad_comercial
+router.post('/actividad', upload.single('archivo'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ success: false, error: 'No se recibió archivo' });
+
+  const client = await pool.connect();
+  try {
+    const content = req.file.buffer.toString('latin1');
+    const rows = parse(content, {
+      delimiter: ';', columns: true, skip_empty_lines: true,
+      trim: true, relax_column_count: true, relax_quotes: true,
+    });
+
+    const { rows: oficinas } = await client.query('SELECT id, nombre FROM oficinas');
+    const oficinaMap = {};
+    oficinas.forEach(o => { oficinaMap[o.nombre] = o.id; });
+
+    await client.query('BEGIN');
+    await client.query('DELETE FROM actividad_comercial');
+
+    const stats = { insertadas: 0, errores: 0, ignoradas: 0 };
+    const parseDate = s => {
+      if (!s || s.startsWith('0000')) return null;
+      const d = s.split(' ')[0];
+      return d.match(/^\d{4}-\d{2}-\d{2}$/) ? d : null;
+    };
+
+    for (const row of rows) {
+      try {
+        const sucursal = (row['Sucursal'] || '').trim();
+        const oficinaNombre = SUCURSAL_MAP[sucursal];
+        const oficina_id = oficinaNombre ? (oficinaMap[oficinaNombre] || null) : null;
+        if (!oficinaNombre) { stats.ignoradas++; continue; }
+
+        await client.query(`
+          INSERT INTO actividad_comercial
+            (sucursal, oficina_id, comercial, ref_propiedad, tipo_seguimiento, fecha)
+          VALUES ($1,$2,$3,$4,$5,$6)
+        `, [
+          sucursal, oficina_id,
+          (row['Nombre Captador'] || row['Comercial'] || '').trim() || null,
+          (row['Referencia'] || row['Ref'] || '').trim() || null,
+          (row['Tipo Seguimiento'] || row['tipo operacion'] || '').trim() || null,
+          parseDate(row['Fecha Seguimiento'] || row['Fecha']),
+        ]);
+        stats.insertadas++;
+      } catch(e) {
+        stats.errores++;
+      }
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true, stats, mensaje: `${stats.insertadas} registros de actividad importados` });
+  } catch(e) {
+    await client.query('ROLLBACK').catch(() => {});
+    res.status(500).json({ success: false, error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
+// POST /api/import/demandas
+// Reemplaza completamente la tabla demandas
+router.post('/demandas', upload.single('archivo'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ success: false, error: 'No se recibió archivo' });
+
+  const client = await pool.connect();
+  try {
+    const content = req.file.buffer.toString('latin1');
+    const cleanContent = content.replace(/<[^>]*>/g, '').replace(/\[amp,\]/g, '&');
+    const rows = parse(cleanContent, {
+      delimiter: ';', columns: true, skip_empty_lines: true,
+      trim: true, relax_column_count: true, relax_quotes: true,
+    });
+
+    const { rows: oficinas } = await client.query('SELECT id, nombre FROM oficinas');
+    const oficinaMap = {};
+    oficinas.forEach(o => { oficinaMap[o.nombre] = o.id; });
+
+    await client.query('BEGIN');
+    await client.query('DELETE FROM demandas');
+
+    const stats = { insertadas: 0, errores: 0 };
+    const parseDate = s => {
+      if (!s || s.startsWith('0000')) return null;
+      const d = s.split(' ')[0];
+      return d.match(/^\d{4}-\d{2}-\d{2}$/) ? d : null;
+    };
+
+    for (const row of rows) {
+      try {
+        const sucursal = (row['Sucursal'] || '').trim();
+        const oficinaNombre = SUCURSAL_MAP[sucursal];
+        const oficina_id = oficinaNombre ? (oficinaMap[oficinaNombre] || null) : null;
+        const consultor = [row['Nombre Captador'] || '', row['Apellidos Captador'] || ''].filter(Boolean).join(' ').trim();
+        const cliente   = [row['Nombre Cliente']  || '', row['Apellidos']          || ''].filter(Boolean).join(' ').trim();
+
+        await client.query(`
+          INSERT INTO demandas (
+            sucursal, oficina_id, consultor_nombre, cliente_nombre,
+            fecha_alta_cliente, fecha_alta_demanda, fecha_act_demanda, fecha_cierre,
+            medio_contacto, tipo_cliente, situacion, titulo, email, observacion, fuente
+          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'inmovilla')
+        `, [
+          sucursal, oficina_id, consultor || null, cliente || null,
+          parseDate(row['Fecha Alta Clientes']),
+          parseDate(row['Fecha Alta Demandas']),
+          parseDate(row['Fecha Act Demandas']),
+          parseDate(row['Fecha Cierre Operación'] || row['Fecha Cierre Operacion']),
+          (row['Medio Contacto'] || '').trim() || null,
+          (row['Tipo Cliente'] || '').trim() || null,
+          (row['Situación'] || row['Situacion'] || '').trim() || null,
+          (row['Título demanda'] || row['Titulo demanda'] || '').trim().slice(0, 500) || null,
+          (row['Email Cliente'] || '').trim() || null,
+          (row['Observación'] || row['Observacion'] || '').trim().slice(0, 1000) || null,
+        ]);
+        stats.insertadas++;
+      } catch(e) {
+        stats.errores++;
+      }
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true, stats, mensaje: `${stats.insertadas} demandas importadas` });
+  } catch(e) {
+    await client.query('ROLLBACK').catch(() => {});
+    res.status(500).json({ success: false, error: e.message });
+  } finally {
+    client.release();
+  }
+});
+
 async function recalcularSeguimiento(pool) {
   await pool.query(`
     INSERT INTO seguimiento (oficina_id, año, trimestre, cobrado, generado, captaciones, cierres)
@@ -216,69 +335,5 @@ async function recalcularSeguimiento(pool) {
       updated_at = NOW()
   `);
 }
-
-// POST /api/import/demandas
-router.post('/demandas', upload.single('archivo'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ success: false, error: 'No se recibió archivo' });
-  try {
-    const content = req.file.buffer.toString('latin1');
-    // Limpiar HTML del campo Título antes de parsear
-    const cleanContent = content.replace(/<[^>]*>/g, '').replace(/\[amp,\]/g, '&');
-    const rows = parse(cleanContent, { delimiter:';', columns:true, skip_empty_lines:true, trim:true, relax_column_count:true, relax_quotes:true });
-
-    const { rows: oficinas } = await pool.query('SELECT id, nombre FROM oficinas');
-    const oficinaMap = {};
-    oficinas.forEach(o => { oficinaMap[o.nombre] = o.id; });
-
-    const stats = { insertadas: 0, actualizadas: 0, errores: 0, ignoradas: 0 };
-
-    for (const row of rows) {
-      try {
-        const sucursal = (row['Sucursal']||'').trim();
-        const oficinaNombre = SUCURSAL_MAP[sucursal];
-        const oficina_id = oficinaNombre ? (oficinaMap[oficinaNombre] || null) : null;
-
-        const parseDate = s => {
-          if (!s || s.startsWith('0000')) return null;
-          const d = s.split(' ')[0];
-          return d.match(/^\d{4}-\d{2}-\d{2}$/) ? d : null;
-        };
-
-        const situacion = (row['Situación']||row['Situacion']||'').trim();
-        const medio = (row['Medio Contacto']||'').trim();
-        const consultor = [row['Nombre Captador']||'', row['Apellidos Captador']||''].filter(Boolean).join(' ').trim();
-        const cliente = [row['Nombre Cliente']||'', row['Apellidos']||''].filter(Boolean).join(' ').trim();
-
-        await pool.query(`
-          INSERT INTO demandas (
-            sucursal, oficina_id, consultor_nombre, cliente_nombre,
-            fecha_alta_cliente, fecha_alta_demanda, fecha_act_demanda, fecha_cierre,
-            medio_contacto, tipo_cliente, situacion, titulo, email, observacion
-          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
-          ON CONFLICT DO NOTHING
-        `, [
-          sucursal, oficina_id, consultor || null, cliente || null,
-          parseDate(row['Fecha Alta Clientes']),
-          parseDate(row['Fecha Alta Demandas']),
-          parseDate(row['Fecha Act Demandas']),
-          parseDate(row['Fecha Cierre Operación']||row['Fecha Cierre Operacion']),
-          medio || null,
-          (row['Tipo Cliente']||'').trim() || null,
-          situacion || null,
-          (row['Título demanda']||row['Titulo demanda']||'').trim().slice(0,500) || null,
-          (row['Email Cliente']||'').trim() || null,
-          (row['Observación']||row['Observacion']||'').trim().slice(0,1000) || null
-        ]);
-        stats.insertadas++;
-      } catch(e) {
-        stats.errores++;
-      }
-    }
-
-    res.json({ success: true, stats, mensaje: `${stats.insertadas} demandas importadas` });
-  } catch(e) {
-    res.status(500).json({ success: false, error: e.message });
-  }
-});
 
 module.exports = router;
