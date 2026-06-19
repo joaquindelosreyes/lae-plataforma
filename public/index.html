@@ -916,9 +916,12 @@
           <div class="table-wrap">
             <table>
               <thead><tr>
-                <th>Ref.</th><th>Oficina</th>
-                <th class="nr">Total</th><th class="nr">1ªs visitas</th>
-                <th class="nr" style="color:var(--red)">Canceladas</th><th>Última visita</th>
+                <th onclick="sortActProps('ref')" style="cursor:pointer;user-select:none">Ref. <span id="prop-sort-ref"></span></th>
+                <th onclick="sortActProps('oficina')" style="cursor:pointer;user-select:none">Oficina <span id="prop-sort-oficina"></span></th>
+                <th class="nr" onclick="sortActProps('total_visitas')" style="cursor:pointer;user-select:none">Total <span id="prop-sort-total_visitas"></span></th>
+                <th class="nr" onclick="sortActProps('primeras_visitas')" style="cursor:pointer;user-select:none">1ªs visitas <span id="prop-sort-primeras_visitas"></span></th>
+                <th class="nr" style="color:var(--red);cursor:pointer;user-select:none" onclick="sortActProps('canceladas')">Canceladas <span id="prop-sort-canceladas"></span></th>
+                <th onclick="sortActProps('ultima_visita')" style="cursor:pointer;user-select:none">Última visita <span id="prop-sort-ultima_visita"></span></th>
               </tr></thead>
               <tbody id="act-props-tbody"><tr><td colspan="6" class="loading">Cargando...</td></tr></tbody>
             </table>
@@ -935,14 +938,14 @@
         <div class="table-wrap">
           <table>
             <thead><tr>
-              <th onclick="sortActividad('comercial')" style="cursor:pointer;user-select:none">Comercial <span id="act-sort-c"></span></th>
-              <th>Oficina</th>
-              <th class="nr" onclick="sortActividad('total')" style="cursor:pointer;user-select:none">Total <span id="act-sort-t"></span></th>
-              <th class="nr" style="color:#1E40AF">Venta</th>
-              <th class="nr" style="color:#7C3AED">Alquiler</th>
-              <th class="nr">Adicionales</th>
-              <th class="nr" style="color:var(--red)">Canceladas</th>
-              <th class="nr">% Cancel.</th>
+              <th onclick="sortActividad('comercial')" style="cursor:pointer;user-select:none">Comercial <span id="act-sort-comercial"></span></th>
+              <th onclick="sortActividad('oficina')" style="cursor:pointer;user-select:none">Oficina <span id="act-sort-oficina"></span></th>
+              <th class="nr" onclick="sortActividad('total')" style="cursor:pointer;user-select:none">Total <span id="act-sort-total"></span></th>
+              <th class="nr" style="color:#1E40AF;cursor:pointer;user-select:none" onclick="sortActividad('venta')">Venta <span id="act-sort-venta"></span></th>
+              <th class="nr" style="color:#7C3AED;cursor:pointer;user-select:none" onclick="sortActividad('alquiler')">Alquiler <span id="act-sort-alquiler"></span></th>
+              <th class="nr" onclick="sortActividad('adicionales')" style="cursor:pointer;user-select:none">Adicionales <span id="act-sort-adicionales"></span></th>
+              <th class="nr" style="color:var(--red);cursor:pointer;user-select:none" onclick="sortActividad('canceladas')">Canceladas <span id="act-sort-canceladas"></span></th>
+              <th class="nr" onclick="sortActividad('ratio')" style="cursor:pointer;user-select:none">% Cancel. <span id="act-sort-ratio"></span></th>
               <th style="min-width:100px">Actividad</th>
             </tr></thead>
             <tbody id="act-comerciales-tbody"><tr><td colspan="9" class="loading">Cargando...</td></tr></tbody>
@@ -989,13 +992,13 @@
           <table>
             <thead>
               <tr>
-                <th>Oficina</th>
-                <th class="nr">Total</th>
-                <th class="nr" style="color:var(--green)">Buscando</th>
-                <th class="nr" style="color:#1E40AF">Convertidos</th>
-                <th class="nr" style="color:var(--amber)">Arras</th>
-                <th class="nr" style="color:var(--amber)">Reservas</th>
-                <th class="nr">Tasa conv.</th>
+                <th onclick="sortDemOficinas('nombre')" style="cursor:pointer;user-select:none">Oficina <span id="demof-sort-nombre"></span></th>
+                <th class="nr" onclick="sortDemOficinas('total')" style="cursor:pointer;user-select:none">Total <span id="demof-sort-total"></span></th>
+                <th class="nr" style="color:var(--green);cursor:pointer;user-select:none" onclick="sortDemOficinas('buscando')">Buscando <span id="demof-sort-buscando"></span></th>
+                <th class="nr" style="color:#1E40AF;cursor:pointer;user-select:none" onclick="sortDemOficinas('convertidos')">Convertidos <span id="demof-sort-convertidos"></span></th>
+                <th class="nr" style="color:var(--amber);cursor:pointer;user-select:none" onclick="sortDemOficinas('arras')">Arras <span id="demof-sort-arras"></span></th>
+                <th class="nr" style="color:var(--amber);cursor:pointer;user-select:none" onclick="sortDemOficinas('reservas')">Reservas <span id="demof-sort-reservas"></span></th>
+                <th class="nr" onclick="sortDemOficinas('tasa')" style="cursor:pointer;user-select:none">Tasa conv. <span id="demof-sort-tasa"></span></th>
                 <th style="min-width:120px">Peso relativo</th>
               </tr>
             </thead>
@@ -1016,12 +1019,12 @@
           <table>
             <thead>
               <tr>
-                <th>Consultor</th>
-                <th>Oficina</th>
-                <th class="nr">Total</th>
-                <th class="nr" style="color:var(--green)">Buscando</th>
-                <th class="nr" style="color:#1E40AF">Convertidos</th>
-                <th class="nr">Tasa conv.</th>
+                <th onclick="sortDemConsultores('consultor')" style="cursor:pointer;user-select:none">Consultor <span id="demcons-sort-consultor"></span></th>
+                <th onclick="sortDemConsultores('oficina')" style="cursor:pointer;user-select:none">Oficina <span id="demcons-sort-oficina"></span></th>
+                <th class="nr" onclick="sortDemConsultores('total')" style="cursor:pointer;user-select:none">Total <span id="demcons-sort-total"></span></th>
+                <th class="nr" style="color:var(--green);cursor:pointer;user-select:none" onclick="sortDemConsultores('buscando')">Buscando <span id="demcons-sort-buscando"></span></th>
+                <th class="nr" style="color:#1E40AF;cursor:pointer;user-select:none" onclick="sortDemConsultores('convertidos')">Convertidos <span id="demcons-sort-convertidos"></span></th>
+                <th class="nr" onclick="sortDemConsultores('tasa')" style="cursor:pointer;user-select:none">Tasa conv. <span id="demcons-sort-tasa"></span></th>
               </tr>
             </thead>
             <tbody id="dem-consultores-tbody">

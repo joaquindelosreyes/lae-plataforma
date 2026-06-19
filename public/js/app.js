@@ -1897,61 +1897,124 @@ async function loadDemandas() {
     }
 
     // Por oficina
-    const tbody = document.getElementById('dem-oficinas-tbody');
-    if (tbody && ofRes.success) {
-      const lista = ofRes.data;
-      const maxT = Math.max(...lista.map(o => parseInt(o.total)||0), 1);
-      let totTotal=0, totBusc=0, totConv=0;
-      const filas = lista.map(o => {
-        const t = parseInt(o.total)||0;
-        const b = parseInt(o.buscando)||0;
-        const c = parseInt(o.convertidos)||0;
-        const a = parseInt(o.arras)||0;
-        const r = parseInt(o.reservas)||0;
-        const tc = parseFloat(o.tasa_conversion)||0;
-        const w = Math.round(t/maxT*100);
-        totTotal+=t; totBusc+=b; totConv+=c;
-        return `<tr>
-          <td><strong>${o.nombre}</strong></td>
-          <td class="td-right">${t}</td>
-          <td class="td-right" style="color:var(--green);font-weight:500">${b}</td>
-          <td class="td-right" style="color:#1E40AF;font-weight:500">${c}</td>
-          <td class="td-right" style="color:var(--amber)">${a}</td>
-          <td class="td-right" style="color:var(--amber)">${r}</td>
-          <td class="td-right"><span class="${tc>=5?'pct-green':tc>=2?'pct-amber':'pct-red'}">${tc}%</span></td>
-          <td><div style="height:5px;background:var(--border);border-radius:2px"><div style="width:${w}%;height:100%;background:var(--navy);border-radius:2px"></div></div></td>
-        </tr>`;
-      }).join('');
-      tbody.innerHTML = filas + `<tr style="background:var(--cream);border-top:2px solid var(--border)">
-        <td style="font-weight:700">RED TOTAL</td>
-        <td class="td-right" style="font-weight:700">${totTotal}</td>
-        <td class="td-right" style="color:var(--green);font-weight:700">${totBusc}</td>
-        <td class="td-right" style="color:#1E40AF;font-weight:700">${totConv}</td>
-        <td class="td-right">—</td><td class="td-right">—</td>
-        <td class="td-right" style="font-weight:700">${totTotal>0?Math.round(totConv/totTotal*100*10)/10:0}%</td>
-        <td></td>
-      </tr>`;
-    }
+    _demOfData = ofRes.data || [];
+    renderDemOficinas();
 
     // Por consultor
-    const tbodyCons = document.getElementById('dem-consultores-tbody');
-    if (tbodyCons && consRes.success) {
-      const lista = consRes.data;
-      if (!lista.length) {
-        tbodyCons.innerHTML = '<tr><td colspan="6" class="loading">Sin datos para este período</td></tr>';
-      } else {
-        tbodyCons.innerHTML = lista.map(c => `<tr>
-          <td>${c.consultor||'—'}</td>
-          <td><span class="badge badge-gray">${c.oficina||'—'}</span></td>
-          <td class="td-right">${c.total||0}</td>
-          <td class="td-right" style="color:var(--green);font-weight:500">${c.buscando||0}</td>
-          <td class="td-right" style="color:#1E40AF;font-weight:500">${c.convertidos||0}</td>
-          <td class="td-right"><span class="${(c.tasa_conversion||0)>=5?'pct-green':(c.tasa_conversion||0)>=2?'pct-amber':'pct-red'}">${c.tasa_conversion||0}%</span></td>
-        </tr>`).join('');
-      }
-    }
+    _demConsData = consRes.data || [];
+    renderDemConsultores();
 
   } catch(e) { console.warn('Error demandas:', e.message); }
+}
+
+// ── DEMANDAS — POR OFICINA SORT ───────────────────────
+let _demOfData = [], _demOfSortCol = 'total', _demOfSortAsc = false;
+const DEMOF_COLS = ['nombre','total','buscando','convertidos','arras','reservas','tasa'];
+
+function sortDemOficinas(col) {
+  if (_demOfSortCol === col) { _demOfSortAsc = !_demOfSortAsc; }
+  else { _demOfSortCol = col; _demOfSortAsc = col === 'nombre'; }
+  DEMOF_COLS.forEach(c => {
+    const el = document.getElementById('demof-sort-' + c);
+    if (el) el.textContent = c === col ? (_demOfSortAsc ? ' ↑' : ' ↓') : '';
+  });
+  renderDemOficinas();
+}
+
+function renderDemOficinas() {
+  const tbody = document.getElementById('dem-oficinas-tbody');
+  if (!tbody) return;
+  if (!_demOfData.length) { tbody.innerHTML = '<tr><td colspan="8" class="loading">Sin datos para este período</td></tr>'; return; }
+  const getVal = (o, col) => {
+    switch(col) {
+      case 'nombre':      return o.nombre || '';
+      case 'buscando':    return parseInt(o.buscando) || 0;
+      case 'convertidos': return parseInt(o.convertidos) || 0;
+      case 'arras':       return parseInt(o.arras) || 0;
+      case 'reservas':    return parseInt(o.reservas) || 0;
+      case 'tasa':        return parseFloat(o.tasa_conversion) || 0;
+      default:            return parseInt(o.total) || 0;
+    }
+  };
+  const sorted = [..._demOfData].sort((a,b) => {
+    const va = getVal(a, _demOfSortCol), vb = getVal(b, _demOfSortCol);
+    if (typeof va==='string') return _demOfSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _demOfSortAsc ? va-vb : vb-va;
+  });
+  const maxT = Math.max(...sorted.map(o => parseInt(o.total)||0), 1);
+  let totTotal=0, totBusc=0, totConv=0;
+  const filas = sorted.map(o => {
+    const t = parseInt(o.total)||0;
+    const b = parseInt(o.buscando)||0;
+    const c = parseInt(o.convertidos)||0;
+    const a = parseInt(o.arras)||0;
+    const r = parseInt(o.reservas)||0;
+    const tc = parseFloat(o.tasa_conversion)||0;
+    const w = Math.round(t/maxT*100);
+    totTotal+=t; totBusc+=b; totConv+=c;
+    return `<tr>
+      <td><strong>${o.nombre}</strong></td>
+      <td class="td-right">${t}</td>
+      <td class="td-right" style="color:var(--green);font-weight:500">${b}</td>
+      <td class="td-right" style="color:#1E40AF;font-weight:500">${c}</td>
+      <td class="td-right" style="color:var(--amber)">${a}</td>
+      <td class="td-right" style="color:var(--amber)">${r}</td>
+      <td class="td-right"><span class="${tc>=5?'pct-green':tc>=2?'pct-amber':'pct-red'}">${tc}%</span></td>
+      <td><div style="height:5px;background:var(--border);border-radius:2px"><div style="width:${w}%;height:100%;background:var(--navy);border-radius:2px"></div></div></td>
+    </tr>`;
+  }).join('');
+  tbody.innerHTML = filas + `<tr style="background:var(--cream);border-top:2px solid var(--border)">
+    <td style="font-weight:700">RED TOTAL</td>
+    <td class="td-right" style="font-weight:700">${totTotal}</td>
+    <td class="td-right" style="color:var(--green);font-weight:700">${totBusc}</td>
+    <td class="td-right" style="color:#1E40AF;font-weight:700">${totConv}</td>
+    <td class="td-right">—</td><td class="td-right">—</td>
+    <td class="td-right" style="font-weight:700">${totTotal>0?Math.round(totConv/totTotal*100*10)/10:0}%</td>
+    <td></td>
+  </tr>`;
+}
+
+// ── DEMANDAS — POR CONSULTOR SORT ─────────────────────
+let _demConsData = [], _demConsSortCol = 'total', _demConsSortAsc = false;
+const DEMCONS_COLS = ['consultor','oficina','total','buscando','convertidos','tasa'];
+
+function sortDemConsultores(col) {
+  if (_demConsSortCol === col) { _demConsSortAsc = !_demConsSortAsc; }
+  else { _demConsSortCol = col; _demConsSortAsc = col === 'consultor' || col === 'oficina'; }
+  DEMCONS_COLS.forEach(c => {
+    const el = document.getElementById('demcons-sort-' + c);
+    if (el) el.textContent = c === col ? (_demConsSortAsc ? ' ↑' : ' ↓') : '';
+  });
+  renderDemConsultores();
+}
+
+function renderDemConsultores() {
+  const tbody = document.getElementById('dem-consultores-tbody');
+  if (!tbody) return;
+  if (!_demConsData.length) { tbody.innerHTML = '<tr><td colspan="6" class="loading">Sin datos para este período</td></tr>'; return; }
+  const getVal = (c, col) => {
+    switch(col) {
+      case 'consultor':   return c.consultor || '';
+      case 'oficina':     return c.oficina || '';
+      case 'buscando':    return parseInt(c.buscando) || 0;
+      case 'convertidos': return parseInt(c.convertidos) || 0;
+      case 'tasa':        return parseFloat(c.tasa_conversion) || 0;
+      default:            return parseInt(c.total) || 0;
+    }
+  };
+  const sorted = [..._demConsData].sort((a,b) => {
+    const va = getVal(a, _demConsSortCol), vb = getVal(b, _demConsSortCol);
+    if (typeof va==='string') return _demConsSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _demConsSortAsc ? va-vb : vb-va;
+  });
+  tbody.innerHTML = sorted.map(c => `<tr>
+    <td>${c.consultor||'—'}</td>
+    <td><span class="badge badge-gray">${c.oficina||'—'}</span></td>
+    <td class="td-right">${c.total||0}</td>
+    <td class="td-right" style="color:var(--green);font-weight:500">${c.buscando||0}</td>
+    <td class="td-right" style="color:#1E40AF;font-weight:500">${c.convertidos||0}</td>
+    <td class="td-right"><span class="${(c.tasa_conversion||0)>=5?'pct-green':(c.tasa_conversion||0)>=2?'pct-amber':'pct-red'}">${c.tasa_conversion||0}%</span></td>
+  </tr>`).join('');
 }
 
 // ── AAFF 50-50 ────────────────────────────────────────
@@ -2190,17 +2253,8 @@ async function loadActividad() {
     }
 
     // Propiedades más visitadas
-    const tProps = document.getElementById('act-props-tbody');
-    if (tProps && propRes.success) {
-      tProps.innerHTML = propRes.data.map(p => `<tr>
-        <td style="font-family:monospace;font-size:10px;font-weight:600;color:var(--navy)">${p.ref}</td>
-        <td><span class="badge badge-gray" style="font-size:9px">${p.oficina||'—'}</span></td>
-        <td class="td-right" style="font-weight:700">${p.total_visitas}</td>
-        <td class="td-right" style="color:#1E40AF">${p.primeras_visitas}</td>
-        <td class="td-right" style="color:var(--red)">${p.canceladas}</td>
-        <td style="font-size:11px;color:var(--muted)">${p.ultima_visita?fmtFecha(p.ultima_visita):'—'}</td>
-      </tr>`).join('');
-    }
+    _propData = propRes.data || [];
+    renderActProps();
 
     // Comerciales
     _actData = comRes.data || [];
@@ -2209,11 +2263,13 @@ async function loadActividad() {
   } catch(e) { console.warn('Error actividad:', e.message); }
 }
 
+const ACT_COLS = ['comercial','oficina','total','venta','alquiler','adicionales','canceladas','ratio'];
+
 function sortActividad(col) {
   if (_actSortCol === col) { _actSortAsc = !_actSortAsc; }
-  else { _actSortCol = col; _actSortAsc = col === 'comercial'; }
-  ['comercial','total'].forEach(c => {
-    const el = document.getElementById('act-sort-' + c[0]);
+  else { _actSortCol = col; _actSortAsc = col === 'comercial' || col === 'oficina'; }
+  ACT_COLS.forEach(c => {
+    const el = document.getElementById('act-sort-' + c);
     if (el) el.textContent = c === col ? (_actSortAsc ? ' ↑' : ' ↓') : '';
   });
   renderActComerciales();
@@ -2223,9 +2279,20 @@ function renderActComerciales() {
   const tbody = document.getElementById('act-comerciales-tbody');
   if (!tbody) return;
   if (!_actData.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px">Sin datos</td></tr>'; return; }
+  const getVal = (c, col) => {
+    switch(col) {
+      case 'comercial':   return c.comercial || '';
+      case 'oficina':     return c.oficina || '';
+      case 'venta':       return parseInt(c.venta) || 0;
+      case 'alquiler':    return parseInt(c.alquiler) || 0;
+      case 'adicionales': return parseInt(c.adicionales) || 0;
+      case 'canceladas':  return parseInt(c.canceladas) || 0;
+      case 'ratio':       return parseFloat(c.ratio_cancel) || 0;
+      default:            return parseInt(c.total) || 0;
+    }
+  };
   const sorted = [..._actData].sort((a,b) => {
-    const va = _actSortCol==='comercial' ? (a.comercial||'') : (parseInt(a.total)||0);
-    const vb = _actSortCol==='comercial' ? (b.comercial||'') : (parseInt(b.total)||0);
+    const va = getVal(a, _actSortCol), vb = getVal(b, _actSortCol);
     if (typeof va==='string') return _actSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     return _actSortAsc ? va-vb : vb-va;
   });
@@ -2246,6 +2313,49 @@ function renderActComerciales() {
       <td><div style="height:5px;background:var(--border);border-radius:2px"><div style="width:${w}%;height:100%;background:var(--navy);border-radius:2px"></div></div></td>
     </tr>`;
   }).join('');
+}
+
+// ── ACTIVIDAD — PROPIEDADES MÁS VISITADAS SORT ────────
+let _propData = [], _propSortCol = 'total_visitas', _propSortAsc = false;
+const PROP_COLS = ['ref','oficina','total_visitas','primeras_visitas','canceladas','ultima_visita'];
+
+function sortActProps(col) {
+  if (_propSortCol === col) { _propSortAsc = !_propSortAsc; }
+  else { _propSortCol = col; _propSortAsc = col === 'ref' || col === 'oficina'; }
+  PROP_COLS.forEach(c => {
+    const el = document.getElementById('prop-sort-' + c);
+    if (el) el.textContent = c === col ? (_propSortAsc ? ' ↑' : ' ↓') : '';
+  });
+  renderActProps();
+}
+
+function renderActProps() {
+  const tbody = document.getElementById('act-props-tbody');
+  if (!tbody) return;
+  if (!_propData.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Sin datos</td></tr>'; return; }
+  const getVal = (p, col) => {
+    switch(col) {
+      case 'ref':              return p.ref || '';
+      case 'oficina':           return p.oficina || '';
+      case 'primeras_visitas':  return parseInt(p.primeras_visitas) || 0;
+      case 'canceladas':        return parseInt(p.canceladas) || 0;
+      case 'ultima_visita':     return p.ultima_visita || '';
+      default:                  return parseInt(p.total_visitas) || 0;
+    }
+  };
+  const sorted = [..._propData].sort((a,b) => {
+    const va = getVal(a, _propSortCol), vb = getVal(b, _propSortCol);
+    if (typeof va==='string') return _propSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _propSortAsc ? va-vb : vb-va;
+  });
+  tbody.innerHTML = sorted.map(p => `<tr>
+    <td style="font-family:monospace;font-size:10px;font-weight:600;color:var(--navy)">${p.ref}</td>
+    <td><span class="badge badge-gray" style="font-size:9px">${p.oficina||'—'}</span></td>
+    <td class="td-right" style="font-weight:700">${p.total_visitas}</td>
+    <td class="td-right" style="color:#1E40AF">${p.primeras_visitas}</td>
+    <td class="td-right" style="color:var(--red)">${p.canceladas}</td>
+    <td style="font-size:11px;color:var(--muted)">${p.ultima_visita?fmtFecha(p.ultima_visita):'—'}</td>
+  </tr>`).join('');
 }
 
 // ── AAFF 50-50 SORT ───────────────────────────────────
