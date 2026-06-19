@@ -1,5 +1,12 @@
 const pool = require('../db/pool');
 
+// Migración idempotente: soporte para segundo impuesto (ej. IVA + retención IRPF)
+pool.query(`
+  ALTER TABLE gastos ADD COLUMN IF NOT EXISTS tipo_impuesto2_desc VARCHAR(60);
+  ALTER TABLE gastos ADD COLUMN IF NOT EXISTS pct_impuesto2 NUMERIC DEFAULT 0;
+  ALTER TABLE gastos ADD COLUMN IF NOT EXISTS signo_impuesto2 VARCHAR(5) DEFAULT 'resta';
+`).catch(() => {});
+
 const Gasto = {
 
   async listar({ oficina_id, categoria, desde, hasta } = {}) {
@@ -53,23 +60,29 @@ const Gasto = {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const base = parseFloat(data.base_imponible) || 0;
-      const pct  = parseFloat(data.pct_impuesto) || 0;
-      const total = base + base * pct / 100;
+      const base   = parseFloat(data.base_imponible) || 0;
+      const pct    = parseFloat(data.pct_impuesto) || 0;
+      const pct2   = parseFloat(data.pct_impuesto2) || 0;
+      const signo2 = data.signo_impuesto2 === 'suma' ? 'suma' : 'resta';
+      const importe2 = base * pct2 / 100 * (signo2 === 'resta' ? -1 : 1);
+      const total = base + base * pct / 100 + importe2;
 
       const { rows } = await client.query(`
         INSERT INTO gastos (
           concepto, categoria, fecha, periodicidad,
           base_imponible, tipo_impuesto_desc, pct_impuesto, total,
-          fecha_vencimiento_contrato, alerta_renovacion, nota
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+          fecha_vencimiento_contrato, alerta_renovacion, nota,
+          tipo_impuesto2_desc, pct_impuesto2, signo_impuesto2
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
         RETURNING *
       `, [
         data.concepto, data.categoria || 'Otros', data.fecha, data.periodicidad || 'puntual',
         base, data.tipo_impuesto_desc || 'IVA 21%', pct, total,
         data.fecha_vencimiento_contrato || null,
         data.alerta_renovacion || false,
-        data.nota || null
+        data.nota || null,
+        pct2 > 0 ? (data.tipo_impuesto2_desc || 'Retención IRPF') : null,
+        pct2, signo2
       ]);
 
       const gasto = rows[0];

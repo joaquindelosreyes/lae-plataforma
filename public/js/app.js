@@ -730,6 +730,7 @@ async function guardarGasto() {
   const pct  = parseFloat(document.getElementById('g-pct')?.value||'0') || 0;
   const categoria = document.getElementById('g-categoria')?.value || 'Otros';
   const oficina_id = document.getElementById('g-oficina')?.value || null;
+  const aplicaImp2 = document.getElementById('g-imp2-toggle')?.checked;
   const payload = {
     concepto, categoria,
     fecha: document.getElementById('g-fecha')?.value || new Date().toISOString().split('T')[0],
@@ -737,6 +738,9 @@ async function guardarGasto() {
     base_imponible: base,
     tipo_impuesto_desc: document.getElementById('g-imp-desc')?.value || 'IVA 21%',
     pct_impuesto: pct,
+    tipo_impuesto2_desc: aplicaImp2 ? (document.getElementById('g-imp2-desc')?.value || 'Retención IRPF') : null,
+    pct_impuesto2: aplicaImp2 ? (parseFloat(document.getElementById('g-pct2')?.value) || 0) : 0,
+    signo_impuesto2: document.getElementById('g-signo2')?.value || 'resta',
     fecha_vencimiento_contrato: document.getElementById('g-vencimiento')?.value || null,
     nota: document.getElementById('g-nota')?.value || null,
     oficina_ids: oficina_id ? [parseInt(oficina_id)] : []
@@ -747,6 +751,7 @@ async function guardarGasto() {
   if (res.success) {
     showAlert('gastos-alert', '✓ Gasto guardado', 'success');
     document.getElementById('form-gasto')?.reset();
+    document.getElementById('g-imp2-wrap')?.style.setProperty('display', 'none');
     loadGastos();
   } else { showAlert('gastos-alert', 'Error: ' + res.error, 'error'); }
 }
@@ -1568,7 +1573,7 @@ function renderGastosTabla(data) {
       <td>${g.oficinas||'Central'}</td>
       <td><span class="badge badge-gray">${perLbl[g.periodicidad]||g.periodicidad}</span></td>
       <td class="td-right">${fmt(g.base_imponible)}</td>
-      <td class="td-right"><strong>${fmt(g.total)}</strong></td>
+      <td class="td-right"><strong>${fmt(g.total)}</strong>${g.tipo_impuesto2_desc ? `<div style="font-size:9px;color:var(--muted)">${g.signo_impuesto2==='resta'?'−':'+'} ${g.tipo_impuesto2_desc}</div>` : ''}</td>
       <td>${venc}</td>
       <td><button class="btn btn-danger btn-sm" onclick="eliminarGasto(${g.id})">✕</button></td>
     </tr>`;
