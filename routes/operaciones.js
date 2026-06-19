@@ -35,6 +35,17 @@ router.get('/por-oficina', async (req, res) => {
   }
 });
 
+// GET /api/operaciones/por-oficina-tipo — ventas/alquiler/AAFF por oficina
+router.get('/por-oficina-tipo', async (req, res) => {
+  try {
+    const { desde, hasta } = req.query;
+    const data = await Operacion.porOficinaTipoCanal({ desde, hasta });
+    res.json({ success: true, data });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // GET /api/operaciones/:id
 router.get('/:id', async (req, res) => {
   try {

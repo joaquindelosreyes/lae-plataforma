@@ -1193,6 +1193,27 @@
           <div class="panel-body" id="ir-por-oficina"><div class="loading">Cargando...</div></div>
         </div>
       </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Operaciones por oficina — Venta / Alquiler / AAFF</span>
+          <span style="font-size:11px;color:var(--muted)">Nº operaciones del período</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th onclick="sortIrOf('nombre')" style="cursor:pointer;user-select:none">Oficina <span id="irof-sort-nombre"></span></th>
+              <th class="nr" style="color:#1E40AF;cursor:pointer;user-select:none" onclick="sortIrOf('venta')">Ventas <span id="irof-sort-venta"></span></th>
+              <th class="nr" style="color:#7C3AED;cursor:pointer;user-select:none" onclick="sortIrOf('alquiler')">Alquileres <span id="irof-sort-alquiler"></span></th>
+              <th class="nr" onclick="sortIrOf('total')" style="cursor:pointer;user-select:none">Total <span id="irof-sort-total"></span></th>
+              <th class="nr" style="color:var(--gold);cursor:pointer;user-select:none" onclick="sortIrOf('venta_aaff')">Ventas AAFF <span id="irof-sort-venta_aaff"></span></th>
+              <th class="nr" style="color:var(--gold);cursor:pointer;user-select:none" onclick="sortIrOf('alquiler_aaff')">Alquileres AAFF <span id="irof-sort-alquiler_aaff"></span></th>
+              <th class="nr" onclick="sortIrOf('pct_aaff')" style="cursor:pointer;user-select:none">% AAFF <span id="irof-sort-pct_aaff"></span></th>
+            </tr></thead>
+            <tbody id="ir-of-tipo-tbody"><tr><td colspan="7" class="loading">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- ═══ CAPTACIONES MATRIZ ═══ -->

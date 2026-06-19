@@ -135,6 +135,28 @@ const Operacion = {
     return rows[0];
   },
 
+  async porOficinaTipoCanal({ desde, hasta } = {}) {
+    let where = [`o.tipo_ingreso = 'inmobiliaria'`];
+    const params = [];
+    let i = 1;
+    if (desde) { where.push(`o.fecha >= $${i++}`); params.push(desde); }
+    if (hasta) { where.push(`o.fecha <= $${i++}`); params.push(hasta); }
+
+    const { rows } = await pool.query(`
+      SELECT
+        of.id, of.nombre,
+        COUNT(o.id) FILTER (WHERE o.tipo_operacion = 'cv')                                AS ops_venta,
+        COUNT(o.id) FILTER (WHERE o.tipo_operacion = 'alquiler')                           AS ops_alquiler,
+        COUNT(o.id) FILTER (WHERE o.tipo_operacion = 'cv' AND o.canal = 'aaff')            AS ops_venta_aaff,
+        COUNT(o.id) FILTER (WHERE o.tipo_operacion = 'alquiler' AND o.canal = 'aaff')      AS ops_alquiler_aaff
+      FROM oficinas of
+      LEFT JOIN operaciones o ON o.oficina_id = of.id AND ${where.join(' AND ')}
+      GROUP BY of.id, of.nombre
+      ORDER BY (COUNT(o.id) FILTER (WHERE o.tipo_operacion='cv') + COUNT(o.id) FILTER (WHERE o.tipo_operacion='alquiler')) DESC
+    `, params);
+    return rows;
+  },
+
   async porOficina({ desde, hasta } = {}) {
     let where = ['1=1'];
     const params = [];

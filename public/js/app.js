@@ -957,10 +957,13 @@ async function loadPalancas() {
 async function loadIngresosResumen() {
   try {
     const { desde, hasta } = getDateRange();
-    const [resOp, ofRes] = await Promise.all([
+    const [resOp, ofRes, ofTipoRes] = await Promise.all([
       fetch(`${API}/api/operaciones/resumen?desde=${desde}&hasta=${hasta}`).then(r => r.json()),
       fetch(`${API}/api/oficinas?desde=${desde}&hasta=${hasta}`).then(r => r.json()),
+      fetch(`${API}/api/operaciones/por-oficina-tipo?desde=${desde}&hasta=${hasta}`).then(r => r.json()),
     ]);
+    _irOfData = ofTipoRes.data || [];
+    renderIrOf();
     if (!resOp.success) { console.warn('Ingresos resumen error:', resOp.error); return; }
     const s = resOp.data;
     const el = id => document.getElementById(id);
@@ -1027,6 +1030,64 @@ async function loadIngresosResumen() {
       }).join('') || '<p style="font-size:12px;color:var(--muted)">Sin datos para este período</p>';
     }
   } catch(e) { console.warn('Error ingresos resumen:', e.message); }
+}
+
+// ── INGRESOS RESUMEN — OPS POR OFICINA SORT ───────────
+let _irOfData = [], _irOfSortCol = 'total', _irOfSortAsc = false;
+const IROF_COLS = ['nombre','venta','alquiler','total','venta_aaff','alquiler_aaff','pct_aaff'];
+
+function sortIrOf(col) {
+  if (_irOfSortCol === col) { _irOfSortAsc = !_irOfSortAsc; }
+  else { _irOfSortCol = col; _irOfSortAsc = col === 'nombre'; }
+  IROF_COLS.forEach(c => {
+    const el = document.getElementById('irof-sort-' + c);
+    if (el) el.textContent = c === col ? (_irOfSortAsc ? ' ↑' : ' ↓') : '';
+  });
+  renderIrOf();
+}
+
+function renderIrOf() {
+  const tbody = document.getElementById('ir-of-tipo-tbody');
+  if (!tbody) return;
+  if (!_irOfData.length) { tbody.innerHTML = '<tr><td colspan="7" class="loading">Sin datos para este período</td></tr>'; return; }
+  const getVal = (o, col) => {
+    const venta    = parseInt(o.ops_venta) || 0;
+    const alquiler = parseInt(o.ops_alquiler) || 0;
+    const vAaff    = parseInt(o.ops_venta_aaff) || 0;
+    const aAaff    = parseInt(o.ops_alquiler_aaff) || 0;
+    const total    = venta + alquiler;
+    switch(col) {
+      case 'nombre':        return o.nombre || '';
+      case 'venta':         return venta;
+      case 'alquiler':      return alquiler;
+      case 'venta_aaff':    return vAaff;
+      case 'alquiler_aaff': return aAaff;
+      case 'pct_aaff':      return total > 0 ? (vAaff + aAaff) / total * 100 : 0;
+      default:              return total;
+    }
+  };
+  const sorted = [..._irOfData].sort((a,b) => {
+    const va = getVal(a, _irOfSortCol), vb = getVal(b, _irOfSortCol);
+    if (typeof va==='string') return _irOfSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _irOfSortAsc ? va-vb : vb-va;
+  });
+  tbody.innerHTML = sorted.map(o => {
+    const venta    = parseInt(o.ops_venta) || 0;
+    const alquiler = parseInt(o.ops_alquiler) || 0;
+    const vAaff    = parseInt(o.ops_venta_aaff) || 0;
+    const aAaff    = parseInt(o.ops_alquiler_aaff) || 0;
+    const total    = venta + alquiler;
+    const pctAaff  = total > 0 ? Math.round((vAaff + aAaff) / total * 1000) / 10 : 0;
+    return `<tr>
+      <td><strong>${o.nombre}</strong></td>
+      <td class="td-right" style="color:#1E40AF;font-weight:500">${venta}</td>
+      <td class="td-right" style="color:#7C3AED;font-weight:500">${alquiler}</td>
+      <td class="td-right"><strong>${total}</strong></td>
+      <td class="td-right" style="color:var(--gold)">${vAaff}</td>
+      <td class="td-right" style="color:var(--gold)">${aAaff}</td>
+      <td class="td-right"><span class="${pctAaff>=30?'pct-green':pctAaff>=10?'pct-amber':'pct-red'}">${pctAaff}%</span></td>
+    </tr>`;
+  }).join('');
 }
 
 // ── CAPTACIONES MATRIZ ────────────────────────────────
