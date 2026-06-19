@@ -853,6 +853,10 @@ async function loadSelectsGlobales() {
       const s = document.getElementById(id);
       if (s) s.innerHTML = optsOf;
     });
+    const matrizSel = document.getElementById('cap-matriz-oficina');
+    if (matrizSel && Array.isArray(oficinas)) {
+      matrizSel.innerHTML = '<option value="">Todas las oficinas</option>' + oficinas.map(o => `<option value="${o.id}">${o.nombre}</option>`).join('');
+    }
     // Opciones con puesto visible
     const optsConsPuesto = Array.isArray(consultores)
       ? '<option value="">— seleccionar —</option>' + consultores.map(c =>
@@ -1032,7 +1036,8 @@ async function loadCaptacionesMatriz() {
   tbody.innerHTML = '<tr><td colspan="7" class="loading">Cargando...</td></tr>';
   try {
     const { desde, hasta } = getDateRange();
-    const res = await fetch(`${API}/api/captaciones/matriz?desde=${desde}&hasta=${hasta}`).then(r => r.json());
+    const oficina_id = document.getElementById('cap-matriz-oficina')?.value || '';
+    const res = await fetch(`${API}/api/captaciones/matriz?desde=${desde}&hasta=${hasta}&oficina_id=${oficina_id}`).then(r => r.json());
     const lista = res.data || res;
     if (!Array.isArray(lista) || !lista.length) {
       tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state" style="padding:24px"><div class="empty-state-icon">📊</div><h3>Sin datos</h3><p>Importa captaciones de Inmovilla para ver la matriz.</p></div></td></tr>';

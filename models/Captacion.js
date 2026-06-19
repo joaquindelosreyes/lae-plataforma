@@ -59,12 +59,13 @@ const Captacion = {
     return rows[0];
   },
 
-  async matriz({ desde, hasta } = {}) {
+  async matriz({ desde, hasta, oficina_id } = {}) {
     let where = [`estado = 'activa'`];
     const params = [];
     let i = 1;
-    if (desde) { where.push(`fecha_captacion >= $${i++}`); params.push(desde); }
-    if (hasta) { where.push(`fecha_captacion <= $${i++}`); params.push(hasta); }
+    if (desde)      { where.push(`fecha_captacion >= $${i++}`); params.push(desde); }
+    if (hasta)      { where.push(`fecha_captacion <= $${i++}`); params.push(hasta); }
+    if (oficina_id) { where.push(`oficina_id = $${i++}`);       params.push(oficina_id); }
     const { rows } = await pool.query(`
       SELECT tipologia, mandato,
         COUNT(*) AS num,

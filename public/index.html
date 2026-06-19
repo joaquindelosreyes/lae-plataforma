@@ -1200,7 +1200,10 @@
       <div class="panel">
         <div class="panel-header">
           <span class="panel-title">Matriz — Tipología × Mandato</span>
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="cap-matriz-oficina" class="form-select" style="width:auto;font-size:11px;padding:5px 8px" onchange="loadCaptacionesMatriz()">
+              <option value="">Todas las oficinas</option>
+            </select>
             <span class="badge badge-blue">Exclusiva</span>
             <span style="background:#F5F3FF;color:#7C3AED" class="badge">Nota de encargo</span>
           </div>

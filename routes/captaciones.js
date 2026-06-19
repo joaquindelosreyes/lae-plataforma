@@ -21,8 +21,8 @@ router.get('/resumen', async (req, res) => {
 // GET /api/captaciones/matriz
 router.get('/matriz', async (req, res) => {
   try {
-    const { desde, hasta } = req.query;
-    const data = await Captacion.matriz({ desde, hasta });
+    const { desde, hasta, oficina_id } = req.query;
+    const data = await Captacion.matriz({ desde, hasta, oficina_id });
     res.json({ success: true, data });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
