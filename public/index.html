@@ -157,27 +157,27 @@
 
     <!-- ═══ DASHBOARD ═══ -->
     <div class="view active" id="view-dashboard">
-      <!-- Fila 1: Generado primero, luego Bruto -->
+      <!-- Fila 1: Bruto primero, luego LAE -->
       <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:10px">
-        <div class="kpi-card highlight">
-          <div class="kpi-label">Generados LAE</div>
-          <div class="kpi-value amber" id="kpi-generado">—</div>
-          <div class="kpi-sub">pipeline neto LAE</div>
-        </div>
         <div class="kpi-card highlight">
           <div class="kpi-label">Generados brutos</div>
           <div class="kpi-value amber" id="kpi-gen-brutos">—</div>
           <div class="kpi-sub">pipeline bruto</div>
         </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Honor. LAE cobrado</div>
-          <div class="kpi-value green" id="kpi-cobrado">—</div>
-          <div class="kpi-sub">neto después split</div>
+        <div class="kpi-card highlight">
+          <div class="kpi-label">Generados LAE</div>
+          <div class="kpi-value amber" id="kpi-generado">—</div>
+          <div class="kpi-sub">pipeline neto LAE</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Honor. brutos cobrado</div>
           <div class="kpi-value" id="kpi-honor-brutos">—</div>
           <div class="kpi-sub">comisión total período</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Honor. LAE cobrado</div>
+          <div class="kpi-value green" id="kpi-cobrado">—</div>
+          <div class="kpi-sub">neto después split</div>
         </div>
         <div class="kpi-card">
           <div class="kpi-label">Pendientes escritura</div>
