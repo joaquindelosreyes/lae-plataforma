@@ -438,14 +438,16 @@ async function cambiarEstadoOp(id, estadoActual) {
 
 // ── NUEVA OPERACIÓN ──────────────────────────────────
 async function initNuevaOp() {
-  // Cargar oficinas y consultores en los selects
+  // Cargar oficinas, consultores y despachos AAFF en los selects
   try {
-    const [of, cons] = await Promise.all([
+    const [of, cons, aaff] = await Promise.all([
       fetch(`${API}/api/oficinas`).then(r => r.json()),
-      fetch(`${API}/api/consultores`).then(r => r.json())
+      fetch(`${API}/api/consultores`).then(r => r.json()),
+      fetch(`${API}/api/aaff`).then(r => r.json())
     ]);
     const oficinas = of.data || of;
     const consultores = cons.data || cons;
+    const despachos = aaff.data || aaff;
     const selOf = document.getElementById('nop-oficina');
     if (selOf && Array.isArray(oficinas)) {
       selOf.innerHTML = '<option value="">Selecciona oficina...</option>' +
@@ -458,6 +460,11 @@ async function initNuevaOp() {
       const s = document.getElementById(id);
       if (s) s.innerHTML = optsC;
     });
+    const selAaff = document.getElementById('nop-aaff-sel');
+    if (selAaff && Array.isArray(despachos)) {
+      selAaff.innerHTML = '<option value="">Selecciona...</option>' +
+        despachos.map(d => `<option value="${d.id}">${d.nombre}${d.oficina_nombre ? ' ('+d.oficina_nombre+')' : ''}</option>`).join('');
+    }
   } catch(e) {}
 }
 
@@ -554,7 +561,7 @@ async function guardarNuevaOp() {
     precio_inmueble: precio, pct_comision: pct,
     comision_bruta: bruta, honorarios_lae: lae,
     canal: document.getElementById('nop-canal')?.value || 'directa',
-    aaff_nombre: document.getElementById('nop-aaff-nombre')?.value || null,
+    aaff_id: parseInt(document.getElementById('nop-aaff-sel')?.value) || null,
     prescriptor_nombre: document.getElementById('nop-prescriptor-nombre')?.value || null,
     compartida: comp, split_pct: split,
     agencia_externa: document.getElementById('nop-agencia')?.value || null,
