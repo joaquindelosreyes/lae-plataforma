@@ -472,8 +472,11 @@ function onCanalChange() {
   const canal = document.getElementById('nop-canal')?.value;
   const aaffRow = document.getElementById('nop-aaff-row');
   const prescRow = document.getElementById('nop-prescriptor-row');
-  if (aaffRow)  aaffRow.style.display  = canal === 'aaff'        ? 'block' : 'none';
-  if (prescRow) prescRow.style.display = canal === 'prescriptor' ? 'grid'  : 'none';
+  const porteroRow = document.getElementById('nop-portero-row');
+  if (aaffRow)    aaffRow.style.display    = canal === 'aaff'        ? 'block' : 'none';
+  if (prescRow)   prescRow.style.display   = canal === 'prescriptor' ? 'grid'  : 'none';
+  if (porteroRow) porteroRow.style.display = canal === 'porteros'    ? 'grid'  : 'none';
+  calcNuevaOp();
 }
 
 function onAaffSelChange() {
@@ -482,7 +485,7 @@ function onAaffSelChange() {
   const pct = opt?.dataset?.pct;
   const pctInput = document.getElementById('nop-aaff-pct');
   if (pct && pctInput && !pctInput.value) pctInput.value = pct;
-  calcAaffHonorarios();
+  calcNuevaOp();
 }
 
 function getHonorLaeActual() {
@@ -515,6 +518,70 @@ function calcAaffHonorarios() {
   if (elHonor) elHonor.value = honorAaff > 0 ? honorAaff.toLocaleString('es-ES', {maximumFractionDigits:0}) + ' €' : '';
 }
 
+// Calcula el detalle de reparto de TODOS los intervinientes posibles.
+// Se usa tanto para la vista previa en vivo como para guardar la operación,
+// así ambos sitios calculan exactamente lo mismo.
+function calcularRepartoDetalle(lae, bruta) {
+  const detalle = {};
+  let total = 0;
+
+  const agentes = [
+    { key:'captador',     rol:'Captador',            selId:'nop-captador',     pctId:'nop-pct-cap',  def:15  },
+    { key:'vendedor',     rol:'Vendedor',            selId:'nop-vendedor',     pctId:'nop-pct-ven',  def:15  },
+    { key:'coordinadora', rol:'Coordinadora',        selId:'nop-coordinadora', pctId:'nop-pct-coor', def:1   },
+    { key:'director',     rol:'Director de oficina', selId:'nop-director',     pctId:'nop-pct-dir',  def:1.5 },
+  ];
+  agentes.forEach(a => {
+    const sel = document.getElementById(a.selId);
+    const nombre = sel?.options[sel.selectedIndex]?.text || '';
+    const valido = !!nombre && !nombre.includes('seleccionar') && !nombre.includes('—');
+    const pct = parseFloat(document.getElementById(a.pctId)?.value || a.def) || 0;
+    const importe = valido ? lae * pct / 100 : 0;
+    if (valido) total += importe;
+    detalle[a.key] = { rol: a.rol, nombre: valido ? nombre.split('(')[0].trim() : '', id: valido ? sel.value : null, pct, importe, valido };
+  });
+
+  const canal = document.getElementById('nop-canal')?.value;
+
+  if (canal === 'aaff') {
+    const selAaff = document.getElementById('nop-aaff-sel');
+    const nombreAaff = selAaff?.options[selAaff.selectedIndex]?.text || '';
+    const valido = !!nombreAaff && !nombreAaff.includes('Selecciona');
+    const pct = parseFloat(document.getElementById('nop-aaff-pct')?.value) || 0;
+    const importe = valido ? calcularHonorAaff() : 0;
+    if (valido) total += importe;
+    detalle.aaff = { rol:'AAFF', nombre: valido ? nombreAaff.split('(')[0].trim() : '', id: valido ? selAaff.value : null, pct, importe, valido };
+  }
+
+  if (canal === 'prescriptor') {
+    const nombre = document.getElementById('nop-prescriptor-nombre')?.value?.trim() || '';
+    const pct = parseFloat(document.getElementById('nop-prescriptor-pct')?.value) || 0;
+    const importe = nombre ? lae * pct / 100 : 0;
+    if (nombre) total += importe;
+    detalle.prescriptor = { rol:'Prescriptor', nombre, pct, importe, valido: !!nombre };
+  }
+
+  if (canal === 'porteros') {
+    const nombre = document.getElementById('nop-portero-nombre')?.value?.trim() || '';
+    const pct = parseFloat(document.getElementById('nop-portero-pct')?.value) || 0;
+    const importe = nombre ? lae * pct / 100 : 0;
+    if (nombre) total += importe;
+    detalle.portero = { rol:'Portero', nombre, pct, importe, valido: !!nombre };
+  }
+
+  // Agencia externa (compartida): su parte ya sale del bruto antes de llegar a "lae",
+  // se muestra de forma informativa pero no se vuelve a restar de lae.
+  const comp = document.getElementById('nop-compartida')?.checked || false;
+  if (comp) {
+    const nombre = document.getElementById('nop-agencia')?.value?.trim() || '';
+    const split = parseFloat(document.getElementById('nop-split')?.value) || 50;
+    const importe = (bruta || 0) - lae;
+    detalle.agenciaExterna = { rol:'Agencia externa', nombre, pct: 100 - split, importe, valido: !!nombre };
+  }
+
+  return { detalle, total };
+}
+
 function calcNuevaOp() {
   const precio = parseFloat((document.getElementById('nop-precio')?.value||'0').replace(/\./g,'').replace(',','.')) || 0;
   const pct    = parseFloat(document.getElementById('nop-pct')?.value || '5') || 5;
@@ -531,56 +598,24 @@ function calcNuevaOp() {
   if (compRow) compRow.style.display = comp ? 'grid' : 'none';
 
   // Reparto detallado
+  const prev = document.getElementById('nop-reparto-preview');
   if (lae <= 0) {
-    const prev = document.getElementById('nop-reparto-preview');
     if (prev) prev.style.display = 'none';
     return;
   }
-  const agentes = [
-    { rol:'Captador',            selId:'nop-captador',     pctId:'nop-pct-cap',  def:15  },
-    { rol:'Vendedor',            selId:'nop-vendedor',     pctId:'nop-pct-ven',  def:15  },
-    { rol:'Coordinadora',        selId:'nop-coordinadora', pctId:'nop-pct-coor', def:1   },
-    { rol:'Director de oficina', selId:'nop-director',     pctId:'nop-pct-dir',  def:1.5 },
-  ];
-  let totalRepartos = 0;
-  const rows = agentes.map(a => {
-    const sel = document.getElementById(a.selId);
-    const nombre = sel?.options[sel.selectedIndex]?.text || '';
-    if (!nombre || nombre.includes('seleccionar') || nombre.includes('—')) return null;
-    const p   = parseFloat(document.getElementById(a.pctId)?.value || a.def) || 0;
-    const imp = lae * p / 100;
-    totalRepartos += imp;
-    return `<tr>
-      <td>${nombre.split('(')[0].trim()}</td>
-      <td><span class="badge badge-gray">${a.rol}</span></td>
-      <td class="td-right">${p}%</td>
-      <td class="td-right" style="font-weight:600">${imp.toLocaleString('es-ES',{maximumFractionDigits:0})} €</td>
-    </tr>`;
-  }).filter(Boolean);
 
-  // AAFF (si el canal es AAFF y hay despacho seleccionado)
-  const canal = document.getElementById('nop-canal')?.value;
-  if (canal === 'aaff') {
-    const selAaff = document.getElementById('nop-aaff-sel');
-    const nombreAaff = selAaff?.options[selAaff.selectedIndex]?.text || '';
-    if (nombreAaff && !nombreAaff.includes('Selecciona')) {
-      const pAaff   = parseFloat(document.getElementById('nop-aaff-pct')?.value) || 0;
-      const impAaff = calcularHonorAaff();
-      totalRepartos += impAaff;
-      rows.push(`<tr>
-        <td>${nombreAaff.split('(')[0].trim()}</td>
-        <td><span class="badge badge-gray">AAFF</span></td>
-        <td class="td-right">${pAaff}%</td>
-        <td class="td-right" style="font-weight:600">${impAaff.toLocaleString('es-ES',{maximumFractionDigits:0})} €</td>
-      </tr>`);
-    }
-  }
+  const { detalle, total } = calcularRepartoDetalle(lae, bruta);
+  const rows = Object.values(detalle).filter(d => d.valido).map(d => `<tr>
+    <td>${d.nombre}</td>
+    <td><span class="badge badge-gray">${d.rol}</span></td>
+    <td class="td-right">${d.pct}%</td>
+    <td class="td-right" style="font-weight:600">${d.importe.toLocaleString('es-ES',{maximumFractionDigits:0})} €</td>
+  </tr>`);
 
-  const neto = lae - totalRepartos;
-  const prev = document.getElementById('nop-reparto-preview');
+  const neto = lae - total;
   const rowsEl = document.getElementById('nop-reparto-rows');
   const netoEl = document.getElementById('nop-neto');
-  if (prev) prev.style.display = rows.length ? 'block' : 'none';
+  if (prev)   prev.style.display = rows.length ? 'block' : 'none';
   if (rowsEl) rowsEl.innerHTML = rows.join('');
   if (netoEl) netoEl.textContent = neto.toLocaleString('es-ES',{maximumFractionDigits:0}) + '€';
 }
@@ -609,24 +644,33 @@ async function guardarNuevaOp() {
   const tipoOp = { 'Compra-Venta':'cv', 'Alquiler':'alquiler', 'Traspaso':'traspaso' }
     [document.getElementById('nop-tipo-op')?.value] || 'cv';
 
+  const { detalle } = calcularRepartoDetalle(lae, bruta);
+
   const payload = {
     fecha, tipo_ingreso: tipoIngreso, tipo_operacion: tipoOp,
     tipo_atipico: esAtipico ? (document.getElementById('nop-tipo-atipico')?.value || null) : null,
     oficina_id: parseInt(oficina),
     direccion: document.getElementById('nop-direccion')?.value || '',
-    consultor_captador_id: parseInt(document.getElementById('nop-captador')?.value) || null,
-    pct_captador: parseFloat(document.getElementById('nop-pct-cap')?.value) || 0,
-    consultor_vendedor_id: parseInt(document.getElementById('nop-vendedor')?.value) || null,
-    pct_vendedor: parseFloat(document.getElementById('nop-pct-ven')?.value) || 0,
+    consultor_captador_id: detalle.captador.valido ? parseInt(detalle.captador.id) : null,
+    pct_captador: detalle.captador.pct, importe_captador: detalle.captador.importe,
+    consultor_vendedor_id: detalle.vendedor.valido ? parseInt(detalle.vendedor.id) : null,
+    pct_vendedor: detalle.vendedor.pct, importe_vendedor: detalle.vendedor.importe,
+    consultor_coordinadora_id: detalle.coordinadora.valido ? parseInt(detalle.coordinadora.id) : null,
+    pct_coordinadora: detalle.coordinadora.pct, importe_coordinadora: detalle.coordinadora.importe,
+    consultor_director_id: detalle.director.valido ? parseInt(detalle.director.id) : null,
+    pct_director: detalle.director.pct, importe_director: detalle.director.importe,
     precio_inmueble: precio, pct_comision: pct,
     comision_bruta: bruta, honorarios_lae: lae,
     canal: document.getElementById('nop-canal')?.value || 'directa',
-    aaff_id: parseInt(document.getElementById('nop-aaff-sel')?.value) || null,
-    pct_aaff: document.getElementById('nop-canal')?.value === 'aaff' ? (parseFloat(document.getElementById('nop-aaff-pct')?.value) || 0) : 0,
-    importe_aaff: document.getElementById('nop-canal')?.value === 'aaff' ? calcularHonorAaff() : 0,
-    prescriptor_nombre: document.getElementById('nop-prescriptor-nombre')?.value || null,
+    aaff_id: detalle.aaff?.valido ? parseInt(detalle.aaff.id) : null,
+    pct_aaff: detalle.aaff?.pct || 0, importe_aaff: detalle.aaff?.importe || 0,
+    prescriptor_nombre: detalle.prescriptor?.nombre || null,
+    pct_prescriptor: detalle.prescriptor?.pct || 0, importe_prescriptor: detalle.prescriptor?.importe || 0,
+    portero_nombre: detalle.portero?.nombre || null,
+    pct_portero: detalle.portero?.pct || 0, importe_portero: detalle.portero?.importe || 0,
     compartida: comp, split_pct: split,
     agencia_externa: document.getElementById('nop-agencia')?.value || null,
+    importe_agencia_externa: detalle.agenciaExterna?.importe || 0,
     estado: esAtipico ? 'cobrada' : 'pipeline',
     observaciones: document.getElementById('nop-obs')?.value || null
   };

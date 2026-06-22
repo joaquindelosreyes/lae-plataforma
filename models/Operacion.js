@@ -1,5 +1,24 @@
 const pool = require('../db/pool');
 
+// Migración idempotente: persistir reparto completo de intervinientes
+pool.query(`
+  ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS importe_captador NUMERIC DEFAULT 0;
+  ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS importe_vendedor NUMERIC DEFAULT 0;
+  ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS consultor_coordinadora_id INTEGER REFERENCES consultores(id);
+  ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS pct_coordinadora NUMERIC DEFAULT 0;
+  ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS importe_coordinadora NUMERIC DEFAULT 0;
+  ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS consultor_director_id INTEGER REFERENCES consultores(id);
+  ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS pct_director NUMERIC DEFAULT 0;
+  ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS importe_director NUMERIC DEFAULT 0;
+  ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS prescriptor_nombre VARCHAR(200);
+  ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS pct_prescriptor NUMERIC DEFAULT 0;
+  ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS importe_prescriptor NUMERIC DEFAULT 0;
+  ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS portero_nombre VARCHAR(200);
+  ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS pct_portero NUMERIC DEFAULT 0;
+  ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS importe_portero NUMERIC DEFAULT 0;
+  ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS importe_agencia_externa NUMERIC DEFAULT 0;
+`).catch(() => {});
+
 const Operacion = {
 
   async listar({ oficina_id, estado, canal, desde, hasta, limit = 100, offset = 0 } = {}) {
@@ -55,24 +74,32 @@ const Operacion = {
       INSERT INTO operaciones (
         ref, fecha, tipo_ingreso, tipo_operacion, tipo_atipico,
         oficina_id, direccion, municipio,
-        consultor_captador_id, pct_captador,
-        consultor_vendedor_id, pct_vendedor,
+        consultor_captador_id, pct_captador, importe_captador,
+        consultor_vendedor_id, pct_vendedor, importe_vendedor,
+        consultor_coordinadora_id, pct_coordinadora, importe_coordinadora,
+        consultor_director_id, pct_director, importe_director,
         precio_inmueble, pct_comision, comision_bruta, honorarios_lae,
-        canal, compartida, agencia_externa, split_pct,
+        canal, compartida, agencia_externa, split_pct, importe_agencia_externa,
         aaff_id, pct_aaff, importe_aaff,
+        prescriptor_nombre, pct_prescriptor, importe_prescriptor,
+        portero_nombre, pct_portero, importe_portero,
         estado, fecha_cobro, observaciones
       ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,
-        $17,$18,$19,$20,$21,$22,$23,$24,$25,$26
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
+        $21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40
       ) RETURNING *
     `, [
       ref, data.fecha, data.tipo_ingreso || 'inmobiliaria', data.tipo_operacion, data.tipo_atipico,
       data.oficina_id, data.direccion, data.municipio,
-      data.consultor_captador_id || null, data.pct_captador || 0,
-      data.consultor_vendedor_id || null, data.pct_vendedor || 0,
+      data.consultor_captador_id || null, data.pct_captador || 0, data.importe_captador || 0,
+      data.consultor_vendedor_id || null, data.pct_vendedor || 0, data.importe_vendedor || 0,
+      data.consultor_coordinadora_id || null, data.pct_coordinadora || 0, data.importe_coordinadora || 0,
+      data.consultor_director_id || null, data.pct_director || 0, data.importe_director || 0,
       data.precio_inmueble || 0, data.pct_comision || 5, comision_bruta, data.honorarios_lae || honorarios_lae,
-      data.canal || 'directa', data.compartida || false, data.agencia_externa || null, data.split_pct || 50,
+      data.canal || 'directa', data.compartida || false, data.agencia_externa || null, data.split_pct || 50, data.importe_agencia_externa || 0,
       data.aaff_id || null, data.pct_aaff || 0, data.importe_aaff || 0,
+      data.prescriptor_nombre || null, data.pct_prescriptor || 0, data.importe_prescriptor || 0,
+      data.portero_nombre || null, data.pct_portero || 0, data.importe_portero || 0,
       data.estado || 'pipeline', data.fecha_cobro || null, data.observaciones || null
     ]);
     return rows[0];
@@ -84,10 +111,16 @@ const Operacion = {
     let i = 1;
     const permitidos = [
       'fecha','tipo_ingreso','tipo_operacion','tipo_atipico','oficina_id','direccion','municipio',
-      'consultor_captador_id','pct_captador','consultor_vendedor_id','pct_vendedor',
+      'consultor_captador_id','pct_captador','importe_captador',
+      'consultor_vendedor_id','pct_vendedor','importe_vendedor',
+      'consultor_coordinadora_id','pct_coordinadora','importe_coordinadora',
+      'consultor_director_id','pct_director','importe_director',
       'precio_inmueble','pct_comision','comision_bruta','honorarios_lae',
-      'canal','compartida','agencia_externa','split_pct',
-      'aaff_id','pct_aaff','importe_aaff','estado','fecha_cobro','observaciones'
+      'canal','compartida','agencia_externa','split_pct','importe_agencia_externa',
+      'aaff_id','pct_aaff','importe_aaff',
+      'prescriptor_nombre','pct_prescriptor','importe_prescriptor',
+      'portero_nombre','pct_portero','importe_portero',
+      'estado','fecha_cobro','observaciones'
     ];
     for (const k of permitidos) {
       if (data[k] !== undefined) {
