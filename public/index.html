@@ -1302,37 +1302,57 @@
 
     <!-- ═══ PALANCAS ═══ -->
     <div class="view" id="view-palancas">
+      <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px">
+        <div class="kpi-card highlight">
+          <div class="kpi-label">Ventas mes</div>
+          <div class="kpi-value green" id="pal-card-ventas">—</div>
+          <div class="kpi-sub">operaciones cerradas</div>
+        </div>
+        <div class="kpi-card highlight">
+          <div class="kpi-label">Captaciones mes</div>
+          <div class="kpi-value green" id="pal-card-captaciones">—</div>
+          <div class="kpi-sub">nuevas captaciones</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Viviendas en exclusiva</div>
+          <div class="kpi-value" id="pal-card-viviendas">—</div>
+          <div class="kpi-sub">cartera activa</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Valor cartera excl.</div>
+          <div class="kpi-value" id="pal-card-valor">—</div>
+          <div class="kpi-sub">viviendas en exclusiva</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Honorarios potenciales</div>
+          <div class="kpi-value gold" id="pal-card-honor">—</div>
+          <div class="kpi-sub">cartera viviendas excl.</div>
+        </div>
+      </div>
+
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-title" id="palanca-matriz-titulo">Matriz de palancas</span>
-          <div style="display:flex;gap:6px;font-size:11px">
-            <span style="background:#f0faf3;color:#16a34a;padding:2px 8px;border-radius:3px;font-weight:600">↑ Por encima</span>
-            <span style="background:#fffbeb;color:#d97706;padding:2px 8px;border-radius:3px;font-weight:600">→ En ritmo</span>
-            <span style="background:#fff5f5;color:#dc2626;padding:2px 8px;border-radius:3px;font-weight:600">↓ Por debajo</span>
-          </div>
+          <span class="panel-title">Palancas por oficina</span>
+          <span style="font-size:11px;color:var(--muted)" id="palanca-mes-lbl">—</span>
         </div>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Oficina</th>
-                <th style="min-width:95px">Honor. LAE</th>
-                <th style="min-width:95px">Generado</th>
-                <th style="min-width:95px">Captaciones</th>
-                <th style="min-width:95px">Cierres</th>
-                <th style="min-width:95px">AAFF activos</th>
-                <th style="min-width:95px">Cartera excl.</th>
+                <th onclick="sortPalancas('nombre')" style="cursor:pointer;user-select:none">Oficina <span id="pal-sort-nombre"></span></th>
+                <th class="nr" style="color:var(--green);cursor:pointer;user-select:none" onclick="sortPalancas('ventas')">Ventas mes <span id="pal-sort-ventas"></span></th>
+                <th class="nr" style="color:var(--green);cursor:pointer;user-select:none" onclick="sortPalancas('captaciones')">Captaciones mes <span id="pal-sort-captaciones"></span></th>
+                <th class="nr" onclick="sortPalancas('viviendas')" style="cursor:pointer;user-select:none">Viviendas excl. <span id="pal-sort-viviendas"></span></th>
+                <th class="nr" onclick="sortPalancas('valor')" style="cursor:pointer;user-select:none">Valor cartera excl. <span id="pal-sort-valor"></span></th>
+                <th class="nr" style="color:var(--gold);cursor:pointer;user-select:none" onclick="sortPalancas('honor')">Honor. potenciales <span id="pal-sort-honor"></span></th>
               </tr>
             </thead>
             <tbody id="palanca-tbody">
-              <tr><td colspan="7" class="loading">Cargando...</td></tr>
+              <tr><td colspan="6" class="loading">Cargando...</td></tr>
             </tbody>
           </table>
         </div>
       </div>
-
-      <div class="ssep">Resumen por palanca</div>
-      <div class="kpi-grid kpi-grid-4" id="palanca-resumen" style="grid-template-columns:repeat(6,1fr)"></div>
     </div>
 
     <!-- ═══ IMPORTAR ═══ -->

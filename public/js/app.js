@@ -906,46 +906,84 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── PALANCAS ─────────────────────────────────────────
+let _palData = [], _palSortCol = 'ventas', _palSortAsc = false;
+const PAL_COLS = ['nombre','ventas','captaciones','viviendas','valor','honor'];
+
 async function loadPalancas() {
   try {
-    const año = new Date().getFullYear();
-    const res = await fetch(`${API}/api/palancas?año=${año}`).then(r => r.json());
+    const res = await fetch(`${API}/api/palancas`).then(r => r.json());
     if (!res.success) return;
     const d = res.data;
     const el = id => document.getElementById(id);
-    const bg  = { verde:'#f0faf3', ambar:'#fffbeb', rojo:'#fff5f5', sin_datos:'transparent' };
-    const col = { verde:'#16a34a', ambar:'#d97706', rojo:'#dc2626', sin_datos:'#9ca3af' };
-    const palancaKeys = ['honor_lae','generado','captaciones','cierres','aaff_activos','cartera_excl'];
-    const lbl = { honor_lae:'Honor. LAE', generado:'Generado', captaciones:'Captaciones', cierres:'Cierres', aaff_activos:'AAFF activos', cartera_excl:'Cartera excl.' };
 
-    if (el('palanca-ritmo')) el('palanca-ritmo').textContent = d.ritmo_esperado + '%';
-    if (el('palanca-cnt-verde')) el('palanca-cnt-verde').textContent = d.contadores.verde;
-    if (el('palanca-cnt-ambar')) el('palanca-cnt-ambar').textContent = d.contadores.ambar;
-    if (el('palanca-cnt-rojo'))  el('palanca-cnt-rojo').textContent  = d.contadores.rojo;
+    if (el('palanca-mes-lbl')) el('palanca-mes-lbl').textContent = d.mes_label;
 
-    const tbody = el('palanca-tbody');
-    if (tbody) {
-      tbody.innerHTML = d.oficinas.map(o => {
-        const celdas = palancaKeys.map(k => {
-          const p = o.palancas[k];
-          const txt = p.sem === 'sin_datos' ? '—' : `${p.pct}% ${p.icono}`;
-          return `<td class="td-right" style="background:${bg[p.sem]}"><span style="color:${col[p.sem]};font-weight:600">${txt}</span></td>`;
-        }).join('');
-        return `<tr><td style="font-weight:500;color:var(--navy);white-space:nowrap">${o.nombre}</td>${celdas}</tr>`;
-      }).join('');
-    }
+    const t = d.totales;
+    set('pal-card-ventas',      t.ventas_mes || 0);
+    set('pal-card-captaciones', t.captaciones_mes || 0);
+    set('pal-card-viviendas',   t.viviendas_excl || 0);
+    set('pal-card-valor',       fmtK(t.valor_cartera_excl || 0));
+    set('pal-card-honor',       fmtK(t.honorarios_potenciales_excl || 0));
 
-    const resDiv = el('palanca-resumen');
-    if (resDiv) {
-      resDiv.innerHTML = palancaKeys.map(k => {
-        const r = d.resumen_palancas[k];
-        const c = col[r.sem] || col.rojo;
-        const dir = r.sem === 'verde' ? '↑ por encima' : r.sem === 'ambar' ? '→ en ritmo' : '↓ por debajo';
-        return `<div class="kpi-card"><div class="kpi-label">${lbl[k]}</div><div class="kpi-value" style="color:${c}">${r.media}%</div><div class="kpi-sub">ritmo esp. ${d.ritmo_esperado}% · ${dir}</div></div>`;
-      }).join('');
-    }
-
+    _palData = d.oficinas || [];
+    renderPalancas();
   } catch(e) { console.warn('Error palancas:', e.message); }
+}
+
+function sortPalancas(col) {
+  if (_palSortCol === col) { _palSortAsc = !_palSortAsc; }
+  else { _palSortCol = col; _palSortAsc = col === 'nombre'; }
+  PAL_COLS.forEach(c => {
+    const el = document.getElementById('pal-sort-' + c);
+    if (el) el.textContent = c === col ? (_palSortAsc ? ' ↑' : ' ↓') : '';
+  });
+  renderPalancas();
+}
+
+function renderPalancas() {
+  const tbody = document.getElementById('palanca-tbody');
+  if (!tbody) return;
+  if (!_palData.length) { tbody.innerHTML = '<tr><td colspan="6" class="loading">Sin datos</td></tr>'; return; }
+  const getVal = (o, col) => {
+    switch(col) {
+      case 'nombre':      return o.nombre || '';
+      case 'captaciones': return parseInt(o.captaciones_mes) || 0;
+      case 'viviendas':   return parseInt(o.viviendas_excl) || 0;
+      case 'valor':       return parseFloat(o.valor_cartera_excl) || 0;
+      case 'honor':       return parseFloat(o.honorarios_potenciales_excl) || 0;
+      default:            return parseInt(o.ventas_mes) || 0;
+    }
+  };
+  const sorted = [..._palData].sort((a,b) => {
+    const va = getVal(a, _palSortCol), vb = getVal(b, _palSortCol);
+    if (typeof va==='string') return _palSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _palSortAsc ? va-vb : vb-va;
+  });
+  let totV=0, totC=0, totViv=0, totVal=0, totHon=0;
+  const filas = sorted.map(o => {
+    const ventas = parseInt(o.ventas_mes) || 0;
+    const capt   = parseInt(o.captaciones_mes) || 0;
+    const viv    = parseInt(o.viviendas_excl) || 0;
+    const valor  = parseFloat(o.valor_cartera_excl) || 0;
+    const honor  = parseFloat(o.honorarios_potenciales_excl) || 0;
+    totV+=ventas; totC+=capt; totViv+=viv; totVal+=valor; totHon+=honor;
+    return `<tr>
+      <td><strong>${o.nombre}</strong></td>
+      <td class="td-right" style="color:var(--green);font-weight:600">${ventas}</td>
+      <td class="td-right" style="color:var(--green);font-weight:600">${capt}</td>
+      <td class="td-right">${viv}</td>
+      <td class="td-right">${fmtK(valor)}</td>
+      <td class="td-right" style="color:var(--gold);font-weight:600">${fmtK(honor)}</td>
+    </tr>`;
+  }).join('');
+  tbody.innerHTML = filas + `<tr style="background:var(--cream);border-top:2px solid var(--border)">
+    <td style="font-weight:700">RED TOTAL</td>
+    <td class="td-right" style="font-weight:700;color:var(--green)">${totV}</td>
+    <td class="td-right" style="font-weight:700;color:var(--green)">${totC}</td>
+    <td class="td-right" style="font-weight:700">${totViv}</td>
+    <td class="td-right" style="font-weight:700">${fmtK(totVal)}</td>
+    <td class="td-right" style="font-weight:700;color:var(--gold)">${fmtK(totHon)}</td>
+  </tr>`;
 }
 
 // ── INGRESOS RESUMEN ──────────────────────────────────
