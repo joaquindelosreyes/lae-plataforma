@@ -945,32 +945,6 @@ async function loadPalancas() {
       }).join('');
     }
 
-    const alertDiv = el('palanca-alertas');
-    if (alertDiv) {
-      if (!d.alertas.length) {
-        alertDiv.innerHTML = '<div class="alert alert-success">✓ Ninguna oficina requiere atención urgente</div>';
-      } else {
-        alertDiv.innerHTML = d.alertas.map(a => {
-          const borderCol = a.rojas >= 3 ? '#dc2626' : '#d97706';
-          const txtCol = a.rojas >= 3 ? '#dc2626' : '#d97706';
-          const barras = palancaKeys.map(k => {
-            const p = a.palancas[k];
-            if (p.sem === 'sin_datos') return '';
-            const w = Math.min(p.pct, 100);
-            return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-              <span style="width:90px;font-size:11px;color:var(--muted)">${lbl[k]}</span>
-              <div style="flex:1;height:5px;background:var(--border);border-radius:2px"><div style="width:${w}%;height:100%;background:${col[p.sem]};border-radius:2px"></div></div>
-              <span style="font-size:11px;font-weight:600;color:${col[p.sem]};width:36px">${p.pct}%</span>
-            </div>`;
-          }).filter(Boolean).join('');
-          const accion = a.rojas >= 3 ? 'Acción urgente: reunión esta semana · plan específico' : 'Seguimiento quincenal · reforzar AAFF';
-          return `<div class="panel" style="border-left:3px solid ${borderCol};margin-bottom:12px">
-            <div class="panel-header"><span class="panel-title" style="color:${txtCol}">${a.nombre} — ${a.rojas} palancas por debajo</span></div>
-            <div class="panel-body">${barras}<div class="alert" style="background:${a.rojas>=3?'#FEF2F2':'#FFFBEB'};color:${txtCol};border:none;margin:8px 0 0;padding:8px 12px">${accion}</div></div>
-          </div>`;
-        }).join('');
-      }
-    }
   } catch(e) { console.warn('Error palancas:', e.message); }
 }
 

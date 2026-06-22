@@ -26,6 +26,7 @@ router.get('/', async (req, res) => {
         COALESCE(MAX(s.aaff_activos), 0) AS aaff_activos
       FROM oficinas o
       LEFT JOIN seguimiento s ON s.oficina_id = o.id AND s.año = $1
+      WHERE o.nombre != 'Santander'
       GROUP BY o.id, o.nombre, o.objetivo_anual, o.objetivo_aaff
       ORDER BY o.nombre
     `, [año]);
