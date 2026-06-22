@@ -1001,11 +1001,11 @@ async function loadIngresosResumen() {
     const s = resOp.data;
     const el = id => document.getElementById(id);
 
-    if (el('ir-pipeline'))     el('ir-pipeline').textContent     = fmtK(s.pipeline);
-    if (el('ir-cobrado'))      el('ir-cobrado').textContent      = fmtK(s.cobrado);
-    if (el('ir-pendiente'))    el('ir-pendiente').textContent    = fmtK(s.pendiente_escritura);
-    if (el('ir-ops-venta'))    el('ir-ops-venta').textContent    = s.ops_venta    || s.ops_inmobiliarias || 0;
-    if (el('ir-ops-alquiler')) el('ir-ops-alquiler').textContent = s.ops_alquiler || 0;
+    if (el('ir-bruto-gen')) el('ir-bruto-gen').textContent = fmtK(s.pipeline_bruto);
+    if (el('ir-lae-gen'))   el('ir-lae-gen').textContent   = fmtK(s.pipeline);
+    if (el('ir-bruto-cob')) el('ir-bruto-cob').textContent = fmtK(s.cobrado_bruto);
+    if (el('ir-lae-cob'))   el('ir-lae-cob').textContent   = fmtK(s.cobrado);
+    if (el('ir-pendiente')) el('ir-pendiente').textContent = fmtK(s.pendiente_escritura);
 
     const total = parseFloat(s.cobrado) || 1;
     const canales = [
