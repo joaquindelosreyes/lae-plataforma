@@ -456,7 +456,7 @@ async function initNuevaOp() {
     const optsC = Array.isArray(consultores)
       ? '<option value="">— seleccionar —</option>' + consultores.map(c => `<option value="${c.id}">${c.nombre}${c.oficina_nombre ? ' ('+c.oficina_nombre+')' : ''}</option>`).join('')
       : '';
-    ['nop-captador','nop-vendedor'].forEach(id => {
+    ['nop-captador','nop-vendedor','nop-coordinadora','nop-director'].forEach(id => {
       const s = document.getElementById(id);
       if (s) s.innerHTML = optsC;
     });
