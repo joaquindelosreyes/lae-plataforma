@@ -340,12 +340,34 @@
                 </select>
               </div>
             </div>
-            <div class="form-grid form-2" id="nop-aaff-row" style="display:none;margin-bottom:4px">
-              <div class="form-group">
-                <label class="form-label">Despacho AAFF *</label>
-                <select id="nop-aaff-sel" class="form-select">
-                  <option value="">Selecciona...</option>
-                </select>
+            <div id="nop-aaff-row" style="display:none">
+              <div class="form-grid form-2" style="margin-bottom:8px">
+                <div class="form-group">
+                  <label class="form-label">Despacho AAFF *</label>
+                  <select id="nop-aaff-sel" class="form-select" onchange="onAaffSelChange()">
+                    <option value="">Selecciona...</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-grid form-2" style="margin-bottom:8px">
+                <div class="form-group">
+                  <label class="form-label">% Honorarios AAFF</label>
+                  <input type="number" id="nop-aaff-pct" class="form-input" placeholder="50" step="0.1" oninput="calcAaffHonorarios()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Honorarios AAFF (auto)</label>
+                  <input type="text" id="nop-aaff-honor" class="form-input" readonly placeholder="—">
+                </div>
+              </div>
+              <div class="form-grid form-2" id="nop-aaff-50-row" style="display:none;margin-bottom:4px">
+                <div class="form-group">
+                  <label class="form-label">% Honorarios consultor</label>
+                  <input type="number" id="nop-aaff-pct-consultor" class="form-input" placeholder="10" step="0.1" oninput="calcAaffHonorarios()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Gastos de gestión €</label>
+                  <input type="text" id="nop-aaff-gastos" class="form-input" placeholder="0" oninput="calcAaffHonorarios()">
+                </div>
               </div>
             </div>
             <div class="form-grid form-2" id="nop-prescriptor-row" style="display:none;margin-bottom:4px">

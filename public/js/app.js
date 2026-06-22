@@ -463,7 +463,7 @@ async function initNuevaOp() {
     const selAaff = document.getElementById('nop-aaff-sel');
     if (selAaff && Array.isArray(despachos)) {
       selAaff.innerHTML = '<option value="">Selecciona...</option>' +
-        despachos.map(d => `<option value="${d.id}">${d.nombre}${d.oficina_nombre ? ' ('+d.oficina_nombre+')' : ''}</option>`).join('');
+        despachos.map(d => `<option value="${d.id}" data-pct="${d.pct_comision||''}">${d.nombre}${d.oficina_nombre ? ' ('+d.oficina_nombre+')' : ''}</option>`).join('');
     }
   } catch(e) {}
 }
@@ -472,8 +472,47 @@ function onCanalChange() {
   const canal = document.getElementById('nop-canal')?.value;
   const aaffRow = document.getElementById('nop-aaff-row');
   const prescRow = document.getElementById('nop-prescriptor-row');
-  if (aaffRow)  aaffRow.style.display  = canal === 'aaff'        ? 'grid' : 'none';
-  if (prescRow) prescRow.style.display = canal === 'prescriptor' ? 'grid' : 'none';
+  if (aaffRow)  aaffRow.style.display  = canal === 'aaff'        ? 'block' : 'none';
+  if (prescRow) prescRow.style.display = canal === 'prescriptor' ? 'grid'  : 'none';
+}
+
+function onAaffSelChange() {
+  const sel = document.getElementById('nop-aaff-sel');
+  const opt = sel?.selectedOptions?.[0];
+  const pct = opt?.dataset?.pct;
+  const pctInput = document.getElementById('nop-aaff-pct');
+  if (pct && pctInput && !pctInput.value) pctInput.value = pct;
+  calcAaffHonorarios();
+}
+
+function getHonorLaeActual() {
+  const precio = parseFloat((document.getElementById('nop-precio')?.value||'0').replace(/\./g,'').replace(',','.')) || 0;
+  const pct    = parseFloat(document.getElementById('nop-pct')?.value || '5') || 5;
+  const comp   = document.getElementById('nop-compartida')?.checked || false;
+  const split  = parseFloat(document.getElementById('nop-split')?.value || '50') || 50;
+  const bruta  = precio * pct / 100;
+  return comp ? bruta * split / 100 : bruta;
+}
+
+function calcularHonorAaff() {
+  const pctAaff  = parseFloat(document.getElementById('nop-aaff-pct')?.value) || 0;
+  const honorLae = getHonorLaeActual();
+  if (Math.round(pctAaff) === 50) {
+    const pctConsultor = parseFloat(document.getElementById('nop-aaff-pct-consultor')?.value) || 0;
+    const gastos = parseFloat((document.getElementById('nop-aaff-gastos')?.value||'0').replace(/\./g,'').replace(',','.')) || 0;
+    const base = honorLae - (honorLae * pctConsultor / 100) - gastos;
+    return Math.max(base, 0) * 0.5;
+  }
+  return honorLae * pctAaff / 100;
+}
+
+function calcAaffHonorarios() {
+  const pctAaff = parseFloat(document.getElementById('nop-aaff-pct')?.value) || 0;
+  const row50 = document.getElementById('nop-aaff-50-row');
+  if (row50) row50.style.display = Math.round(pctAaff) === 50 ? 'grid' : 'none';
+  const honorAaff = calcularHonorAaff();
+  const elHonor = document.getElementById('nop-aaff-honor');
+  if (elHonor) elHonor.value = honorAaff > 0 ? honorAaff.toLocaleString('es-ES', {maximumFractionDigits:0}) + ' €' : '';
 }
 
 function calcNuevaOp() {
@@ -487,6 +526,7 @@ function calcNuevaOp() {
   const elLae   = document.getElementById('nop-lae');
   if (elBruta) elBruta.value = bruta > 0 ? bruta.toLocaleString('es-ES', {maximumFractionDigits:0}) + ' €' : '';
   if (elLae)   elLae.value   = lae > 0   ? lae.toLocaleString('es-ES', {maximumFractionDigits:0}) + ' €' : '';
+  calcAaffHonorarios();
   const compRow = document.getElementById('nop-comp-row');
   if (compRow) compRow.style.display = comp ? 'grid' : 'none';
 
@@ -562,6 +602,8 @@ async function guardarNuevaOp() {
     comision_bruta: bruta, honorarios_lae: lae,
     canal: document.getElementById('nop-canal')?.value || 'directa',
     aaff_id: parseInt(document.getElementById('nop-aaff-sel')?.value) || null,
+    pct_aaff: document.getElementById('nop-canal')?.value === 'aaff' ? (parseFloat(document.getElementById('nop-aaff-pct')?.value) || 0) : 0,
+    importe_aaff: document.getElementById('nop-canal')?.value === 'aaff' ? calcularHonorAaff() : 0,
     prescriptor_nombre: document.getElementById('nop-prescriptor-nombre')?.value || null,
     compartida: comp, split_pct: split,
     agencia_externa: document.getElementById('nop-agencia')?.value || null,
@@ -580,6 +622,7 @@ async function guardarNuevaOp() {
       showAlert('op-alert', '✓ Operación guardada correctamente · Ref: ' + res.data.ref, 'success');
       document.getElementById('form-nueva-op')?.reset();
       onTipoIngresoChange();
+      onCanalChange();
       calcNuevaOp();
     } else {
       showAlert('op-alert', 'Error: ' + res.error, 'error');
