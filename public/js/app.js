@@ -518,6 +518,14 @@ function calcNuevaOp() {
   if (netoEl) netoEl.textContent = neto.toLocaleString('es-ES',{maximumFractionDigits:0}) + '€';
 }
 
+function onTipoIngresoChange() {
+  const esAtipico = document.querySelector('[name="tipo-ingreso"]:checked')?.value === 'atipico';
+  const estadoGroup  = document.getElementById('nop-estado-group');
+  const atipicoGroup = document.getElementById('nop-atipico-group');
+  if (estadoGroup)  estadoGroup.style.display  = esAtipico ? 'none'  : 'block';
+  if (atipicoGroup) atipicoGroup.style.display = esAtipico ? 'block' : 'none';
+}
+
 async function guardarNuevaOp() {
   const fecha = document.getElementById('nop-fecha')?.value;
   const oficina = document.getElementById('nop-oficina')?.value;
@@ -532,11 +540,13 @@ async function guardarNuevaOp() {
   const lae       = comp ? bruta * split / 100 : bruta;
 
   const tipoIngreso = document.querySelector('[name="tipo-ingreso"]:checked')?.value || 'inmobiliaria';
+  const esAtipico = tipoIngreso === 'atipico';
   const tipoOp = { 'Compra-Venta':'cv', 'Alquiler':'alquiler', 'Traspaso':'traspaso' }
     [document.getElementById('nop-tipo-op')?.value] || 'cv';
 
   const payload = {
     fecha, tipo_ingreso: tipoIngreso, tipo_operacion: tipoOp,
+    tipo_atipico: esAtipico ? (document.getElementById('nop-tipo-atipico')?.value || null) : null,
     oficina_id: parseInt(oficina),
     direccion: document.getElementById('nop-direccion')?.value || '',
     consultor_captador_id: parseInt(document.getElementById('nop-captador')?.value) || null,
@@ -550,7 +560,7 @@ async function guardarNuevaOp() {
     prescriptor_nombre: document.getElementById('nop-prescriptor-nombre')?.value || null,
     compartida: comp, split_pct: split,
     agencia_externa: document.getElementById('nop-agencia')?.value || null,
-    estado: document.getElementById('nop-estado')?.value || 'cobrada',
+    estado: esAtipico ? 'cobrada' : (document.getElementById('nop-estado')?.value || 'cobrada'),
     observaciones: document.getElementById('nop-obs')?.value || null
   };
 
@@ -564,6 +574,7 @@ async function guardarNuevaOp() {
     if (res.success) {
       showAlert('op-alert', '✓ Operación guardada correctamente · Ref: ' + res.data.ref, 'success');
       document.getElementById('form-nueva-op')?.reset();
+      onTipoIngresoChange();
       calcNuevaOp();
     } else {
       showAlert('op-alert', 'Error: ' + res.error, 'error');

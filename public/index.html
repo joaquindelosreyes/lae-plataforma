@@ -284,10 +284,10 @@
             <div class="ssep">Tipo de ingreso</div>
             <div style="display:flex;gap:20px;margin-bottom:16px">
               <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
-                <input type="radio" name="tipo-ingreso" value="inmobiliaria" checked> Operación inmobiliaria
+                <input type="radio" name="tipo-ingreso" value="inmobiliaria" checked onchange="onTipoIngresoChange()"> Operación inmobiliaria
               </label>
               <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
-                <input type="radio" name="tipo-ingreso" value="atipico"> Ingreso atípico
+                <input type="radio" name="tipo-ingreso" value="atipico" onchange="onTipoIngresoChange()"> Ingreso atípico
               </label>
             </div>
 
@@ -311,12 +311,23 @@
                   <option value="Traspaso">Traspaso</option>
                 </select>
               </div>
-              <div class="form-group">
+              <div class="form-group" id="nop-estado-group">
                 <label class="form-label">Estado</label>
                 <select id="nop-estado" class="form-select">
                   <option value="cobrada">Cobrada</option>
                   <option value="pipeline">Pipeline</option>
                   <option value="pendiente_escritura">Pendiente escritura</option>
+                </select>
+              </div>
+              <div class="form-group" id="nop-atipico-group" style="display:none">
+                <label class="form-label">Tipo de ingreso atípico</label>
+                <select id="nop-tipo-atipico" class="form-select">
+                  <option value="Mutua de propietarios">Mutua de propietarios</option>
+                  <option value="Hipotecas">Hipotecas</option>
+                  <option value="Energía">Energía</option>
+                  <option value="Arbitraje notarial">Arbitraje notarial</option>
+                  <option value="Asesoramiento">Asesoramiento</option>
+                  <option value="Otros">Otros</option>
                 </select>
               </div>
             </div>
