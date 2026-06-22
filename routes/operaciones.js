@@ -46,6 +46,17 @@ router.get('/por-oficina-tipo', async (req, res) => {
   }
 });
 
+// GET /api/operaciones/por-oficina-tipo-euros — ídem pero en € de honorarios LAE
+router.get('/por-oficina-tipo-euros', async (req, res) => {
+  try {
+    const { desde, hasta } = req.query;
+    const data = await Operacion.porOficinaTipoCanalEuros({ desde, hasta });
+    res.json({ success: true, data });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // GET /api/operaciones/:id
 router.get('/:id', async (req, res) => {
   try {

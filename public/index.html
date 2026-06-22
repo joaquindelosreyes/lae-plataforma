@@ -1215,6 +1215,27 @@
           </table>
         </div>
       </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Honorarios por oficina — Venta / Alquiler / AAFF</span>
+          <span style="font-size:11px;color:var(--muted)">€ Honor. LAE del período</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th onclick="sortIrOfEur('nombre')" style="cursor:pointer;user-select:none">Oficina <span id="irofeur-sort-nombre"></span></th>
+              <th class="nr" style="color:#1E40AF;cursor:pointer;user-select:none" onclick="sortIrOfEur('venta')">Ventas <span id="irofeur-sort-venta"></span></th>
+              <th class="nr" style="color:#7C3AED;cursor:pointer;user-select:none" onclick="sortIrOfEur('alquiler')">Alquileres <span id="irofeur-sort-alquiler"></span></th>
+              <th class="nr" onclick="sortIrOfEur('total')" style="cursor:pointer;user-select:none">Total <span id="irofeur-sort-total"></span></th>
+              <th class="nr" style="color:var(--gold);cursor:pointer;user-select:none" onclick="sortIrOfEur('venta_aaff')">Ventas AAFF <span id="irofeur-sort-venta_aaff"></span></th>
+              <th class="nr" style="color:var(--gold);cursor:pointer;user-select:none" onclick="sortIrOfEur('alquiler_aaff')">Alquileres AAFF <span id="irofeur-sort-alquiler_aaff"></span></th>
+              <th class="nr" onclick="sortIrOfEur('pct_aaff')" style="cursor:pointer;user-select:none">% AAFF <span id="irofeur-sort-pct_aaff"></span></th>
+            </tr></thead>
+            <tbody id="ir-of-tipo-eur-tbody"><tr><td colspan="7" class="loading">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- ═══ CAPTACIONES MATRIZ ═══ -->

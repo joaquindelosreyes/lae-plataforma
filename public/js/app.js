@@ -990,13 +990,16 @@ function renderPalancas() {
 async function loadIngresosResumen() {
   try {
     const { desde, hasta } = getDateRange();
-    const [resOp, ofRes, ofTipoRes] = await Promise.all([
+    const [resOp, ofRes, ofTipoRes, ofTipoEurRes] = await Promise.all([
       fetch(`${API}/api/operaciones/resumen?desde=${desde}&hasta=${hasta}`).then(r => r.json()),
       fetch(`${API}/api/oficinas?desde=${desde}&hasta=${hasta}`).then(r => r.json()),
       fetch(`${API}/api/operaciones/por-oficina-tipo?desde=${desde}&hasta=${hasta}`).then(r => r.json()),
+      fetch(`${API}/api/operaciones/por-oficina-tipo-euros?desde=${desde}&hasta=${hasta}`).then(r => r.json()),
     ]);
     _irOfData = ofTipoRes.data || [];
     renderIrOf();
+    _irOfEurData = ofTipoEurRes.data || [];
+    renderIrOfEur();
     if (!resOp.success) { console.warn('Ingresos resumen error:', resOp.error); return; }
     const s = resOp.data;
     const el = id => document.getElementById(id);
@@ -1118,6 +1121,64 @@ function renderIrOf() {
       <td class="td-right"><strong>${total}</strong></td>
       <td class="td-right" style="color:var(--gold)">${vAaff}</td>
       <td class="td-right" style="color:var(--gold)">${aAaff}</td>
+      <td class="td-right"><span class="${pctAaff>=30?'pct-green':pctAaff>=10?'pct-amber':'pct-red'}">${pctAaff}%</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── INGRESOS RESUMEN — OPS POR OFICINA EN € SORT ──────
+let _irOfEurData = [], _irOfEurSortCol = 'total', _irOfEurSortAsc = false;
+const IROFEUR_COLS = ['nombre','venta','alquiler','total','venta_aaff','alquiler_aaff','pct_aaff'];
+
+function sortIrOfEur(col) {
+  if (_irOfEurSortCol === col) { _irOfEurSortAsc = !_irOfEurSortAsc; }
+  else { _irOfEurSortCol = col; _irOfEurSortAsc = col === 'nombre'; }
+  IROFEUR_COLS.forEach(c => {
+    const el = document.getElementById('irofeur-sort-' + c);
+    if (el) el.textContent = c === col ? (_irOfEurSortAsc ? ' ↑' : ' ↓') : '';
+  });
+  renderIrOfEur();
+}
+
+function renderIrOfEur() {
+  const tbody = document.getElementById('ir-of-tipo-eur-tbody');
+  if (!tbody) return;
+  if (!_irOfEurData.length) { tbody.innerHTML = '<tr><td colspan="7" class="loading">Sin datos para este período</td></tr>'; return; }
+  const getVal = (o, col) => {
+    const venta    = parseFloat(o.eur_venta) || 0;
+    const alquiler = parseFloat(o.eur_alquiler) || 0;
+    const vAaff    = parseFloat(o.eur_venta_aaff) || 0;
+    const aAaff    = parseFloat(o.eur_alquiler_aaff) || 0;
+    const total    = venta + alquiler;
+    switch(col) {
+      case 'nombre':        return o.nombre || '';
+      case 'venta':         return venta;
+      case 'alquiler':      return alquiler;
+      case 'venta_aaff':    return vAaff;
+      case 'alquiler_aaff': return aAaff;
+      case 'pct_aaff':      return total > 0 ? (vAaff + aAaff) / total * 100 : 0;
+      default:              return total;
+    }
+  };
+  const sorted = [..._irOfEurData].sort((a,b) => {
+    const va = getVal(a, _irOfEurSortCol), vb = getVal(b, _irOfEurSortCol);
+    if (typeof va==='string') return _irOfEurSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _irOfEurSortAsc ? va-vb : vb-va;
+  });
+  tbody.innerHTML = sorted.map(o => {
+    const venta    = parseFloat(o.eur_venta) || 0;
+    const alquiler = parseFloat(o.eur_alquiler) || 0;
+    const vAaff    = parseFloat(o.eur_venta_aaff) || 0;
+    const aAaff    = parseFloat(o.eur_alquiler_aaff) || 0;
+    const total    = venta + alquiler;
+    const pctAaff  = total > 0 ? Math.round((vAaff + aAaff) / total * 1000) / 10 : 0;
+    return `<tr>
+      <td><strong>${o.nombre}</strong></td>
+      <td class="td-right" style="color:#1E40AF;font-weight:500">${fmtK(venta)}</td>
+      <td class="td-right" style="color:#7C3AED;font-weight:500">${fmtK(alquiler)}</td>
+      <td class="td-right"><strong>${fmtK(total)}</strong></td>
+      <td class="td-right" style="color:var(--gold)">${fmtK(vAaff)}</td>
+      <td class="td-right" style="color:var(--gold)">${fmtK(aAaff)}</td>
       <td class="td-right"><span class="${pctAaff>=30?'pct-green':pctAaff>=10?'pct-amber':'pct-red'}">${pctAaff}%</span></td>
     </tr>`;
   }).join('');
