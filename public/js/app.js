@@ -250,7 +250,7 @@ function sortDash(col) {
     _sortCol = col;
     _sortAsc = col === 'nombre'; // texto asc por defecto, números desc
   }
-  ['nombre','objetivo','generado','cobrado','pct','cierres','captaciones'].forEach(c => {
+  ['nombre','objetivo','generado','pct_gen','cobrado','pct','cierres','captaciones'].forEach(c => {
     const el = document.getElementById('sort-' + c);
     if (el) el.textContent = c === col ? (_sortAsc ? ' ↑' : ' ↓') : '';
   });
@@ -268,6 +268,7 @@ function renderDashOficinas(lista) {
       else if (_sortCol === 'generado') { va = parseFloat(a.total_generado)||0; vb = parseFloat(b.total_generado)||0; }
       else if (_sortCol === 'cobrado') { va = parseFloat(a.total_cobrado)||0; vb = parseFloat(b.total_cobrado)||0; }
       else if (_sortCol === 'pct')     { va = parseFloat(a.pct_cumplimiento)||0; vb = parseFloat(b.pct_cumplimiento)||0; }
+      else if (_sortCol === 'pct_gen') { va = parseFloat(a.pct_generado)||0; vb = parseFloat(b.pct_generado)||0; }
       else if (_sortCol === 'cierres') { va = parseInt(a.total_cierres)||0; vb = parseInt(b.total_cierres)||0; }
       else if (_sortCol === 'captaciones') { va = parseInt(a.total_captaciones)||0; vb = parseInt(b.total_captaciones)||0; }
       if (typeof va === 'string') return _sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
@@ -277,12 +278,14 @@ function renderDashOficinas(lista) {
     const max = Math.max(...sorted.map(o => parseFloat(o.total_cobrado) || 0), 1);
     let totObj=0, totGen=0, totCob=0, totCierres=0, totCap=0;
     const filas = sorted.map(o => {
-        const gen = parseFloat(o.total_generado) || 0;
-        const cob = parseFloat(o.total_cobrado) || 0;
-        const obj = parseFloat(o.objetivo_periodo || o.objetivo_anual) || 0;
-        const p   = parseFloat(o.pct_cumplimiento) || 0;
-        const w   = Math.round(cob / max * 100);
+        const gen   = parseFloat(o.total_generado) || 0;
+        const cob   = parseFloat(o.total_cobrado) || 0;
+        const obj   = parseFloat(o.objetivo_periodo || o.objetivo_anual) || 0;
+        const p     = parseFloat(o.pct_cumplimiento) || 0;
+        const pGen  = parseFloat(o.pct_generado) || 0;
+        const w     = Math.round(cob / max * 100);
         const barColor = p >= 90 ? 'var(--green)' : p >= 60 ? 'var(--amber)' : 'var(--red)';
+        const barColorGen = pGen >= 90 ? 'var(--green)' : pGen >= 60 ? 'var(--amber)' : 'var(--red)';
         totObj += obj; totGen += gen; totCob += cob;
         totCierres += parseInt(o.total_cierres)||0;
         totCap += parseInt(o.total_captaciones)||0;
@@ -291,6 +294,14 @@ function renderDashOficinas(lista) {
           <td><strong>${o.nombre}</strong></td>
           <td class="td-right">${fmtK(obj)}</td>
           <td class="td-right" style="color:var(--amber)">${fmtK(gen)}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;min-width:120px">
+              <div style="flex:1;height:5px;background:var(--border);border-radius:2px">
+                <div style="width:${Math.min(pGen,100)}%;height:100%;background:${barColorGen};border-radius:2px"></div>
+              </div>
+              <span class="${pctClass(pGen)}" style="width:38px;font-size:11px">${pGen}%</span>
+            </div>
+          </td>
           <td class="td-right">${fmtK(cob)}</td>
           <td>
             <div style="display:flex;align-items:center;gap:8px;min-width:120px">
@@ -304,13 +315,23 @@ function renderDashOficinas(lista) {
           <td class="td-right">${parseInt(o.total_captaciones)||0}</td>
         </tr>`;
       }).join('');
-      const pctT = totObj > 0 ? Math.round(totCob/totObj*100*10)/10 : 0;
-      const barT = pctT >= 90 ? 'var(--green)' : pctT >= 60 ? 'var(--amber)' : 'var(--red)';
+      const pctT    = totObj > 0 ? Math.round(totCob/totObj*100*10)/10 : 0;
+      const pctGenT = totObj > 0 ? Math.round(totGen/totObj*100*10)/10 : 0;
+      const barT    = pctT >= 90 ? 'var(--green)' : pctT >= 60 ? 'var(--amber)' : 'var(--red)';
+      const barGenT = pctGenT >= 90 ? 'var(--green)' : pctGenT >= 60 ? 'var(--amber)' : 'var(--red)';
       tbody.innerHTML = filas + `<tr style="background:var(--cream);border-top:2px solid var(--border)">
         <td></td>
         <td style="font-weight:700;color:var(--navy)">RED TOTAL</td>
         <td class="td-right" style="font-weight:700">${fmtK(totObj)}</td>
         <td class="td-right" style="font-weight:700;color:var(--amber)">${fmtK(totGen)}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px;min-width:120px">
+            <div style="flex:1;height:5px;background:var(--border);border-radius:2px">
+              <div style="width:${Math.min(pctGenT,100)}%;height:100%;background:${barGenT};border-radius:2px"></div>
+            </div>
+            <span class="${pctClass(pctGenT)}" style="width:38px;font-size:11px;font-weight:700">${pctGenT}%</span>
+          </div>
+        </td>
         <td class="td-right" style="font-weight:700">${fmtK(totCob)}</td>
         <td>
           <div style="display:flex;align-items:center;gap:8px;min-width:120px">

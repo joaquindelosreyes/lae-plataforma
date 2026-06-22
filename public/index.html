@@ -224,14 +224,15 @@
                 <th onclick="sortDash('nombre')"    style="cursor:pointer;user-select:none">Oficina <span id="sort-nombre"></span></th>
                 <th class="nr" onclick="sortDash('objetivo')" style="cursor:pointer;user-select:none">Objetivo <span id="sort-objetivo"></span></th>
                 <th class="nr" onclick="sortDash('generado')" style="cursor:pointer;user-select:none">Generado <span id="sort-generado"></span></th>
+                <th class="nr" onclick="sortDash('pct_gen')" style="cursor:pointer;user-select:none;min-width:160px;color:var(--amber)">Prog. Generado <span id="sort-pct_gen"></span></th>
                 <th class="nr" onclick="sortDash('cobrado')" style="cursor:pointer;user-select:none">Cobrado <span id="sort-cobrado"></span></th>
-                <th class="nr" onclick="sortDash('pct')" style="cursor:pointer;user-select:none;min-width:160px">Progreso <span id="sort-pct"></span></th>
+                <th class="nr" onclick="sortDash('pct')" style="cursor:pointer;user-select:none;min-width:160px">Prog. Cobrado <span id="sort-pct"></span></th>
                 <th class="nr" onclick="sortDash('cierres')" class="td-right" style="cursor:pointer;user-select:none">Cierres <span id="sort-cierres"></span></th>
                 <th class="nr" onclick="sortDash('captaciones')" class="td-right" style="cursor:pointer;user-select:none">Captaciones <span id="sort-captaciones"></span></th>
               </tr>
             </thead>
             <tbody id="dash-tbody">
-              <tr><td colspan="7" class="loading">Cargando datos reales...</td></tr>
+              <tr><td colspan="8" class="loading">Cargando datos reales...</td></tr>
             </tbody>
           </table>
         </div>

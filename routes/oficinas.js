@@ -40,7 +40,10 @@ router.get('/', async (req, res) => {
         o.${objCol}                  AS objetivo_periodo,
         CASE WHEN o.${objCol} > 0
           THEN ROUND(COALESCE(ops.cobrado,0) / o.${objCol} * 100, 1)
-          ELSE 0 END AS pct_cumplimiento
+          ELSE 0 END AS pct_cumplimiento,
+        CASE WHEN o.${objCol} > 0
+          THEN ROUND(COALESCE(ops.generado,0) / o.${objCol} * 100, 1)
+          ELSE 0 END AS pct_generado
       FROM oficinas o
       LEFT JOIN (
         SELECT oficina_id,
