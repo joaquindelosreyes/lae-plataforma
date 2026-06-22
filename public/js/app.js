@@ -520,9 +520,7 @@ function calcNuevaOp() {
 
 function onTipoIngresoChange() {
   const esAtipico = document.querySelector('[name="tipo-ingreso"]:checked')?.value === 'atipico';
-  const estadoGroup  = document.getElementById('nop-estado-group');
   const atipicoGroup = document.getElementById('nop-atipico-group');
-  if (estadoGroup)  estadoGroup.style.display  = esAtipico ? 'none'  : 'block';
   if (atipicoGroup) atipicoGroup.style.display = esAtipico ? 'block' : 'none';
 }
 
@@ -560,7 +558,7 @@ async function guardarNuevaOp() {
     prescriptor_nombre: document.getElementById('nop-prescriptor-nombre')?.value || null,
     compartida: comp, split_pct: split,
     agencia_externa: document.getElementById('nop-agencia')?.value || null,
-    estado: esAtipico ? 'cobrada' : (document.getElementById('nop-estado')?.value || 'cobrada'),
+    estado: esAtipico ? 'cobrada' : 'pipeline',
     observaciones: document.getElementById('nop-obs')?.value || null
   };
 
