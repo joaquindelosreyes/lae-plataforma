@@ -597,13 +597,9 @@ function calcNuevaOp() {
   const compRow = document.getElementById('nop-comp-row');
   if (compRow) compRow.style.display = comp ? 'grid' : 'none';
 
-  // Reparto detallado
+  // Reparto detallado — se muestra en cuanto hay algún interviniente seleccionado,
+  // aunque el precio/honorarios aún no esté relleno (importes a 0€ mientras tanto)
   const prev = document.getElementById('nop-reparto-preview');
-  if (lae <= 0) {
-    if (prev) prev.style.display = 'none';
-    return;
-  }
-
   const { detalle, total } = calcularRepartoDetalle(lae, bruta);
   const rows = Object.values(detalle).filter(d => d.valido).map(d => `<tr>
     <td>${d.nombre}</td>
