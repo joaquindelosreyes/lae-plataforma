@@ -550,11 +550,31 @@ function calcNuevaOp() {
     const p   = parseFloat(document.getElementById(a.pctId)?.value || a.def) || 0;
     const imp = lae * p / 100;
     totalRepartos += imp;
-    return `<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0">
-      <span style="color:var(--muted)">${a.rol} · ${nombre.split('(')[0].trim()}</span>
-      <span style="font-weight:500">${p}% = ${imp.toLocaleString('es-ES',{maximumFractionDigits:0})}€</span>
-    </div>`;
+    return `<tr>
+      <td>${nombre.split('(')[0].trim()}</td>
+      <td><span class="badge badge-gray">${a.rol}</span></td>
+      <td class="td-right">${p}%</td>
+      <td class="td-right" style="font-weight:600">${imp.toLocaleString('es-ES',{maximumFractionDigits:0})} €</td>
+    </tr>`;
   }).filter(Boolean);
+
+  // AAFF (si el canal es AAFF y hay despacho seleccionado)
+  const canal = document.getElementById('nop-canal')?.value;
+  if (canal === 'aaff') {
+    const selAaff = document.getElementById('nop-aaff-sel');
+    const nombreAaff = selAaff?.options[selAaff.selectedIndex]?.text || '';
+    if (nombreAaff && !nombreAaff.includes('Selecciona')) {
+      const pAaff   = parseFloat(document.getElementById('nop-aaff-pct')?.value) || 0;
+      const impAaff = calcularHonorAaff();
+      totalRepartos += impAaff;
+      rows.push(`<tr>
+        <td>${nombreAaff.split('(')[0].trim()}</td>
+        <td><span class="badge badge-gray">AAFF</span></td>
+        <td class="td-right">${pAaff}%</td>
+        <td class="td-right" style="font-weight:600">${impAaff.toLocaleString('es-ES',{maximumFractionDigits:0})} €</td>
+      </tr>`);
+    }
+  }
 
   const neto = lae - totalRepartos;
   const prev = document.getElementById('nop-reparto-preview');

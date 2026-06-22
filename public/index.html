@@ -448,18 +448,23 @@
                 <input type="number" id="nop-pct-dir" class="form-input" value="1.5" step="0.1" oninput="calcNuevaOp()">
               </div>
             </div>
-            <div id="nop-reparto-preview" style="background:var(--cream);border-radius:6px;padding:12px;margin-bottom:12px;display:none">
-              <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Reparto calculado</div>
-              <div id="nop-reparto-rows"></div>
+            <div class="form-group" style="margin-bottom:16px">
+              <label class="form-label">Observaciones</label>
+              <textarea id="nop-obs" class="form-textarea" placeholder="Notas..."></textarea>
+            </div>
+
+            <div class="ssep">Relación de intervinientes y reparto</div>
+            <div id="nop-reparto-preview" style="background:var(--cream);border-radius:6px;padding:12px;margin-bottom:16px;display:none">
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Interviniente</th><th>Rol</th><th class="nr">% Comisión</th><th class="nr">Importe reparto</th></tr></thead>
+                  <tbody id="nop-reparto-rows"></tbody>
+                </table>
+              </div>
               <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;display:flex;justify-content:space-between">
                 <span style="font-size:11px;font-weight:600;color:var(--navy)">Total neto LAE HOMES</span>
                 <span style="font-size:13px;font-weight:700;color:var(--green)" id="nop-neto">—</span>
               </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom:16px">
-              <label class="form-label">Observaciones</label>
-              <textarea id="nop-obs" class="form-textarea" placeholder="Notas..."></textarea>
             </div>
 
             <div class="form-actions">
