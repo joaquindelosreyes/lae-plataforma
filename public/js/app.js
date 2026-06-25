@@ -235,8 +235,8 @@ async function loadDashboard() {
     set('kpi-cierres',      r.cierres_total || 0);
     set('kpi-captaciones',  r.captaciones_total || 0);
 
-    // Guardar datos para ordenación
-    window._dashOficinas = oficinas.data || oficinas;
+    // Guardar datos para ordenación (Santander no se muestra en el dashboard)
+    window._dashOficinas = (oficinas.data || oficinas).filter(o => o.nombre !== 'Santander');
     renderDashOficinas(window._dashOficinas);
   } catch(e) { console.error('Error dashboard:', e); }
 }
