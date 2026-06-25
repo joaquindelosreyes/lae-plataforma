@@ -54,7 +54,7 @@ router.get('/', async (req, res) => {
         GROUP BY oficina_id
       ) ops ON ops.oficina_id = o.id
       LEFT JOIN (
-        SELECT oficina_id, COUNT(*) AS total FROM captaciones WHERE estado='activa' GROUP BY oficina_id
+        SELECT oficina_id, COUNT(*) AS total FROM captaciones WHERE fecha_captacion BETWEEN $1 AND $2 GROUP BY oficina_id
       ) cap ON cap.oficina_id = o.id
       LEFT JOIN (
         SELECT oficina_id, COUNT(*) AS activos FROM aaff_despachos WHERE estado='activo' GROUP BY oficina_id
