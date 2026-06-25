@@ -1026,7 +1026,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── PALANCAS ─────────────────────────────────────────
 let _palData = [], _palSortCol = 'ventas', _palSortAsc = false;
-const PAL_COLS = ['nombre','ventas','captaciones','viviendas','valor','honor'];
+const PAL_COLS = ['nombre','ventas','captaciones','viviendas','valor','honor','generado','aaff'];
 
 async function loadPalancas() {
   try {
@@ -1043,6 +1043,8 @@ async function loadPalancas() {
     set('pal-card-viviendas',   t.viviendas_excl || 0);
     set('pal-card-valor',       fmtK(t.valor_cartera_excl || 0));
     set('pal-card-honor',       fmtK(t.honorarios_potenciales_excl || 0));
+    set('pal-card-generado',    fmtK(t.generado_lae || 0));
+    set('pal-card-aaff',        t.n_aaff || 0);
 
     _palData = d.oficinas || [];
     renderPalancas();
@@ -1062,7 +1064,7 @@ function sortPalancas(col) {
 function renderPalancas() {
   const tbody = document.getElementById('palanca-tbody');
   if (!tbody) return;
-  if (!_palData.length) { tbody.innerHTML = '<tr><td colspan="6" class="loading">Sin datos</td></tr>'; return; }
+  if (!_palData.length) { tbody.innerHTML = '<tr><td colspan="8" class="loading">Sin datos</td></tr>'; return; }
   const getVal = (o, col) => {
     switch(col) {
       case 'nombre':      return o.nombre || '';
@@ -1070,6 +1072,8 @@ function renderPalancas() {
       case 'viviendas':   return parseInt(o.viviendas_excl) || 0;
       case 'valor':       return parseFloat(o.valor_cartera_excl) || 0;
       case 'honor':       return parseFloat(o.honorarios_potenciales_excl) || 0;
+      case 'generado':    return parseFloat(o.generado_lae) || 0;
+      case 'aaff':        return parseInt(o.n_aaff) || 0;
       default:            return parseInt(o.ventas_mes) || 0;
     }
   };
@@ -1078,14 +1082,16 @@ function renderPalancas() {
     if (typeof va==='string') return _palSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     return _palSortAsc ? va-vb : vb-va;
   });
-  let totV=0, totC=0, totViv=0, totVal=0, totHon=0;
+  let totV=0, totC=0, totViv=0, totVal=0, totHon=0, totGen=0, totAaff=0;
   const filas = sorted.map(o => {
     const ventas = parseInt(o.ventas_mes) || 0;
     const capt   = parseInt(o.captaciones_mes) || 0;
     const viv    = parseInt(o.viviendas_excl) || 0;
     const valor  = parseFloat(o.valor_cartera_excl) || 0;
     const honor  = parseFloat(o.honorarios_potenciales_excl) || 0;
-    totV+=ventas; totC+=capt; totViv+=viv; totVal+=valor; totHon+=honor;
+    const gen    = parseFloat(o.generado_lae) || 0;
+    const naaff  = parseInt(o.n_aaff) || 0;
+    totV+=ventas; totC+=capt; totViv+=viv; totVal+=valor; totHon+=honor; totGen+=gen; totAaff+=naaff;
     return `<tr>
       <td><strong>${o.nombre}</strong></td>
       <td class="td-right" style="color:var(--green);font-weight:600">${ventas}</td>
@@ -1093,6 +1099,8 @@ function renderPalancas() {
       <td class="td-right">${viv}</td>
       <td class="td-right">${fmtK(valor)}</td>
       <td class="td-right" style="color:var(--gold);font-weight:600">${fmtK(honor)}</td>
+      <td class="td-right" style="color:var(--navy);background:#F8FAFF;border-left:2px solid var(--navy);font-weight:600">${fmtK(gen)}</td>
+      <td class="td-right" style="color:var(--navy);background:#F8FAFF;font-weight:600">${naaff}</td>
     </tr>`;
   }).join('');
   tbody.innerHTML = filas + `<tr style="background:var(--cream);border-top:2px solid var(--border)">
@@ -1102,6 +1110,8 @@ function renderPalancas() {
     <td class="td-right" style="font-weight:700">${totViv}</td>
     <td class="td-right" style="font-weight:700">${fmtK(totVal)}</td>
     <td class="td-right" style="font-weight:700;color:var(--gold)">${fmtK(totHon)}</td>
+    <td class="td-right" style="font-weight:700;color:var(--navy);border-left:2px solid var(--navy)">${fmtK(totGen)}</td>
+    <td class="td-right" style="font-weight:700;color:var(--navy)">${totAaff}</td>
   </tr>`;
 }
 

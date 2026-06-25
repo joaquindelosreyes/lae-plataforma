@@ -58,6 +58,26 @@ router.get('/', async (req, res) => {
       };
     });
 
+    // Resultado de las palancas (no son palancas en sí, son consecuencia de ellas)
+    // Generado LAE: pipeline del mes
+    const { rows: genRows } = await pool.query(`
+      SELECT oficina_id, COALESCE(SUM(honorarios_lae), 0) AS generado
+      FROM operaciones
+      WHERE estado = 'pipeline' AND fecha BETWEEN $1 AND $2
+      GROUP BY oficina_id
+    `, [mesInicio, mesFin]);
+    const genMap = {};
+    genRows.forEach(g => { genMap[g.oficina_id] = parseFloat(g.generado); });
+
+    // Nº AAFF activos
+    const { rows: aaffRows } = await pool.query(`
+      SELECT oficina_id, COUNT(*) AS activos
+      FROM aaff_despachos WHERE estado = 'activo'
+      GROUP BY oficina_id
+    `);
+    const aaffMap = {};
+    aaffRows.forEach(a => { aaffMap[a.oficina_id] = parseInt(a.activos); });
+
     const oficinas = oficinasBase.map(o => {
       const exc = excMap[o.id] || { viviendas: 0, valor: 0, honorarios: 0 };
       return {
@@ -68,6 +88,8 @@ router.get('/', async (req, res) => {
         viviendas_excl: exc.viviendas,
         valor_cartera_excl: exc.valor,
         honorarios_potenciales_excl: exc.honorarios,
+        generado_lae: genMap[o.id] || 0,
+        n_aaff: aaffMap[o.id] || 0,
       };
     });
 
@@ -77,7 +99,9 @@ router.get('/', async (req, res) => {
       viviendas_excl: acc.viviendas_excl + o.viviendas_excl,
       valor_cartera_excl: acc.valor_cartera_excl + o.valor_cartera_excl,
       honorarios_potenciales_excl: acc.honorarios_potenciales_excl + o.honorarios_potenciales_excl,
-    }), { ventas_mes: 0, captaciones_mes: 0, viviendas_excl: 0, valor_cartera_excl: 0, honorarios_potenciales_excl: 0 });
+      generado_lae: acc.generado_lae + o.generado_lae,
+      n_aaff: acc.n_aaff + o.n_aaff,
+    }), { ventas_mes: 0, captaciones_mes: 0, viviendas_excl: 0, valor_cartera_excl: 0, honorarios_potenciales_excl: 0, generado_lae: 0, n_aaff: 0 });
 
     res.json({ success: true, data: { mes_label: mesLabel, oficinas, totales } });
   } catch (e) {

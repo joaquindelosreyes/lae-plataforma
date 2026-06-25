@@ -1397,6 +1397,20 @@
         </div>
       </div>
 
+      <div class="ssep">Resultado de las palancas</div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px">
+        <div class="kpi-card" style="border-left:3px solid var(--navy)">
+          <div class="kpi-label">Generado LAE</div>
+          <div class="kpi-value" style="color:var(--navy)" id="pal-card-generado">—</div>
+          <div class="kpi-sub">pipeline del mes · consecuencia de las palancas</div>
+        </div>
+        <div class="kpi-card" style="border-left:3px solid var(--navy)">
+          <div class="kpi-label">Nº AAFF</div>
+          <div class="kpi-value" style="color:var(--navy)" id="pal-card-aaff">—</div>
+          <div class="kpi-sub">despachos activos · consecuencia de las palancas</div>
+        </div>
+      </div>
+
       <div class="panel">
         <div class="panel-header">
           <span class="panel-title">Palancas por oficina</span>
@@ -1412,10 +1426,12 @@
                 <th class="nr" onclick="sortPalancas('viviendas')" style="cursor:pointer;user-select:none">Viviendas excl. <span id="pal-sort-viviendas"></span></th>
                 <th class="nr" onclick="sortPalancas('valor')" style="cursor:pointer;user-select:none">Valor cartera excl. <span id="pal-sort-valor"></span></th>
                 <th class="nr" style="color:var(--gold);cursor:pointer;user-select:none" onclick="sortPalancas('honor')">Honor. potenciales <span id="pal-sort-honor"></span></th>
+                <th class="nr" style="color:var(--navy);background:#EFF6FF;border-left:2px solid var(--navy);cursor:pointer;user-select:none" onclick="sortPalancas('generado')">Generado LAE <span id="pal-sort-generado"></span></th>
+                <th class="nr" style="color:var(--navy);background:#EFF6FF;cursor:pointer;user-select:none" onclick="sortPalancas('aaff')">Nº AAFF <span id="pal-sort-aaff"></span></th>
               </tr>
             </thead>
             <tbody id="palanca-tbody">
-              <tr><td colspan="6" class="loading">Cargando...</td></tr>
+              <tr><td colspan="8" class="loading">Cargando...</td></tr>
             </tbody>
           </table>
         </div>
