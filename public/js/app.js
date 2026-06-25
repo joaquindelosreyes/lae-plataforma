@@ -620,6 +620,10 @@ function onTipoIngresoChange() {
   const esAtipico = document.querySelector('[name="tipo-ingreso"]:checked')?.value === 'atipico';
   const atipicoGroup = document.getElementById('nop-atipico-group');
   if (atipicoGroup) atipicoGroup.style.display = esAtipico ? 'block' : 'none';
+  const refGroup = document.getElementById('nop-ref-inmovilla-group');
+  const dirGroup = document.getElementById('nop-direccion-group');
+  if (refGroup) refGroup.style.display = esAtipico ? 'none' : 'block';
+  if (dirGroup) dirGroup.style.display = esAtipico ? 'none' : 'block';
 }
 
 async function guardarNuevaOp() {
@@ -647,6 +651,7 @@ async function guardarNuevaOp() {
     tipo_atipico: esAtipico ? (document.getElementById('nop-tipo-atipico')?.value || null) : null,
     oficina_id: parseInt(oficina),
     direccion: document.getElementById('nop-direccion')?.value || '',
+    ref_inmovilla: esAtipico ? null : (document.getElementById('nop-ref-inmovilla')?.value || null),
     consultor_captador_id: detalle.captador.valido ? parseInt(detalle.captador.id) : null,
     pct_captador: detalle.captador.pct, importe_captador: detalle.captador.importe,
     consultor_vendedor_id: detalle.vendedor.valido ? parseInt(detalle.vendedor.id) : null,

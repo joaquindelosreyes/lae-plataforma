@@ -17,6 +17,7 @@ pool.query(`
   ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS pct_portero NUMERIC DEFAULT 0;
   ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS importe_portero NUMERIC DEFAULT 0;
   ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS importe_agencia_externa NUMERIC DEFAULT 0;
+  ALTER TABLE operaciones ADD COLUMN IF NOT EXISTS ref_inmovilla VARCHAR(100);
 `).catch(() => {});
 
 const Operacion = {
@@ -73,7 +74,7 @@ const Operacion = {
     const { rows } = await pool.query(`
       INSERT INTO operaciones (
         ref, fecha, tipo_ingreso, tipo_operacion, tipo_atipico,
-        oficina_id, direccion, municipio,
+        oficina_id, direccion, municipio, ref_inmovilla,
         consultor_captador_id, pct_captador, importe_captador,
         consultor_vendedor_id, pct_vendedor, importe_vendedor,
         consultor_coordinadora_id, pct_coordinadora, importe_coordinadora,
@@ -85,12 +86,12 @@ const Operacion = {
         portero_nombre, pct_portero, importe_portero,
         estado, fecha_cobro, observaciones
       ) VALUES (
-        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
-        $21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,
+        $22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41
       ) RETURNING *
     `, [
       ref, data.fecha, data.tipo_ingreso || 'inmobiliaria', data.tipo_operacion, data.tipo_atipico,
-      data.oficina_id, data.direccion, data.municipio,
+      data.oficina_id, data.direccion, data.municipio, data.ref_inmovilla || null,
       data.consultor_captador_id || null, data.pct_captador || 0, data.importe_captador || 0,
       data.consultor_vendedor_id || null, data.pct_vendedor || 0, data.importe_vendedor || 0,
       data.consultor_coordinadora_id || null, data.pct_coordinadora || 0, data.importe_coordinadora || 0,
@@ -110,7 +111,7 @@ const Operacion = {
     const valores = [];
     let i = 1;
     const permitidos = [
-      'fecha','tipo_ingreso','tipo_operacion','tipo_atipico','oficina_id','direccion','municipio',
+      'fecha','tipo_ingreso','tipo_operacion','tipo_atipico','oficina_id','direccion','municipio','ref_inmovilla',
       'consultor_captador_id','pct_captador','importe_captador',
       'consultor_vendedor_id','pct_vendedor','importe_vendedor',
       'consultor_coordinadora_id','pct_coordinadora','importe_coordinadora',
