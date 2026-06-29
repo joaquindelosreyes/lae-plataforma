@@ -739,6 +739,11 @@ async function loadCaptaciones() {
     if (filConsultor) {
       filConsultor.innerHTML = '<option value="">Consultor</option>' + consultores.map(n => `<option value="${n}">${n}</option>`).join('');
     }
+    const oficinas = [...new Set(lista.map(c => c.oficina_nombre).filter(Boolean))].sort();
+    const filOficina = document.getElementById('cap-fil-oficina');
+    if (filOficina) {
+      filOficina.innerHTML = '<option value="">Oficina</option>' + oficinas.map(n => `<option value="${n}">${n}</option>`).join('');
+    }
     aplicarFiltrosCap();
   } catch(e) {
     if (tbody) tbody.innerHTML = `<tr><td colspan="10" class="loading">Error: ${e.message}</td></tr>`;
@@ -746,11 +751,13 @@ async function loadCaptaciones() {
 }
 
 function aplicarFiltrosCap() {
+  const filOficina   = document.getElementById('cap-fil-oficina')?.value || '';
   const filConsultor = document.getElementById('cap-fil-consultor')?.value || '';
   const filCanal     = document.getElementById('cap-fil-canal')?.value || '';
   const filEstado    = document.getElementById('cap-fil-estado')?.value || '';
   const filTipo      = document.getElementById('cap-fil-tipo')?.value || '';
   const filtrado = _capAllData.filter(c => {
+    if (filOficina   && c.oficina_nombre !== filOficina) return false;
     if (filConsultor && c.consultor_nombre !== filConsultor) return false;
     if (filCanal     && (c.medio_contacto || c.canal || '') !== filCanal) return false;
     if (filEstado    && (c.estado || '') !== filEstado) return false;
@@ -762,7 +769,7 @@ function aplicarFiltrosCap() {
 }
 
 function limpiarFiltrosCap() {
-  ['cap-fil-consultor','cap-fil-canal','cap-fil-estado','cap-fil-tipo'].forEach(id => {
+  ['cap-fil-oficina','cap-fil-consultor','cap-fil-canal','cap-fil-estado','cap-fil-tipo'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -1755,13 +1762,16 @@ function renderCartera(data) {
     if (typeof va === 'string') return _carteraSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     return _carteraSortAsc ? va - vb : vb - va;
   });
-  tbody.innerHTML = sorted.map(c => {
+  let totPrecio = 0, totHonor = 0;
+  const filas = sorted.map(c => {
     const meses  = Math.round(parseFloat(c.meses_activa)||0);
     const mCol   = meses >= 7 ? 'var(--red)' : meses >= 5 ? 'var(--amber)' : 'var(--green)';
     const mandTag = c.mandato === 'exclusiva'
       ? '<span class="badge badge-blue">Excl.</span>'
       : '<span class="badge badge-gray">NE</span>';
     const canal  = c.medio_contacto || c.canal || '—';
+    totPrecio += parseFloat(c.precio_captacion) || 0;
+    totHonor  += parseFloat(c.honorarios_potenciales) || 0;
     return `<tr>
       <td style="font-size:10px;color:var(--muted);font-family:monospace">${c.ref||'—'}</td>
       <td style="font-size:12px">${c.oficina_nombre||'—'}</td>
@@ -1775,6 +1785,12 @@ function renderCartera(data) {
       <td class="td-right">${parseInt(c.visitas)||0 > 0 ? parseInt(c.visitas) : '—'}</td>
     </tr>`;
   }).join('');
+  tbody.innerHTML = filas + `<tr style="background:var(--cream);border-top:2px solid var(--border)">
+    <td colspan="6" style="font-weight:700">TOTAL (${sorted.length})</td>
+    <td class="td-right" style="font-weight:700">${fmtK(totPrecio)}</td>
+    <td class="td-right" style="font-weight:700;color:var(--green)">${fmtK(totHonor)}</td>
+    <td></td><td></td>
+  </tr>`;
   const cnt = document.getElementById('cartera-count');
   if (cnt) cnt.textContent = _carteraData.length + ' inmuebles activos';
 }
