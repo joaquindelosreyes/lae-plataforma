@@ -701,6 +701,8 @@ async function guardarNuevaOp() {
 // ── CAPTACIONES ──────────────────────────────────────
 let _capAllData = [];
 
+let _capConsultoresAll = [];
+
 async function loadCaptaciones() {
   const tbody = document.getElementById('cap-tbody');
   const carteraTbody = document.getElementById('cartera-tbody');
@@ -709,10 +711,12 @@ async function loadCaptaciones() {
   tbody.innerHTML = '<tr><td colspan="10" class="loading">Cargando...</td></tr>';
   if (carteraTbody) carteraTbody.innerHTML = '<tr><td colspan="10" class="loading">Cargando...</td></tr>';
   try {
-    const [sumRes, listRes] = await Promise.all([
+    const [sumRes, listRes, consRes] = await Promise.all([
       fetch(`${API}/api/captaciones/resumen`).then(r => r.json()),
-      fetch(`${API}/api/captaciones`).then(r => r.json())
+      fetch(`${API}/api/captaciones`).then(r => r.json()),
+      fetch(`${API}/api/consultores`).then(r => r.json())
     ]);
+    _capConsultoresAll = consRes.data || consRes || [];
     const s = sumRes.data || sumRes;
     if (kpis) {
       kpis.innerHTML = `
@@ -734,20 +738,34 @@ async function loadCaptaciones() {
       return;
     }
     _capAllData = lista;
-    const consultores = [...new Set(lista.map(c => c.consultor_nombre).filter(Boolean))].sort();
-    const filConsultor = document.getElementById('cap-fil-consultor');
-    if (filConsultor) {
-      filConsultor.innerHTML = '<option value="">Consultor</option>' + consultores.map(n => `<option value="${n}">${n}</option>`).join('');
-    }
     const oficinas = [...new Set(lista.map(c => c.oficina_nombre).filter(Boolean))].sort();
     const filOficina = document.getElementById('cap-fil-oficina');
     if (filOficina) {
       filOficina.innerHTML = '<option value="">Oficina</option>' + oficinas.map(n => `<option value="${n}">${n}</option>`).join('');
     }
+    poblarFiltroConsultorCap();
     aplicarFiltrosCap();
   } catch(e) {
     if (tbody) tbody.innerHTML = `<tr><td colspan="10" class="loading">Error: ${e.message}</td></tr>`;
   }
+}
+
+function poblarFiltroConsultorCap() {
+  const filOficina = document.getElementById('cap-fil-oficina')?.value || '';
+  const filConsultor = document.getElementById('cap-fil-consultor');
+  if (!filConsultor) return;
+  const prev = filConsultor.value;
+  const candidatos = filOficina
+    ? _capConsultoresAll.filter(c => c.oficina_nombre === filOficina)
+    : _capConsultoresAll;
+  const nombres = [...new Set(candidatos.map(c => c.nombre).filter(Boolean))].sort();
+  filConsultor.innerHTML = '<option value="">Consultor</option>' + nombres.map(n => `<option value="${n}">${n}</option>`).join('');
+  filConsultor.value = nombres.includes(prev) ? prev : '';
+}
+
+function onOficinaFilterCapChange() {
+  poblarFiltroConsultorCap();
+  aplicarFiltrosCap();
 }
 
 function aplicarFiltrosCap() {
@@ -773,6 +791,7 @@ function limpiarFiltrosCap() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  poblarFiltroConsultorCap();
   aplicarFiltrosCap();
 }
 
