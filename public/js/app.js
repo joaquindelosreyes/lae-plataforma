@@ -1147,6 +1147,107 @@ function renderPalancas() {
 }
 
 // ── INGRESOS RESUMEN ──────────────────────────────────
+let _irFiltro = 'lae-cob';
+let _irResumenData = null;
+let _irAllOfData = [];
+
+function setIrFiltro(f) {
+  _irFiltro = f;
+  ['lae-cob','bruto-cob','lae-gen','bruto-gen'].forEach(id => {
+    const btn = document.getElementById('ir-fil-' + id);
+    if (!btn) return;
+    btn.className = 'btn btn-sm ' + (id === f ? 'btn-primary' : 'btn-outline');
+  });
+  renderIrPaneles();
+}
+
+function renderIrPaneles() {
+  if (!_irResumenData || !_irAllOfData.length) return;
+  const s = _irResumenData;
+  const lista = _irAllOfData;
+  const esGen  = _irFiltro.includes('gen');
+  const esBruto = _irFiltro.includes('bruto');
+
+  // Subtítulos de paneles
+  const lblTipo = esBruto ? 'Bruto' : 'LAE';
+  const lblMetrica = esGen ? 'Generado' : 'Cobrado';
+  const sub = document.getElementById('ir-panel-canal-sub');
+  if (sub) sub.textContent = `${lblTipo} ${lblMetrica}`;
+  const subGen = document.getElementById('ir-panel-gen-sub');
+  if (subGen) subGen.textContent = lblTipo;
+  const subCob = document.getElementById('ir-panel-cob-sub');
+  if (subCob) subCob.textContent = lblTipo;
+
+  // Canal: qué campo usar según filtro
+  const canalFields = {
+    'lae-cob':   ['cobrado_directa','cobrado_aaff','cobrado_prescriptor','cobrado_compartida','cobrado_porteros'],
+    'bruto-cob': ['cobrado_bruto_directa','cobrado_bruto_aaff','cobrado_bruto_prescriptor','cobrado_bruto_compartida','cobrado_bruto_porteros'],
+    'lae-gen':   ['generado_directa','generado_aaff','generado_prescriptor','generado_compartida','generado_porteros'],
+    'bruto-gen': ['generado_bruto_directa','generado_bruto_aaff','generado_bruto_prescriptor','generado_bruto_compartida','generado_bruto_porteros'],
+  };
+  const fields = canalFields[_irFiltro];
+  const canalDefs = [
+    { lbl:'Directa',             color:'var(--navy)' },
+    { lbl:'AAFF',                color:'var(--gold)' },
+    { lbl:'Prescriptor',         color:'#7C3AED' },
+    { lbl:'Compartida',          color:'#d97706' },
+    { lbl:'Porteros',            color:'#059669' },
+  ];
+  const canalVals = canalDefs.map((c, i) => ({ ...c, val: parseFloat(s[fields[i]]) || 0 }));
+  const totalCanal = Math.max(canalVals.reduce((a, c) => a + c.val, 0), 1);
+  const barDiv = document.getElementById('ir-canales');
+  if (barDiv) {
+    barDiv.innerHTML = canalVals.map(c => {
+      const w = Math.round(c.val / totalCanal * 100);
+      return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="width:110px;font-size:11px;color:var(--muted)">${c.lbl}</span>
+        <div style="flex:1;height:12px;background:var(--border);border-radius:3px;overflow:hidden">
+          <div style="width:${w}%;height:100%;background:${c.color};border-radius:3px"></div>
+        </div>
+        <span style="font-size:11px;font-weight:600;color:var(--text);width:70px;text-align:right">${fmtK(c.val)}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // Generado por oficina (bruto o LAE según filtro)
+  const genField = esBruto ? 'total_generado_bruto' : 'total_generado';
+  const genDiv = document.getElementById('ir-generado-oficina');
+  if (genDiv) {
+    const sorted = [...lista].sort((a, b) => (parseFloat(b[genField]) || 0) - (parseFloat(a[genField]) || 0));
+    const maxG = Math.max(...sorted.map(o => parseFloat(o[genField]) || 0), 1);
+    genDiv.innerHTML = sorted.map(o => {
+      const v = parseFloat(o[genField]) || 0;
+      const w = Math.round(v / maxG * 100);
+      return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="width:90px;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${o.nombre}</span>
+        <div style="flex:1;height:12px;background:var(--border);border-radius:3px;overflow:hidden">
+          <div style="width:${w}%;height:100%;background:var(--amber);border-radius:3px"></div>
+        </div>
+        <span style="font-size:11px;font-weight:600;color:var(--amber);width:70px;text-align:right">${fmtK(v)}</span>
+      </div>`;
+    }).join('') || '<p style="font-size:12px;color:var(--muted)">Sin datos</p>';
+  }
+
+  // Cobrado por oficina (bruto o LAE según filtro)
+  const cobField = esBruto ? 'total_cobrado_bruto' : 'total_cobrado';
+  const ofDiv = document.getElementById('ir-por-oficina');
+  if (ofDiv) {
+    const sorted = [...lista].sort((a, b) => (parseFloat(b[cobField]) || 0) - (parseFloat(a[cobField]) || 0));
+    const maxC = Math.max(...sorted.map(o => parseFloat(o[cobField]) || 0), 1);
+    ofDiv.innerHTML = sorted.map(o => {
+      const v = parseFloat(o[cobField]) || 0;
+      const w = Math.round(v / maxC * 100);
+      return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="width:90px;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${o.nombre}</span>
+        <div style="flex:1;height:12px;background:var(--border);border-radius:3px;overflow:hidden">
+          <div style="width:${w}%;height:100%;background:var(--navy);border-radius:3px"></div>
+        </div>
+        <span style="font-size:11px;font-weight:600;color:var(--navy);width:70px;text-align:right">${fmtK(v)}</span>
+      </div>`;
+    }).join('') || '<p style="font-size:12px;color:var(--muted)">Sin datos</p>';
+  }
+}
+
 async function loadIngresosResumen() {
   try {
     const { desde, hasta } = getDateRange();
@@ -1170,61 +1271,9 @@ async function loadIngresosResumen() {
     if (el('ir-lae-cob'))   el('ir-lae-cob').textContent   = fmtK(s.cobrado);
     if (el('ir-pendiente')) el('ir-pendiente').textContent = fmtK(s.pendiente_escritura);
 
-    const total = parseFloat(s.cobrado) || 1;
-    const canales = [
-      { lbl:'Directa',              val: s.cobrado_directa,     color:'var(--navy)' },
-      { lbl:'AAFF',                 val: s.cobrado_aaff,        color:'var(--gold)' },
-      { lbl:'Prescriptor',          val: s.cobrado_prescriptor, color:'#7C3AED' },
-      { lbl:'Compartida (otra inm.)', val: s.cobrado_compartida,color:'#d97706' },
-      { lbl:'Porteros',             val: s.cobrado_porteros,    color:'#059669' },
-    ];
-    const barDiv = el('ir-canales');
-    if (barDiv) {
-      barDiv.innerHTML = canales.map(c => {
-        const v = parseFloat(c.val) || 0;
-        const w = Math.round(v / total * 100);
-        return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-          <span style="width:110px;font-size:11px;color:var(--muted)">${c.lbl}</span>
-          <div style="flex:1;height:12px;background:var(--border);border-radius:3px;overflow:hidden">
-            <div style="width:${w}%;height:100%;background:${c.color};border-radius:3px"></div>
-          </div>
-          <span style="font-size:11px;font-weight:600;color:var(--text);width:70px;text-align:right">${fmtK(v)}</span>
-        </div>`;
-      }).join('');
-    }
-
-    const lista = ofRes.data || ofRes;
-    const genDiv = el('ir-generado-oficina');
-    if (genDiv && Array.isArray(lista)) {
-      const maxG = Math.max(...lista.map(o => parseFloat(o.total_generado)||0), 1);
-      genDiv.innerHTML = lista.filter(o => parseFloat(o.total_generado) > 0).sort((a,b) => (parseFloat(b.total_generado)||0)-(parseFloat(a.total_generado)||0)).map(o => {
-        const v = parseFloat(o.total_generado)||0;
-        const w = Math.round(v/maxG*100);
-        return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-          <span style="width:90px;font-size:11px;color:var(--muted);white-space:nowrap">${o.nombre}</span>
-          <div style="flex:1;height:12px;background:var(--border);border-radius:3px;overflow:hidden">
-            <div style="width:${w}%;height:100%;background:var(--amber);border-radius:3px"></div>
-          </div>
-          <span style="font-size:11px;font-weight:600;color:var(--amber);width:70px;text-align:right">${fmtK(v)}</span>
-        </div>`;
-      }).join('') || '<p style="font-size:12px;color:var(--muted)">Sin datos para este período</p>';
-    }
-
-    const ofDiv = el('ir-por-oficina');
-    if (ofDiv && Array.isArray(lista)) {
-      const maxC = Math.max(...lista.map(o => parseFloat(o.total_cobrado)||0), 1);
-      ofDiv.innerHTML = lista.filter(o => parseFloat(o.total_cobrado) > 0).sort((a,b) => (parseFloat(b.total_cobrado)||0)-(parseFloat(a.total_cobrado)||0)).map(o => {
-        const v = parseFloat(o.total_cobrado)||0;
-        const w = Math.round(v/maxC*100);
-        return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-          <span style="width:90px;font-size:11px;color:var(--muted);white-space:nowrap">${o.nombre}</span>
-          <div style="flex:1;height:12px;background:var(--border);border-radius:3px;overflow:hidden">
-            <div style="width:${w}%;height:100%;background:var(--navy);border-radius:3px"></div>
-          </div>
-          <span style="font-size:11px;font-weight:600;color:var(--navy);width:70px;text-align:right">${fmtK(v)}</span>
-        </div>`;
-      }).join('') || '<p style="font-size:12px;color:var(--muted)">Sin datos para este período</p>';
-    }
+    _irResumenData = s;
+    _irAllOfData = (ofRes.data || ofRes).filter(o => o.nombre !== 'Santander');
+    renderIrPaneles();
   } catch(e) { console.warn('Error ingresos resumen:', e.message); }
 }
 
@@ -1267,13 +1316,15 @@ function renderIrOf() {
     if (typeof va==='string') return _irOfSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     return _irOfSortAsc ? va-vb : vb-va;
   });
-  tbody.innerHTML = sorted.map(o => {
+  let totVenta = 0, totAlquiler = 0, totVAaff = 0, totAAaff = 0;
+  const filas = sorted.map(o => {
     const venta    = parseInt(o.ops_venta) || 0;
     const alquiler = parseInt(o.ops_alquiler) || 0;
     const vAaff    = parseInt(o.ops_venta_aaff) || 0;
     const aAaff    = parseInt(o.ops_alquiler_aaff) || 0;
     const total    = venta + alquiler;
     const pctAaff  = total > 0 ? Math.round((vAaff + aAaff) / total * 1000) / 10 : 0;
+    totVenta += venta; totAlquiler += alquiler; totVAaff += vAaff; totAAaff += aAaff;
     return `<tr>
       <td><strong>${o.nombre}</strong></td>
       <td class="td-right" style="color:#1E40AF;font-weight:500">${venta}</td>
@@ -1284,6 +1335,17 @@ function renderIrOf() {
       <td class="td-right"><span class="${pctAaff>=30?'pct-green':pctAaff>=10?'pct-amber':'pct-red'}">${pctAaff}%</span></td>
     </tr>`;
   }).join('');
+  const totTotal = totVenta + totAlquiler;
+  const totPctAaff = totTotal > 0 ? Math.round((totVAaff + totAAaff) / totTotal * 1000) / 10 : 0;
+  tbody.innerHTML = filas + `<tr style="background:var(--cream);border-top:2px solid var(--border);font-weight:700">
+    <td>TOTAL (${sorted.length})</td>
+    <td class="td-right" style="color:#1E40AF">${totVenta}</td>
+    <td class="td-right" style="color:#7C3AED">${totAlquiler}</td>
+    <td class="td-right">${totTotal}</td>
+    <td class="td-right" style="color:var(--gold)">${totVAaff}</td>
+    <td class="td-right" style="color:var(--gold)">${totAAaff}</td>
+    <td class="td-right"><span class="${totPctAaff>=30?'pct-green':totPctAaff>=10?'pct-amber':'pct-red'}">${totPctAaff}%</span></td>
+  </tr>`;
 }
 
 // ── INGRESOS RESUMEN — OPS POR OFICINA EN € SORT ──────
@@ -1325,13 +1387,15 @@ function renderIrOfEur() {
     if (typeof va==='string') return _irOfEurSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     return _irOfEurSortAsc ? va-vb : vb-va;
   });
-  tbody.innerHTML = sorted.map(o => {
+  let totEurVenta = 0, totEurAlquiler = 0, totEurVAaff = 0, totEurAAaff = 0;
+  const filasEur = sorted.map(o => {
     const venta    = parseFloat(o.eur_venta) || 0;
     const alquiler = parseFloat(o.eur_alquiler) || 0;
     const vAaff    = parseFloat(o.eur_venta_aaff) || 0;
     const aAaff    = parseFloat(o.eur_alquiler_aaff) || 0;
     const total    = venta + alquiler;
     const pctAaff  = total > 0 ? Math.round((vAaff + aAaff) / total * 1000) / 10 : 0;
+    totEurVenta += venta; totEurAlquiler += alquiler; totEurVAaff += vAaff; totEurAAaff += aAaff;
     return `<tr>
       <td><strong>${o.nombre}</strong></td>
       <td class="td-right" style="color:#1E40AF;font-weight:500">${fmtK(venta)}</td>
@@ -1342,6 +1406,17 @@ function renderIrOfEur() {
       <td class="td-right"><span class="${pctAaff>=30?'pct-green':pctAaff>=10?'pct-amber':'pct-red'}">${pctAaff}%</span></td>
     </tr>`;
   }).join('');
+  const totEurTotal = totEurVenta + totEurAlquiler;
+  const totEurPct = totEurTotal > 0 ? Math.round((totEurVAaff + totEurAAaff) / totEurTotal * 1000) / 10 : 0;
+  tbody.innerHTML = filasEur + `<tr style="background:var(--cream);border-top:2px solid var(--border);font-weight:700">
+    <td>TOTAL (${sorted.length})</td>
+    <td class="td-right" style="color:#1E40AF">${fmtK(totEurVenta)}</td>
+    <td class="td-right" style="color:#7C3AED">${fmtK(totEurAlquiler)}</td>
+    <td class="td-right">${fmtK(totEurTotal)}</td>
+    <td class="td-right" style="color:var(--gold)">${fmtK(totEurVAaff)}</td>
+    <td class="td-right" style="color:var(--gold)">${fmtK(totEurAAaff)}</td>
+    <td class="td-right"><span class="${totEurPct>=30?'pct-green':totEurPct>=10?'pct-amber':'pct-red'}">${totEurPct}%</span></td>
+  </tr>`;
 }
 
 // ── CAPTACIONES MATRIZ ────────────────────────────────

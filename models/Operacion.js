@@ -163,7 +163,23 @@ const Operacion = {
         COALESCE(SUM(honorarios_lae) FILTER (WHERE canal='directa' AND estado='cobrada'), 0) AS cobrado_directa,
         COALESCE(SUM(honorarios_lae) FILTER (WHERE canal='aaff' AND estado='cobrada'), 0) AS cobrado_aaff,
         COALESCE(SUM(honorarios_lae) FILTER (WHERE canal='prescriptor' AND estado='cobrada'), 0) AS cobrado_prescriptor,
-        COALESCE(SUM(honorarios_lae) FILTER (WHERE canal='compartida' AND estado='cobrada'), 0) AS cobrado_compartida
+        COALESCE(SUM(honorarios_lae) FILTER (WHERE canal='compartida' AND estado='cobrada'), 0) AS cobrado_compartida,
+        COALESCE(SUM(honorarios_lae) FILTER (WHERE canal='porteros' AND estado='cobrada'), 0) AS cobrado_porteros,
+        COALESCE(SUM(honorarios_lae) FILTER (WHERE canal='directa' AND estado='pipeline'), 0) AS generado_directa,
+        COALESCE(SUM(honorarios_lae) FILTER (WHERE canal='aaff' AND estado='pipeline'), 0) AS generado_aaff,
+        COALESCE(SUM(honorarios_lae) FILTER (WHERE canal='prescriptor' AND estado='pipeline'), 0) AS generado_prescriptor,
+        COALESCE(SUM(honorarios_lae) FILTER (WHERE canal='compartida' AND estado='pipeline'), 0) AS generado_compartida,
+        COALESCE(SUM(honorarios_lae) FILTER (WHERE canal='porteros' AND estado='pipeline'), 0) AS generado_porteros,
+        COALESCE(SUM(GREATEST(honorarios_brutos, comision_bruta)) FILTER (WHERE canal='directa' AND estado='cobrada'), 0) AS cobrado_bruto_directa,
+        COALESCE(SUM(GREATEST(honorarios_brutos, comision_bruta)) FILTER (WHERE canal='aaff' AND estado='cobrada'), 0) AS cobrado_bruto_aaff,
+        COALESCE(SUM(GREATEST(honorarios_brutos, comision_bruta)) FILTER (WHERE canal='prescriptor' AND estado='cobrada'), 0) AS cobrado_bruto_prescriptor,
+        COALESCE(SUM(GREATEST(honorarios_brutos, comision_bruta)) FILTER (WHERE canal='compartida' AND estado='cobrada'), 0) AS cobrado_bruto_compartida,
+        COALESCE(SUM(GREATEST(honorarios_brutos, comision_bruta)) FILTER (WHERE canal='porteros' AND estado='cobrada'), 0) AS cobrado_bruto_porteros,
+        COALESCE(SUM(GREATEST(honorarios_brutos, comision_bruta)) FILTER (WHERE canal='directa' AND estado='pipeline'), 0) AS generado_bruto_directa,
+        COALESCE(SUM(GREATEST(honorarios_brutos, comision_bruta)) FILTER (WHERE canal='aaff' AND estado='pipeline'), 0) AS generado_bruto_aaff,
+        COALESCE(SUM(GREATEST(honorarios_brutos, comision_bruta)) FILTER (WHERE canal='prescriptor' AND estado='pipeline'), 0) AS generado_bruto_prescriptor,
+        COALESCE(SUM(GREATEST(honorarios_brutos, comision_bruta)) FILTER (WHERE canal='compartida' AND estado='pipeline'), 0) AS generado_bruto_compartida,
+        COALESCE(SUM(GREATEST(honorarios_brutos, comision_bruta)) FILTER (WHERE canal='porteros' AND estado='pipeline'), 0) AS generado_bruto_porteros
       FROM operaciones
       WHERE ${where.join(' AND ')}
     `, params);

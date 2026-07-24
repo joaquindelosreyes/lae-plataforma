@@ -32,9 +32,11 @@ router.get('/', async (req, res) => {
 
     const { rows } = await pool.query(`
       SELECT o.*,
-        COALESCE(ops.cobrado, 0)     AS total_cobrado,
-        COALESCE(ops.generado, 0)    AS total_generado,
-        COALESCE(ops.cierres, 0)     AS total_cierres,
+        COALESCE(ops.cobrado, 0)        AS total_cobrado,
+        COALESCE(ops.generado, 0)       AS total_generado,
+        COALESCE(ops.cierres, 0)        AS total_cierres,
+        COALESCE(ops.cobrado_bruto, 0)  AS total_cobrado_bruto,
+        COALESCE(ops.generado_bruto, 0) AS total_generado_bruto,
         COALESCE(cap.total, 0)       AS total_captaciones,
         COALESCE(aaff.activos, 0)    AS aaff_activos,
         o.${objCol}                  AS objetivo_periodo,
@@ -49,7 +51,9 @@ router.get('/', async (req, res) => {
         SELECT oficina_id,
           SUM(honorarios_lae) FILTER (WHERE estado='cobrada')  AS cobrado,
           SUM(honorarios_lae) FILTER (WHERE estado='pipeline') AS generado,
-          COUNT(*) FILTER (WHERE estado='cobrada')             AS cierres
+          COUNT(*) FILTER (WHERE estado='cobrada')             AS cierres,
+          SUM(GREATEST(honorarios_brutos, comision_bruta)) FILTER (WHERE estado='cobrada')  AS cobrado_bruto,
+          SUM(GREATEST(honorarios_brutos, comision_bruta)) FILTER (WHERE estado='pipeline') AS generado_bruto
         FROM operaciones WHERE fecha BETWEEN $1 AND $2
         GROUP BY oficina_id
       ) ops ON ops.oficina_id = o.id
