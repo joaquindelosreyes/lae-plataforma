@@ -353,7 +353,6 @@
                 <select id="nop-canal" class="form-select" onchange="onCanalChange()">
                   <option value="directa">Directa</option>
                   <option value="aaff">AAFF</option>
-                  <option value="prescriptor">Prescriptor</option>
                   <option value="compartida">Compartida (otra inmobiliaria)</option>
                   <option value="porteros">Porteros</option>
                 </select>
@@ -387,16 +386,6 @@
                   <label class="form-label">Gastos de gestión €</label>
                   <input type="text" id="nop-aaff-gastos" class="form-input" placeholder="0" oninput="calcNuevaOp()">
                 </div>
-              </div>
-            </div>
-            <div class="form-grid form-2" id="nop-prescriptor-row" style="display:none;margin-bottom:4px">
-              <div class="form-group">
-                <label class="form-label">Nombre Prescriptor *</label>
-                <input type="text" id="nop-prescriptor-nombre" class="form-input" placeholder="Nombre del prescriptor..." oninput="calcNuevaOp()">
-              </div>
-              <div class="form-group">
-                <label class="form-label">% Honorarios Prescriptor</label>
-                <input type="number" id="nop-prescriptor-pct" class="form-input" placeholder="10" step="0.1" oninput="calcNuevaOp()">
               </div>
             </div>
             <div class="form-grid form-2" id="nop-portero-row" style="display:none;margin-bottom:4px">
@@ -441,6 +430,20 @@
               <div class="form-group">
                 <label class="form-label">% para LAE HOMES</label>
                 <input type="number" id="nop-split" class="form-input" value="50" oninput="calcNuevaOp()">
+              </div>
+            </div>
+
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:12px">
+              <input type="checkbox" id="nop-tiene-prescriptor" onchange="onPrescriptorToggle()"> Con prescriptor
+            </label>
+            <div class="form-grid form-2" id="nop-prescriptor-row" style="display:none;margin-bottom:12px">
+              <div class="form-group">
+                <label class="form-label">Nombre prescriptor *</label>
+                <input type="text" id="nop-prescriptor-nombre" class="form-input" placeholder="Nombre del prescriptor..." oninput="calcNuevaOp()">
+              </div>
+              <div class="form-group">
+                <label class="form-label">% honorarios prescriptor</label>
+                <input type="number" id="nop-prescriptor-pct" class="form-input" placeholder="10" step="0.1" oninput="calcNuevaOp()">
               </div>
             </div>
 

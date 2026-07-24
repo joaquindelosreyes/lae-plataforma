@@ -515,12 +515,17 @@ async function initNuevaOp() {
 
 function onCanalChange() {
   const canal = document.getElementById('nop-canal')?.value;
-  const aaffRow = document.getElementById('nop-aaff-row');
-  const prescRow = document.getElementById('nop-prescriptor-row');
+  const aaffRow   = document.getElementById('nop-aaff-row');
   const porteroRow = document.getElementById('nop-portero-row');
-  if (aaffRow)    aaffRow.style.display    = canal === 'aaff'        ? 'block' : 'none';
-  if (prescRow)   prescRow.style.display   = canal === 'prescriptor' ? 'grid'  : 'none';
-  if (porteroRow) porteroRow.style.display = canal === 'porteros'    ? 'grid'  : 'none';
+  if (aaffRow)    aaffRow.style.display    = canal === 'aaff'    ? 'block' : 'none';
+  if (porteroRow) porteroRow.style.display = canal === 'porteros' ? 'grid'  : 'none';
+  calcNuevaOp();
+}
+
+function onPrescriptorToggle() {
+  const checked  = document.getElementById('nop-tiene-prescriptor')?.checked;
+  const prescRow = document.getElementById('nop-prescriptor-row');
+  if (prescRow) prescRow.style.display = checked ? 'grid' : 'none';
   calcNuevaOp();
 }
 
@@ -598,7 +603,7 @@ function calcularRepartoDetalle(lae, bruta) {
     detalle.aaff = { rol:'AAFF', nombre: valido ? nombreAaff.split('(')[0].trim() : '', id: valido ? selAaff.value : null, pct, importe, valido };
   }
 
-  if (canal === 'prescriptor') {
+  if (document.getElementById('nop-tiene-prescriptor')?.checked) {
     const nombre = document.getElementById('nop-prescriptor-nombre')?.value?.trim() || '';
     const pct = parseFloat(document.getElementById('nop-prescriptor-pct')?.value) || 0;
     const importe = nombre ? lae * pct / 100 : 0;
@@ -733,6 +738,7 @@ async function guardarNuevaOp() {
       document.getElementById('form-nueva-op')?.reset();
       onTipoIngresoChange();
       onCanalChange();
+      onPrescriptorToggle();
       calcNuevaOp();
     } else {
       showAlert('op-alert', 'Error: ' + res.error, 'error');
