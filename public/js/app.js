@@ -354,22 +354,63 @@ function set(id, val) {
 // ── OPERACIONES ──────────────────────────────────────
 let _opsData = [], _opsSortCol = 'fecha', _opsSortAsc = false;
 
+let _opsFiltrados = [];
+
 async function loadOperaciones() {
   const tbody = document.getElementById('ops-tbody');
-  const counter = document.getElementById('ops-count');
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="8" class="loading">Cargando...</td></tr>';
   try {
     const { desde, hasta } = getDateRange();
-    const res = await fetch(`${API}/api/operaciones?limit=500&desde=${desde}&hasta=${hasta}`).then(r => r.json());
-    _opsData = res.data || res;
-    if (!Array.isArray(_opsData) || !_opsData.length) {
-      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">📋</div><h3>Sin operaciones</h3><p>Las operaciones importadas de Inmovilla aparecerán aquí.<br>También puedes añadir una manualmente.</p></div></td></tr>`;
-      return;
+    const [res, ofRes] = await Promise.all([
+      fetch(`${API}/api/operaciones?limit=500&desde=${desde}&hasta=${hasta}`).then(r => r.json()),
+      fetch(`${API}/api/oficinas`).then(r => r.json()),
+    ]);
+    const selOf = document.getElementById('op-fil-oficina');
+    if (selOf && ofRes.data) {
+      const opts = (ofRes.data || []).filter(o => o.nombre !== 'Santander');
+      selOf.innerHTML = '<option value="">Oficina</option>' + opts.map(o => `<option value="${o.id}">${o.nombre}</option>`).join('');
     }
-    if (counter) counter.textContent = _opsData.length + ' operaciones';
-    renderOps();
+    _opsData = res.data || res;
+    if (!Array.isArray(_opsData)) _opsData = [];
+    aplicarFiltrosOps();
   } catch(e) { tbody.innerHTML = `<tr><td colspan="8" class="loading">Error: ${e.message}</td></tr>`; }
+}
+
+function aplicarFiltrosOps() {
+  const filDesde   = document.getElementById('op-fil-desde')?.value  || '';
+  const filHasta   = document.getElementById('op-fil-hasta')?.value  || '';
+  const filOficina = document.getElementById('op-fil-oficina')?.value || '';
+  const filTipo    = document.getElementById('op-fil-tipo')?.value    || '';
+
+  _opsFiltrados = _opsData.filter(op => {
+    const fecha = (op.fecha || '').slice(0, 10);
+    if (filDesde && fecha < filDesde) return false;
+    if (filHasta && fecha > filHasta) return false;
+    if (filOficina && String(op.oficina_id) !== filOficina) return false;
+    if (filTipo) {
+      if (filTipo === 'atipico') {
+        if (op.tipo_ingreso !== 'atipico') return false;
+      } else {
+        const t = (op.tipo_operacion || '').toLowerCase();
+        if (filTipo === 'cv' && !['cv','compra-venta','compraventa'].includes(t)) return false;
+        if (filTipo !== 'cv' && t !== filTipo) return false;
+      }
+    }
+    return true;
+  });
+
+  const counter = document.getElementById('ops-count');
+  if (counter) counter.textContent = _opsFiltrados.length + ' operaciones';
+  renderOps();
+}
+
+function limpiarFiltrosOps() {
+  ['op-fil-desde','op-fil-hasta','op-fil-oficina','op-fil-tipo'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  aplicarFiltrosOps();
 }
 
 function sortOps(col) {
@@ -388,9 +429,13 @@ function sortOps(col) {
 
 function renderOps() {
   const tbody = document.getElementById('ops-tbody');
-  if (!tbody || !_opsData.length) return;
+  if (!tbody) return;
+  if (!_opsFiltrados.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">📋</div><h3>Sin operaciones</h3><p>No hay resultados para los filtros aplicados.</p></div></td></tr>`;
+    return;
+  }
 
-  const sorted = [..._opsData].sort((a, b) => {
+  const sorted = [..._opsFiltrados].sort((a, b) => {
     let va, vb;
     if      (_opsSortCol === 'ref')       { va = a.ref||''; vb = b.ref||''; }
     else if (_opsSortCol === 'fecha')     { va = a.fecha||''; vb = b.fecha||''; }

@@ -243,11 +243,26 @@
     <div class="view" id="view-operaciones">
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-title">Operaciones 2026</span>
+          <span class="panel-title">Operaciones</span>
           <div style="display:flex;gap:8px;align-items:center">
             <span id="ops-count" style="font-size:11px;color:var(--muted)"></span>
             <button class="btn btn-primary btn-sm" onclick="nav('nueva-op');initNuevaOp()">+ Nueva operación</button>
           </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--cream)">
+          <input type="date" id="op-fil-desde" class="form-input" style="width:140px;font-size:12px;padding:5px 8px" placeholder="Desde" onchange="aplicarFiltrosOps()">
+          <input type="date" id="op-fil-hasta" class="form-input" style="width:140px;font-size:12px;padding:5px 8px" placeholder="Hasta" onchange="aplicarFiltrosOps()">
+          <select id="op-fil-oficina" class="form-select" style="width:auto;font-size:12px;padding:5px 8px" onchange="aplicarFiltrosOps()">
+            <option value="">Oficina</option>
+          </select>
+          <select id="op-fil-tipo" class="form-select" style="width:auto;font-size:12px;padding:5px 8px" onchange="aplicarFiltrosOps()">
+            <option value="">Tipo</option>
+            <option value="cv">Compra-Venta</option>
+            <option value="alquiler">Alquiler</option>
+            <option value="traspaso">Traspaso</option>
+            <option value="atipico">Atípico</option>
+          </select>
+          <button class="btn btn-sm btn-outline" onclick="limpiarFiltrosOps()">Limpiar</button>
         </div>
         <div class="table-wrap">
           <table>
