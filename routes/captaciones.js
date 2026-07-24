@@ -30,8 +30,8 @@ router.get('/matriz', async (req, res) => {
 // GET /api/captaciones/por-oficina
 router.get('/por-oficina', async (req, res) => {
   try {
-    const { desde, hasta } = req.query;
-    const data = await Captacion.porOficina({ desde, hasta });
+    const { desde, hasta, tipologia, tipo_operacion, mandato } = req.query;
+    const data = await Captacion.porOficina({ desde, hasta, tipologia, tipo_operacion, mandato });
     res.json({ success: true, data });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -39,8 +39,8 @@ router.get('/por-oficina', async (req, res) => {
 // GET /api/captaciones/vivienda-excl-por-oficina
 router.get('/vivienda-excl-por-oficina', async (req, res) => {
   try {
-    const { desde, hasta } = req.query;
-    const data = await Captacion.porOficinaViviendaExcl({ desde, hasta });
+    const { desde, hasta, tipo_operacion, mandato } = req.query;
+    const data = await Captacion.porOficinaViviendaExcl({ desde, hasta, tipo_operacion, mandato });
     res.json({ success: true, data });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });

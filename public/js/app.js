@@ -45,8 +45,7 @@ function nav(viewId) {
     'nueva-op': 'Nueva operación',
     'ingresos-resumen': 'Ingresos — Resumen',
     captaciones: 'Cartera activa',
-    'cap-matriz': 'Captaciones — Matriz',
-    'cap-oficinas': 'Captaciones — Por oficina',
+    'cap-oficinas': 'Cartera — Por oficina',
     actividad: 'Actividad Comercial',
     actividad: 'Actividad Comercial',
     aaff50: 'AAFF 50-50 — Administradores de Fincas',
@@ -65,7 +64,6 @@ function nav(viewId) {
   if (viewId === 'dashboard')        loadDashboard();
   if (viewId === 'operaciones')      loadOperaciones();
   if (viewId === 'captaciones')      loadCaptaciones();
-  if (viewId === 'cap-matriz')       loadCaptacionesMatriz();
   if (viewId === 'cap-oficinas')     loadCaptacionesPorOficina();
   if (viewId === 'ingresos-resumen') loadIngresosResumen();
   if (viewId === 'actividad')         loadActividad();
@@ -188,13 +186,12 @@ function recargarVistaActiva() {
   if (id === 'operaciones')      loadOperaciones();
   if (id === 'ingresos-resumen') loadIngresosResumen();
   if (id === 'captaciones')      loadCaptaciones();
-  if (id === 'cap-matriz')       loadCaptacionesMatriz();
   if (id === 'cap-oficinas')     loadCaptacionesPorOficina();
   if (id === 'demandas')       loadDemandas();
   if (id === 'palancas')         loadPalancas();
   if (id === 'compromisos') loadCompromisosPendientes();
   if (id === 'actas')       loadActas();
-  if (!['dashboard','operaciones','ingresos-resumen','captaciones','cap-matriz','cap-oficinas','palancas','compromisos','actas'].includes(id)) loadDashboard();
+  if (!['dashboard','operaciones','ingresos-resumen','captaciones','cap-oficinas','palancas','compromisos','actas'].includes(id)) loadDashboard();
 }
 
 function getDateRange() {
@@ -1179,10 +1176,6 @@ async function loadSelectsGlobales() {
       const s = document.getElementById(id);
       if (s) s.innerHTML = optsOf;
     });
-    const matrizSel = document.getElementById('cap-matriz-oficina');
-    if (matrizSel && Array.isArray(oficinas)) {
-      matrizSel.innerHTML = '<option value="">Todas las oficinas</option>' + oficinas.map(o => `<option value="${o.id}">${o.nombre}</option>`).join('');
-    }
     // Opciones con puesto visible
     const optsConsPuesto = Array.isArray(consultores)
       ? '<option value="">— seleccionar —</option>' + consultores.map(c =>
@@ -1631,13 +1624,26 @@ async function loadCaptacionesMatriz() {
   } catch(e) { tbody.innerHTML = `<tr><td colspan="7" class="loading">Error: ${e.message}</td></tr>`; console.warn('Error matriz:', e); }
 }
 
+function limpiarFiltrosCof() {
+  ['cof-fil-tipologia','cof-fil-tipo-op','cof-fil-mandato'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  loadCaptacionesPorOficina();
+}
+
 // ── CAPTACIONES POR OFICINA ───────────────────────────
 async function loadCaptacionesPorOficina() {
   try {
     const { desde, hasta } = getDateRange();
+    const tipologia   = document.getElementById('cof-fil-tipologia')?.value || '';
+    const tipo_op     = document.getElementById('cof-fil-tipo-op')?.value   || '';
+    const mandato     = document.getElementById('cof-fil-mandato')?.value   || '';
+    const qs = new URLSearchParams({ desde, hasta, ...(tipologia && {tipologia}), ...(tipo_op && {tipo_operacion: tipo_op}), ...(mandato && {mandato}) }).toString();
+    const qsViv = new URLSearchParams({ desde, hasta, ...(tipo_op && {tipo_operacion: tipo_op}), ...(mandato && {mandato}) }).toString();
     const [res, resViv] = await Promise.all([
-      fetch(`${API}/api/captaciones/por-oficina?desde=${desde}&hasta=${hasta}`).then(r => r.json()),
-      fetch(`${API}/api/captaciones/vivienda-excl-por-oficina?desde=${desde}&hasta=${hasta}`).then(r => r.json())
+      fetch(`${API}/api/captaciones/por-oficina?${qs}`).then(r => r.json()),
+      fetch(`${API}/api/captaciones/vivienda-excl-por-oficina?${qsViv}`).then(r => r.json())
     ]);
     const lista = res.data || res;
     if (!Array.isArray(lista)) return;

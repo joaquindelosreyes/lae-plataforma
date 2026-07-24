@@ -83,12 +83,15 @@ const Captacion = {
     return rows;
   },
 
-  async porOficina({ desde, hasta } = {}) {
+  async porOficina({ desde, hasta, tipologia, tipo_operacion, mandato } = {}) {
     let where = [`c.estado = 'activa'`];
     const params = [];
     let i = 1;
-    if (desde) { where.push(`c.fecha_captacion >= $${i++}`); params.push(desde); }
-    if (hasta) { where.push(`c.fecha_captacion <= $${i++}`); params.push(hasta); }
+    if (desde)         { where.push(`c.fecha_captacion >= $${i++}`); params.push(desde); }
+    if (hasta)         { where.push(`c.fecha_captacion <= $${i++}`); params.push(hasta); }
+    if (tipologia)     { where.push(`c.tipologia = $${i++}`);        params.push(tipologia); }
+    if (tipo_operacion){ where.push(`c.tipo_operacion = $${i++}`);   params.push(tipo_operacion); }
+    if (mandato)       { where.push(`c.mandato = $${i++}`);          params.push(mandato); }
     const { rows } = await pool.query(`
       SELECT
         o.id, o.nombre,
@@ -105,12 +108,14 @@ const Captacion = {
     return rows;
   },
 
-  async porOficinaViviendaExcl({ desde, hasta } = {}) {
+  async porOficinaViviendaExcl({ desde, hasta, tipo_operacion, mandato } = {}) {
     let where = [`c.estado = 'activa'`, `c.tipologia = 'vivienda'`];
     const params = [];
     let i = 1;
-    if (desde) { where.push(`c.fecha_captacion >= $${i++}`); params.push(desde); }
-    if (hasta) { where.push(`c.fecha_captacion <= $${i++}`); params.push(hasta); }
+    if (desde)         { where.push(`c.fecha_captacion >= $${i++}`); params.push(desde); }
+    if (hasta)         { where.push(`c.fecha_captacion <= $${i++}`); params.push(hasta); }
+    if (tipo_operacion){ where.push(`c.tipo_operacion = $${i++}`);   params.push(tipo_operacion); }
+    if (mandato)       { where.push(`c.mandato = $${i++}`);          params.push(mandato); }
     const { rows } = await pool.query(`
       SELECT
         o.id, o.nombre,
