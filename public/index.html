@@ -318,7 +318,7 @@
                   <option value="">Selecciona...</option>
                 </select>
               </div>
-              <div class="form-group">
+              <div class="form-group" id="nop-tipo-op-group">
                 <label class="form-label">Tipo de operación</label>
                 <select id="nop-tipo-op" class="form-select">
                   <option value="Compra-Venta">Compra-Venta</option>
@@ -339,7 +339,7 @@
               </div>
             </div>
 
-            <div class="form-grid form-3">
+            <div class="form-grid form-3" id="nop-canal-grid">
               <div class="form-group" id="nop-ref-inmovilla-group">
                 <label class="form-label">Referencia Inmovilla</label>
                 <input type="text" id="nop-ref-inmovilla" class="form-input" placeholder="Ref. Inmovilla...">
@@ -399,8 +399,49 @@
               </div>
             </div>
 
-            <div class="ssep">Datos económicos</div>
-            <div class="form-grid form-4">
+            <div id="nop-eco-atipico" style="display:none">
+              <div class="ssep">Datos económicos</div>
+              <div class="form-grid form-4">
+                <div class="form-group">
+                  <label class="form-label">Base imponible *</label>
+                  <input type="number" id="nop-base-imponible" class="form-input" placeholder="0" step="0.01" oninput="calcAtipico()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Impuesto 1 (nombre)</label>
+                  <input type="text" id="nop-imp1-desc" class="form-input" placeholder="IVA, IRPF..." oninput="calcAtipico()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">% Impuesto 1</label>
+                  <input type="number" id="nop-imp1-pct" class="form-input" placeholder="0" step="0.01" oninput="calcAtipico()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Importe Imp. 1 (auto)</label>
+                  <input type="text" id="nop-imp1-importe" class="form-input" readonly placeholder="—">
+                </div>
+              </div>
+              <div class="form-grid form-4">
+                <div class="form-group"></div>
+                <div class="form-group">
+                  <label class="form-label">Impuesto 2 (nombre)</label>
+                  <input type="text" id="nop-imp2-desc" class="form-input" placeholder="Retención IRPF..." oninput="calcAtipico()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">% Impuesto 2</label>
+                  <input type="number" id="nop-imp2-pct" class="form-input" placeholder="0" step="0.01" oninput="calcAtipico()">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Importe Imp. 2 (auto)</label>
+                  <input type="text" id="nop-imp2-importe" class="form-input" readonly placeholder="—">
+                </div>
+              </div>
+              <div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;padding:8px 0 12px;border-top:1px solid var(--border);margin-top:4px">
+                <span style="font-size:13px;color:var(--muted)">Total operación</span>
+                <span id="nop-atipico-total" style="font-size:18px;font-weight:700;color:var(--green,#2d7a4f)">—</span>
+              </div>
+            </div>
+
+            <div class="ssep" id="nop-ssep-eco">Datos económicos</div>
+            <div class="form-grid form-4" id="nop-eco-inmob">
               <div class="form-group">
                 <label class="form-label">Precio inmueble</label>
                 <input type="text" id="nop-precio" class="form-input" placeholder="350.000" oninput="calcNuevaOp()">
@@ -419,7 +460,7 @@
               </div>
             </div>
 
-            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:12px">
+            <label id="nop-compartida-label" style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:12px">
               <input type="checkbox" id="nop-compartida" onchange="calcNuevaOp()"> Operación compartida con otra agencia
             </label>
             <div class="form-grid form-2" id="nop-comp-row" style="display:none;margin-bottom:12px">
@@ -433,7 +474,7 @@
               </div>
             </div>
 
-            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:12px">
+            <label id="nop-prescriptor-label" style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:12px">
               <input type="checkbox" id="nop-tiene-prescriptor" onchange="onPrescriptorToggle()"> Con prescriptor
             </label>
             <div class="form-grid form-2" id="nop-prescriptor-row" style="display:none;margin-bottom:12px">
@@ -447,26 +488,26 @@
               </div>
             </div>
 
-            <div class="ssep">Agentes intervinientes</div>
-            <div class="form-grid form-4">
+            <div class="ssep" id="nop-ssep-agentes">Agentes intervinientes</div>
+            <div class="form-grid form-4" id="nop-agentes-grid-1">
               <div class="form-group">
-                <label class="form-label">Captador</label>
+                <label class="form-label" id="nop-captador-label">Captador</label>
                 <select id="nop-captador" class="form-select" onchange="calcNuevaOp()"><option value="">— seleccionar —</option></select>
               </div>
               <div class="form-group">
-                <label class="form-label">% captador</label>
+                <label class="form-label" id="nop-pct-cap-label">% captador</label>
                 <input type="number" id="nop-pct-cap" class="form-input" value="15" step="0.1" oninput="calcNuevaOp()">
               </div>
-              <div class="form-group">
+              <div class="form-group" id="nop-vendedor-group">
                 <label class="form-label">Vendedor</label>
                 <select id="nop-vendedor" class="form-select" onchange="calcNuevaOp()"><option value="">— seleccionar —</option></select>
               </div>
-              <div class="form-group">
+              <div class="form-group" id="nop-pct-ven-group">
                 <label class="form-label">% vendedor</label>
                 <input type="number" id="nop-pct-ven" class="form-input" value="15" step="0.1" oninput="calcNuevaOp()">
               </div>
             </div>
-            <div class="form-grid form-4">
+            <div class="form-grid form-4" id="nop-agentes-grid-2">
               <div class="form-group">
                 <label class="form-label">Coordinadora</label>
                 <select id="nop-coordinadora" class="form-select" onchange="calcNuevaOp()"><option value="">— seleccionar —</option></select>

@@ -633,19 +633,30 @@ function calcularRepartoDetalle(lae, bruta) {
 }
 
 function calcNuevaOp() {
-  const precio = parseFloat((document.getElementById('nop-precio')?.value||'0').replace(/\./g,'').replace(',','.')) || 0;
-  const pct    = parseFloat(document.getElementById('nop-pct')?.value || '5') || 5;
-  const comp   = document.getElementById('nop-compartida')?.checked || false;
-  const split  = parseFloat(document.getElementById('nop-split')?.value || '50') || 50;
-  const bruta  = precio * pct / 100;
-  const lae    = comp ? bruta * split / 100 : bruta;
-  const elBruta = document.getElementById('nop-bruta');
-  const elLae   = document.getElementById('nop-lae');
-  if (elBruta) elBruta.value = bruta > 0 ? bruta.toLocaleString('es-ES', {maximumFractionDigits:0}) + ' €' : '';
-  if (elLae)   elLae.value   = lae > 0   ? lae.toLocaleString('es-ES', {maximumFractionDigits:0}) + ' €' : '';
-  calcAaffHonorarios();
-  const compRow = document.getElementById('nop-comp-row');
-  if (compRow) compRow.style.display = comp ? 'grid' : 'none';
+  const esAtipico = document.querySelector('[name="tipo-ingreso"]:checked')?.value === 'atipico';
+  let lae, bruta;
+
+  if (esAtipico) {
+    const base = parseFloat(document.getElementById('nop-base-imponible')?.value) || 0;
+    const p1   = parseFloat(document.getElementById('nop-imp1-pct')?.value) || 0;
+    const p2   = parseFloat(document.getElementById('nop-imp2-pct')?.value) || 0;
+    bruta = base;
+    lae   = base + base * p1/100 + base * p2/100;
+  } else {
+    const precio = parseFloat((document.getElementById('nop-precio')?.value||'0').replace(/\./g,'').replace(',','.')) || 0;
+    const pct    = parseFloat(document.getElementById('nop-pct')?.value || '5') || 5;
+    const comp   = document.getElementById('nop-compartida')?.checked || false;
+    const split  = parseFloat(document.getElementById('nop-split')?.value || '50') || 50;
+    bruta = precio * pct / 100;
+    lae   = comp ? bruta * split / 100 : bruta;
+    const elBruta = document.getElementById('nop-bruta');
+    const elLae   = document.getElementById('nop-lae');
+    if (elBruta) elBruta.value = bruta > 0 ? bruta.toLocaleString('es-ES', {maximumFractionDigits:0}) + ' €' : '';
+    if (elLae)   elLae.value   = lae > 0   ? lae.toLocaleString('es-ES', {maximumFractionDigits:0}) + ' €' : '';
+    calcAaffHonorarios();
+    const compRow = document.getElementById('nop-comp-row');
+    if (compRow) compRow.style.display = comp ? 'grid' : 'none';
+  }
 
   // Reparto detallado — se muestra en cuanto hay algún interviniente seleccionado,
   // aunque el precio/honorarios aún no esté relleno (importes a 0€ mientras tanto)
@@ -668,12 +679,64 @@ function calcNuevaOp() {
 
 function onTipoIngresoChange() {
   const esAtipico = document.querySelector('[name="tipo-ingreso"]:checked')?.value === 'atipico';
-  const atipicoGroup = document.getElementById('nop-atipico-group');
-  if (atipicoGroup) atipicoGroup.style.display = esAtipico ? 'block' : 'none';
-  const refGroup = document.getElementById('nop-ref-inmovilla-group');
-  const dirGroup = document.getElementById('nop-direccion-group');
-  if (refGroup) refGroup.style.display = esAtipico ? 'none' : 'block';
-  if (dirGroup) dirGroup.style.display = esAtipico ? 'none' : 'block';
+
+  const show = (id, vis) => { const el = document.getElementById(id); if (el) el.style.display = vis; };
+
+  // Elementos que se muestran/ocultan según tipo
+  show('nop-atipico-group',      esAtipico ? 'block' : 'none');
+  show('nop-tipo-op-group',      esAtipico ? 'none'  : 'block');
+  show('nop-canal-grid',         esAtipico ? 'none'  : 'grid');
+  show('nop-ref-inmovilla-group',esAtipico ? 'none'  : 'block');
+  show('nop-direccion-group',    esAtipico ? 'none'  : 'block');
+  show('nop-aaff-row',           'none');
+  show('nop-portero-row',        'none');
+
+  // Economía
+  show('nop-eco-atipico', esAtipico ? 'block' : 'none');
+  show('nop-ssep-eco',    esAtipico ? 'none'  : 'block');
+  show('nop-eco-inmob',   esAtipico ? 'none'  : 'grid');
+
+  // Compartida / prescriptor — solo en inmobiliaria
+  show('nop-compartida-label',  esAtipico ? 'none' : 'flex');
+  show('nop-prescriptor-label', esAtipico ? 'none' : 'flex');
+  if (esAtipico) {
+    show('nop-comp-row', 'none');
+    show('nop-prescriptor-row', 'none');
+  } else {
+    show('nop-comp-row', document.getElementById('nop-compartida')?.checked ? 'grid' : 'none');
+    show('nop-prescriptor-row', document.getElementById('nop-tiene-prescriptor')?.checked ? 'grid' : 'none');
+  }
+
+  // Agentes: en atípico ocultar vendedor, coor, director
+  show('nop-vendedor-group',  esAtipico ? 'none' : 'block');
+  show('nop-pct-ven-group',   esAtipico ? 'none' : 'block');
+  show('nop-agentes-grid-2',  esAtipico ? 'none' : 'grid');
+
+  // Cambiar etiquetas captador
+  const lblCap = document.getElementById('nop-captador-label');
+  const lblPct = document.getElementById('nop-pct-cap-label');
+  if (lblCap) lblCap.textContent = esAtipico ? 'Agente interviniente' : 'Captador';
+  if (lblPct) lblPct.textContent = esAtipico ? '% del total' : '% captador';
+
+  if (esAtipico) calcAtipico(); else calcNuevaOp();
+}
+
+function calcAtipico() {
+  const base = parseFloat(document.getElementById('nop-base-imponible')?.value) || 0;
+  const pct1 = parseFloat(document.getElementById('nop-imp1-pct')?.value) || 0;
+  const pct2 = parseFloat(document.getElementById('nop-imp2-pct')?.value) || 0;
+  const imp1 = base * pct1 / 100;
+  const imp2 = base * pct2 / 100;
+  const total = base + imp1 + imp2;
+
+  const fmt = v => v ? v.toLocaleString('es-ES', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' €' : '—';
+  const el1 = document.getElementById('nop-imp1-importe');
+  const el2 = document.getElementById('nop-imp2-importe');
+  const elT = document.getElementById('nop-atipico-total');
+  if (el1) el1.value = pct1 ? fmt(imp1) : '';
+  if (el2) el2.value = pct2 ? fmt(imp2) : '';
+  if (elT) elT.textContent = base ? fmt(total) : '—';
+  calcNuevaOp();
 }
 
 async function guardarNuevaOp() {
@@ -681,50 +744,77 @@ async function guardarNuevaOp() {
   const oficina = document.getElementById('nop-oficina')?.value;
   if (!fecha || !oficina) { alert('Fecha y oficina son obligatorias'); return; }
 
-  const precioRaw = (document.getElementById('nop-precio')?.value||'0').replace(/[^0-9,]/g,'').replace(',','.');
-  const precio    = parseFloat(precioRaw) || 0;
-  const pct       = parseFloat(document.getElementById('nop-pct')?.value) || 5;
-  const comp      = document.getElementById('nop-compartida')?.checked || false;
-  const split     = parseFloat(document.getElementById('nop-split')?.value) || 50;
-  const bruta     = precio * pct / 100;
-  const lae       = comp ? bruta * split / 100 : bruta;
-
   const tipoIngreso = document.querySelector('[name="tipo-ingreso"]:checked')?.value || 'inmobiliaria';
   const esAtipico = tipoIngreso === 'atipico';
-  const tipoOp = { 'Compra-Venta':'cv', 'Alquiler':'alquiler', 'Traspaso':'traspaso' }
-    [document.getElementById('nop-tipo-op')?.value] || 'cv';
 
-  const { detalle } = calcularRepartoDetalle(lae, bruta);
+  let payload;
 
-  const payload = {
-    fecha, tipo_ingreso: tipoIngreso, tipo_operacion: tipoOp,
-    tipo_atipico: esAtipico ? (document.getElementById('nop-tipo-atipico')?.value || null) : null,
-    oficina_id: parseInt(oficina),
-    direccion: document.getElementById('nop-direccion')?.value || '',
-    ref_inmovilla: esAtipico ? null : (document.getElementById('nop-ref-inmovilla')?.value || null),
-    consultor_captador_id: detalle.captador.valido ? parseInt(detalle.captador.id) : null,
-    pct_captador: detalle.captador.pct, importe_captador: detalle.captador.importe,
-    consultor_vendedor_id: detalle.vendedor.valido ? parseInt(detalle.vendedor.id) : null,
-    pct_vendedor: detalle.vendedor.pct, importe_vendedor: detalle.vendedor.importe,
-    consultor_coordinadora_id: detalle.coordinadora.valido ? parseInt(detalle.coordinadora.id) : null,
-    pct_coordinadora: detalle.coordinadora.pct, importe_coordinadora: detalle.coordinadora.importe,
-    consultor_director_id: detalle.director.valido ? parseInt(detalle.director.id) : null,
-    pct_director: detalle.director.pct, importe_director: detalle.director.importe,
-    precio_inmueble: precio, pct_comision: pct,
-    comision_bruta: bruta, honorarios_lae: lae,
-    canal: document.getElementById('nop-canal')?.value || 'directa',
-    aaff_id: detalle.aaff?.valido ? parseInt(detalle.aaff.id) : null,
-    pct_aaff: detalle.aaff?.pct || 0, importe_aaff: detalle.aaff?.importe || 0,
-    prescriptor_nombre: detalle.prescriptor?.nombre || null,
-    pct_prescriptor: detalle.prescriptor?.pct || 0, importe_prescriptor: detalle.prescriptor?.importe || 0,
-    portero_nombre: detalle.portero?.nombre || null,
-    pct_portero: detalle.portero?.pct || 0, importe_portero: detalle.portero?.importe || 0,
-    compartida: comp, split_pct: split,
-    agencia_externa: document.getElementById('nop-agencia')?.value || null,
-    importe_agencia_externa: detalle.agenciaExterna?.importe || 0,
-    estado: esAtipico ? 'cobrada' : 'pipeline',
-    observaciones: document.getElementById('nop-obs')?.value || null
-  };
+  if (esAtipico) {
+    const base   = parseFloat(document.getElementById('nop-base-imponible')?.value) || 0;
+    const pct1   = parseFloat(document.getElementById('nop-imp1-pct')?.value) || 0;
+    const pct2   = parseFloat(document.getElementById('nop-imp2-pct')?.value) || 0;
+    const imp1   = base * pct1 / 100;
+    const imp2   = base * pct2 / 100;
+    const total  = base + imp1 + imp2;
+    const agenteId = document.getElementById('nop-captador')?.value;
+    const agentePct = parseFloat(document.getElementById('nop-pct-cap')?.value) || 0;
+    payload = {
+      fecha, tipo_ingreso: 'atipico',
+      tipo_atipico: document.getElementById('nop-tipo-atipico')?.value || null,
+      oficina_id: parseInt(oficina),
+      precio_inmueble: base, pct_comision: 0,
+      comision_bruta: base, honorarios_lae: total,
+      tipo_impuesto_desc: document.getElementById('nop-imp1-desc')?.value || null,
+      pct_impuesto: pct1,
+      tipo_impuesto2_desc: document.getElementById('nop-imp2-desc')?.value || null,
+      pct_impuesto2: pct2,
+      canal: 'directa', compartida: false, split_pct: 100,
+      consultor_captador_id: agenteId ? parseInt(agenteId) : null,
+      pct_captador: agentePct,
+      importe_captador: total * agentePct / 100,
+      estado: 'cobrada',
+      observaciones: document.getElementById('nop-obs')?.value || null
+    };
+  } else {
+    const precioRaw = (document.getElementById('nop-precio')?.value||'0').replace(/[^0-9,]/g,'').replace(',','.');
+    const precio    = parseFloat(precioRaw) || 0;
+    const pct       = parseFloat(document.getElementById('nop-pct')?.value) || 5;
+    const comp      = document.getElementById('nop-compartida')?.checked || false;
+    const split     = parseFloat(document.getElementById('nop-split')?.value) || 50;
+    const bruta     = precio * pct / 100;
+    const lae       = comp ? bruta * split / 100 : bruta;
+    const tipoOp = { 'Compra-Venta':'cv', 'Alquiler':'alquiler', 'Traspaso':'traspaso' }
+      [document.getElementById('nop-tipo-op')?.value] || 'cv';
+    const { detalle } = calcularRepartoDetalle(lae, bruta);
+    payload = {
+      fecha, tipo_ingreso: 'inmobiliaria', tipo_operacion: tipoOp,
+      oficina_id: parseInt(oficina),
+      direccion: document.getElementById('nop-direccion')?.value || '',
+      ref_inmovilla: document.getElementById('nop-ref-inmovilla')?.value || null,
+      consultor_captador_id: detalle.captador.valido ? parseInt(detalle.captador.id) : null,
+      pct_captador: detalle.captador.pct, importe_captador: detalle.captador.importe,
+      consultor_vendedor_id: detalle.vendedor.valido ? parseInt(detalle.vendedor.id) : null,
+      pct_vendedor: detalle.vendedor.pct, importe_vendedor: detalle.vendedor.importe,
+      consultor_coordinadora_id: detalle.coordinadora.valido ? parseInt(detalle.coordinadora.id) : null,
+      pct_coordinadora: detalle.coordinadora.pct, importe_coordinadora: detalle.coordinadora.importe,
+      consultor_director_id: detalle.director.valido ? parseInt(detalle.director.id) : null,
+      pct_director: detalle.director.pct, importe_director: detalle.director.importe,
+      precio_inmueble: precio, pct_comision: pct,
+      comision_bruta: bruta, honorarios_lae: lae,
+      canal: document.getElementById('nop-canal')?.value || 'directa',
+      aaff_id: detalle.aaff?.valido ? parseInt(detalle.aaff.id) : null,
+      pct_aaff: detalle.aaff?.pct || 0, importe_aaff: detalle.aaff?.importe || 0,
+      prescriptor_nombre: detalle.prescriptor?.nombre || null,
+      pct_prescriptor: detalle.prescriptor?.pct || 0, importe_prescriptor: detalle.prescriptor?.importe || 0,
+      portero_nombre: detalle.portero?.nombre || null,
+      pct_portero: detalle.portero?.pct || 0, importe_portero: detalle.portero?.importe || 0,
+      compartida: comp, split_pct: split,
+      agencia_externa: document.getElementById('nop-agencia')?.value || null,
+      importe_agencia_externa: detalle.agenciaExterna?.importe || 0,
+      estado: 'pipeline',
+      observaciones: document.getElementById('nop-obs')?.value || null
+    };
+  }
 
   const btn = document.getElementById('btn-guardar-op');
   if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
