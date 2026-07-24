@@ -1653,12 +1653,15 @@ async function loadCaptacionesPorOficina() {
     const listaViv = resViv.data || resViv;
     const tbodyViv = document.getElementById('cap-viv-excl-tbody');
     if (tbodyViv && Array.isArray(listaViv)) {
-      const maxExcl = Math.max(...listaViv.map(o => parseInt(o.exclusivas)||0), 1);
-      tbodyViv.innerHTML = listaViv.filter(o => (parseInt(o.total)||0) > 0).map(o => {
+      const vivFiltrado = listaViv.filter(o => (parseInt(o.total)||0) > 0);
+      const maxExcl = Math.max(...vivFiltrado.map(o => parseInt(o.exclusivas)||0), 1);
+      let vTotExcl = 0, vTotNe = 0, vTotTotal = 0, vTotHonor = 0;
+      const vivFilas = vivFiltrado.map(o => {
         const excl  = parseInt(o.exclusivas)||0;
         const ne    = parseInt(o.notas_encargo)||0;
         const total = parseInt(o.total)||0;
         const honor = parseFloat(o.honorarios_excl)||0;
+        vTotExcl += excl; vTotNe += ne; vTotTotal += total; vTotHonor += honor;
         const w = Math.round(excl / maxExcl * 100);
         return `<tr>
           <td><strong>${o.nombre}</strong></td>
@@ -1673,6 +1676,14 @@ async function loadCaptacionesPorOficina() {
           </td>
         </tr>`;
       }).join('');
+      tbodyViv.innerHTML = vivFilas + `<tr style="background:var(--cream);border-top:2px solid var(--border)">
+        <td style="font-weight:700">TOTAL (${vivFiltrado.length})</td>
+        <td class="td-right" style="font-weight:700;color:#1E40AF">${vTotExcl}</td>
+        <td class="td-right" style="font-weight:700;color:#7C3AED">${vTotNe}</td>
+        <td class="td-right" style="font-weight:700">${vTotTotal}</td>
+        <td class="td-right" style="font-weight:700;color:var(--green)">${fmtK(vTotHonor)}</td>
+        <td></td>
+      </tr>`;
     }
   } catch(e) {}
 }
@@ -2173,14 +2184,20 @@ function renderCapOf(data) {
     return _capOfSortAsc ? va - vb : vb - va;
   });
   const maxTotal = Math.max(...sorted.map(o => parseInt(o.total)||0), 1);
-  tbody.innerHTML = sorted.map(o => {
-    const w = Math.round((parseInt(o.total)||0) / maxTotal * 100);
+  let totExcl = 0, totNe = 0, totTotal = 0, totHonor = 0;
+  const filas = sorted.map(o => {
+    const excl  = parseInt(o.exclusivas)||0;
+    const ne    = parseInt(o.notas_encargo)||0;
+    const total = parseInt(o.total)||0;
+    const honor = parseFloat(o.honorarios)||0;
+    totExcl  += excl; totNe += ne; totTotal += total; totHonor += honor;
+    const w = Math.round(total / maxTotal * 100);
     return `<tr>
       <td><strong>${o.nombre}</strong></td>
-      <td class="td-right" style="color:#1E40AF;font-weight:600">${o.exclusivas||0}</td>
-      <td class="td-right" style="color:#7C3AED">${o.notas_encargo||0}</td>
-      <td class="td-right"><strong>${o.total||0}</strong></td>
-      <td class="td-right" style="color:var(--green)">${fmtK(o.honorarios||0)}</td>
+      <td class="td-right" style="color:#1E40AF;font-weight:600">${excl}</td>
+      <td class="td-right" style="color:#7C3AED">${ne}</td>
+      <td class="td-right"><strong>${total}</strong></td>
+      <td class="td-right" style="color:var(--green)">${fmtK(honor)}</td>
       <td style="width:120px">
         <div style="height:5px;background:var(--border);border-radius:2px">
           <div style="width:${w}%;height:100%;background:var(--navy);border-radius:2px"></div>
@@ -2188,6 +2205,14 @@ function renderCapOf(data) {
       </td>
     </tr>`;
   }).join('');
+  tbody.innerHTML = filas + `<tr style="background:var(--cream);border-top:2px solid var(--border)">
+    <td style="font-weight:700">TOTAL (${sorted.length})</td>
+    <td class="td-right" style="font-weight:700;color:#1E40AF">${totExcl}</td>
+    <td class="td-right" style="font-weight:700;color:#7C3AED">${totNe}</td>
+    <td class="td-right" style="font-weight:700">${totTotal}</td>
+    <td class="td-right" style="font-weight:700;color:var(--green)">${fmtK(totHonor)}</td>
+    <td></td>
+  </tr>`;
 }
 
 // ── PLANTILLAS DE REUNIÓN ─────────────────────────────
