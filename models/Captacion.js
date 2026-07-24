@@ -1,5 +1,9 @@
 const pool = require('../db/pool');
 
+pool.query(`
+  ALTER TABLE captaciones ADD COLUMN IF NOT EXISTS consultor_nombre_raw VARCHAR(200);
+`).catch(() => {});
+
 const Captacion = {
 
   async listar({ oficina_id, mandato, tipologia, tipo_operacion, antiguedad, estado } = {}) {
@@ -18,7 +22,7 @@ const Captacion = {
     const { rows } = await pool.query(`
       SELECT c.*,
         o.nombre AS oficina_nombre,
-        cons.nombre AS consultor_nombre,
+        COALESCE(cons.nombre, c.consultor_nombre_raw) AS consultor_nombre,
         EXTRACT(MONTH FROM AGE(NOW(), c.fecha_captacion)) +
           EXTRACT(YEAR FROM AGE(NOW(), c.fecha_captacion)) * 12 AS meses_activa
       FROM captaciones c

@@ -44,7 +44,7 @@ function nav(viewId) {
     operaciones: 'Operaciones',
     'nueva-op': 'Nueva operación',
     'ingresos-resumen': 'Ingresos — Resumen',
-    captaciones: 'Captaciones — Listado',
+    captaciones: 'Cartera activa',
     'cap-matriz': 'Captaciones — Matriz',
     'cap-oficinas': 'Captaciones — Por oficina',
     actividad: 'Actividad Comercial',
@@ -858,20 +858,7 @@ async function loadCaptaciones() {
       fetch(`${API}/api/consultores`).then(r => r.json())
     ]);
     _capConsultoresAll = consRes.data || consRes || [];
-    const s = sumRes.data || sumRes;
-    if (kpis) {
-      kpis.innerHTML = `
-        <div class="kpi-card highlight"><div class="kpi-label">Total activas</div><div class="kpi-value">${s.total||0}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Exclusivas</div><div class="kpi-value" style="color:#1E40AF">${s.exclusivas||0}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Notas encargo</div><div class="kpi-value" style="color:#7C3AED">${s.notas_encargo||0}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Valor cartera</div><div class="kpi-value gold">${fmtK(s.valor_cartera||0)}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Hon. potenciales</div><div class="kpi-value green">${fmtK(s.honorarios_potenciales||0)}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Hon. pot. exclusivas</div><div class="kpi-value" style="color:#1E40AF">${fmtK(s.hon_pot_exclusivas||0)}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Hon. pot. N.E.</div><div class="kpi-value" style="color:#7C3AED">${fmtK(s.hon_pot_ne||0)}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Excl. viviendas</div><div class="kpi-value" style="color:#1E40AF">${s.excl_viviendas||0}</div></div>
-        <div class="kpi-card"><div class="kpi-label">Hon. pot. excl. viv.</div><div class="kpi-value green">${fmtK(s.hon_pot_excl_viviendas||0)}</div></div>
-      `;
-    }
+    // KPIs se calculan en aplicarFiltrosCap() para que los filtros los actualicen
     const lista = listRes.data || listRes;
     if (!Array.isArray(lista) || !lista.length) {
       tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-state-icon">🏠</div><h3>Sin captaciones</h3><p>Importa un CSV de Inmovilla para ver las captaciones.</p><button class="btn btn-primary" style="margin-top:12px" onclick="nav('importar')">Importar Inmovilla</button></div></td></tr>`;
@@ -896,10 +883,10 @@ function poblarFiltroConsultorCap() {
   const filConsultor = document.getElementById('cap-fil-consultor');
   if (!filConsultor) return;
   const prev = filConsultor.value;
-  const candidatos = filOficina
-    ? _capConsultoresAll.filter(c => c.oficina_nombre === filOficina)
-    : _capConsultoresAll;
-  const nombres = [...new Set(candidatos.map(c => c.nombre).filter(Boolean))].sort();
+  const fuente = filOficina
+    ? _capAllData.filter(c => c.oficina_nombre === filOficina)
+    : _capAllData;
+  const nombres = [...new Set(fuente.map(c => c.consultor_nombre).filter(Boolean))].sort();
   filConsultor.innerHTML = '<option value="">Consultor</option>' + nombres.map(n => `<option value="${n}">${n}</option>`).join('');
   filConsultor.value = nombres.includes(prev) ? prev : '';
 }
@@ -918,13 +905,40 @@ function aplicarFiltrosCap() {
   const filtrado = _capAllData.filter(c => {
     if (filOficina   && c.oficina_nombre !== filOficina) return false;
     if (filConsultor && c.consultor_nombre !== filConsultor) return false;
-    if (filCanal     && (c.medio_contacto || c.canal || '') !== filCanal) return false;
+    if (filCanal     && (c.canal_captacion || '') !== filCanal) return false;
     if (filEstado    && (c.estado || '') !== filEstado) return false;
     if (filTipo      && (c.tipologia || '') !== filTipo) return false;
     return true;
   });
+  const activas = filtrado.filter(c => (c.estado || 'activa') === 'activa');
+  actualizarKpisCap(activas);
   renderCap(filtrado);
-  renderCartera(filtrado.filter(c => (c.estado || 'activa') === 'activa'));
+  renderCartera(activas);
+}
+
+function actualizarKpisCap(activas) {
+  const kpis = document.getElementById('cap-kpis');
+  if (!kpis) return;
+  const total    = activas.length;
+  const excl     = activas.filter(c => c.mandato === 'exclusiva').length;
+  const ne       = activas.filter(c => c.mandato === 'nota_encargo').length;
+  const valor    = activas.reduce((s, c) => s + (parseFloat(c.precio_captacion) || 0), 0);
+  const honor    = activas.reduce((s, c) => s + (parseFloat(c.honorarios_potenciales) || 0), 0);
+  const hExcl    = activas.filter(c => c.mandato === 'exclusiva').reduce((s, c) => s + (parseFloat(c.honorarios_potenciales) || 0), 0);
+  const hNe      = activas.filter(c => c.mandato === 'nota_encargo').reduce((s, c) => s + (parseFloat(c.honorarios_potenciales) || 0), 0);
+  const exclViv  = activas.filter(c => c.mandato === 'exclusiva' && c.tipologia === 'vivienda').length;
+  const hExclViv = activas.filter(c => c.mandato === 'exclusiva' && c.tipologia === 'vivienda').reduce((s, c) => s + (parseFloat(c.honorarios_potenciales) || 0), 0);
+  kpis.innerHTML = `
+    <div class="kpi-card highlight"><div class="kpi-label">Total activas</div><div class="kpi-value">${total}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Exclusivas</div><div class="kpi-value" style="color:#1E40AF">${excl}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Notas encargo</div><div class="kpi-value" style="color:#7C3AED">${ne}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Valor cartera</div><div class="kpi-value gold">${fmtK(valor)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Hon. potenciales</div><div class="kpi-value green">${fmtK(honor)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Hon. pot. exclusivas</div><div class="kpi-value" style="color:#1E40AF">${fmtK(hExcl)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Hon. pot. N.E.</div><div class="kpi-value" style="color:#7C3AED">${fmtK(hNe)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Excl. viviendas</div><div class="kpi-value" style="color:#1E40AF">${exclViv}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Hon. pot. excl. viv.</div><div class="kpi-value green">${fmtK(hExclViv)}</div></div>
+  `;
 }
 
 function limpiarFiltrosCap() {
@@ -1936,7 +1950,7 @@ function renderCap(data) {
     else if (_capSortCol === 'tipo_op')   { va = a.tipo_operacion||''; vb = b.tipo_operacion||''; }
     else if (_capSortCol === 'oficina')   { va = a.oficina_nombre||''; vb = b.oficina_nombre||''; }
     else if (_capSortCol === 'consultor') { va = a.consultor_nombre||''; vb = b.consultor_nombre||''; }
-    else if (_capSortCol === 'canal')     { va = a.medio_contacto||a.canal||''; vb = b.medio_contacto||b.canal||''; }
+    else if (_capSortCol === 'canal')     { va = a.canal_captacion||''; vb = b.canal_captacion||''; }
     else if (_capSortCol === 'precio')    { va = parseFloat(a.precio_captacion)||0; vb = parseFloat(b.precio_captacion)||0; }
     else if (_capSortCol === 'honor')     { va = parseFloat(a.honorarios_potenciales)||0; vb = parseFloat(b.honorarios_potenciales)||0; }
     if (typeof va === 'string') return _capSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
@@ -1946,7 +1960,7 @@ function renderCap(data) {
   tbody.innerHTML = sorted.map(c => {
     const estado = c.estado || 'activa';
     const fecha  = (c.fecha_captacion || c.created_at || '').substring(0,10);
-    const canal  = c.medio_contacto || c.canal || '—';
+    const canal  = c.canal_captacion || '—';
     return `<tr>
       <td style="font-size:10px;color:var(--muted);font-family:monospace">${c.ref||'—'}</td>
       <td><span style="font-size:11px;font-weight:600;color:${estadoColors[estado]||'var(--text)'}">${estado}</span></td>
@@ -1988,7 +2002,7 @@ function renderCartera(data) {
     else if (_carteraSortCol === 'oficina')   { va = a.oficina_nombre||''; vb = b.oficina_nombre||''; }
     else if (_carteraSortCol === 'consultor') { va = a.consultor_nombre||''; vb = b.consultor_nombre||''; }
     else if (_carteraSortCol === 'mandato')   { va = a.mandato||''; vb = b.mandato||''; }
-    else if (_carteraSortCol === 'canal')     { va = a.medio_contacto||a.canal||''; vb = b.medio_contacto||b.canal||''; }
+    else if (_carteraSortCol === 'canal')     { va = a.canal_captacion||''; vb = b.canal_captacion||''; }
     else if (_carteraSortCol === 'tipologia') { va = a.tipologia||''; vb = b.tipologia||''; }
     else if (_carteraSortCol === 'precio')    { va = parseFloat(a.precio_captacion)||0; vb = parseFloat(b.precio_captacion)||0; }
     else if (_carteraSortCol === 'honor')     { va = parseFloat(a.honorarios_potenciales)||0; vb = parseFloat(b.honorarios_potenciales)||0; }
@@ -2004,7 +2018,7 @@ function renderCartera(data) {
     const mandTag = c.mandato === 'exclusiva'
       ? '<span class="badge badge-blue">Excl.</span>'
       : '<span class="badge badge-gray">NE</span>';
-    const canal  = c.medio_contacto || c.canal || '—';
+    const canal  = c.canal_captacion || '—';
     totPrecio += parseFloat(c.precio_captacion) || 0;
     totHonor  += parseFloat(c.honorarios_potenciales) || 0;
     return `<tr>

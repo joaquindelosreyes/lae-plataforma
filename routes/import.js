@@ -108,17 +108,24 @@ router.post('/inmovilla', upload.single('archivo'), async (req, res) => {
         const pctComision = parseFloat((row['Porcentaje'] || '5').replace(',', '.')) || 5;
         const comision    = parseFloat((row['Comisión'] || '0').replace(',', '.')) || 0;
 
-        const captadoPor = (row['Captado por'] || '').trim().toLowerCase();
+        const captadoPorRaw = (row['Captado por'] || '').trim();
+        const captadoPor    = captadoPorRaw.toLowerCase();
         let resolvedConsultor = consultorMap[captadoPor] || null;
-        if (!resolvedConsultor && captadoPor) {
+        if (!resolvedConsultor && captadoPorRaw) {
           const { rows: newCons } = await client.query(
             'INSERT INTO consultores (nombre, oficina_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id',
-            [row['Captado por'].trim(), oficina_id]
+            [captadoPorRaw, oficina_id]
           );
           if (newCons[0]) {
             resolvedConsultor = newCons[0].id;
-            consultorMap[captadoPor] = resolvedConsultor;
+          } else {
+            const { rows: found } = await client.query(
+              'SELECT id FROM consultores WHERE lower(nombre) = lower($1) AND oficina_id = $2',
+              [captadoPorRaw, oficina_id]
+            );
+            resolvedConsultor = found[0]?.id || null;
           }
+          if (resolvedConsultor) consultorMap[captadoPor] = resolvedConsultor;
         }
 
         const tipologia  = mapTipologia(tipo);
@@ -129,11 +136,11 @@ router.post('/inmovilla', upload.single('archivo'), async (req, res) => {
         if (ESTADOS_ACTIVOS.has(estado)) {
           await client.query(`
             INSERT INTO captaciones (ref, fecha_captacion, direccion, oficina_id, consultor_id,
-              mandato, tipologia, tipo_operacion, precio_captacion, pct_honorarios,
+              consultor_nombre_raw, mandato, tipologia, tipo_operacion, precio_captacion, pct_honorarios,
               honorarios_potenciales, estado, fuente)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'activa','inmovilla')
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'activa','inmovilla')
           `, [ref, fechaAlta, direccion, oficina_id, resolvedConsultor,
-              mandato, tipologia, tipoOpLAE, precioVenta, pctComision, honorarios]);
+              captadoPorRaw || null, mandato, tipologia, tipoOpLAE, precioVenta, pctComision, honorarios]);
           stats.captaciones_nuevas++;
 
         } else if (ESTADOS_CERRADOS.has(estado)) {
