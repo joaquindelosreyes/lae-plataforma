@@ -449,10 +449,15 @@ function renderOps() {
 
   const estadoBadge = { cobrada:'badge-green', pipeline:'badge-blue', pendiente_escritura:'badge-amber', cancelada:'badge-gray' };
   const estadoLbl   = { cobrada:'Cobrada', pipeline:'Pipeline', pendiente_escritura:'Pend. escritura', cancelada:'Cancelada' };
+
+  let tPrecio = 0, tHonor = 0;
   tbody.innerHTML = sorted.map(op => {
     const est   = op.estado || 'pipeline';
-    const precio = parseFloat(op.precio_inmueble) > 0 ? fmtK(op.precio_inmueble) : '—';
-    const honor  = parseFloat(op.honorarios_lae)  > 0 ? fmt(op.honorarios_lae)   : '—';
+    const pv = parseFloat(op.precio_inmueble) || 0;
+    const hv = parseFloat(op.honorarios_lae)  || 0;
+    tPrecio += pv; tHonor += hv;
+    const precio = pv > 0 ? fmtK(op.precio_inmueble) : '—';
+    const honor  = hv > 0 ? fmt(op.honorarios_lae)   : '—';
     return `<tr>
       <td style="font-size:10px;color:var(--muted);font-family:monospace">${op.ref||'—'}</td>
       <td>${fmtFecha(op.fecha)}</td>
@@ -464,6 +469,14 @@ function renderOps() {
       <td><span class="badge ${estadoBadge[est]||'badge-gray'}" style="cursor:pointer" onclick="cambiarEstadoOp(${op.id},'${est}')">${estadoLbl[est]||est}</span></td>
     </tr>`;
   }).join('');
+
+  const tfoot = document.getElementById('ops-tfoot');
+  if (tfoot) tfoot.innerHTML = `<tr style="background:var(--cream);font-weight:600;border-top:2px solid var(--border)">
+    <td colspan="5" style="font-size:12px;padding:8px 10px">${sorted.length} operación${sorted.length !== 1 ? 'es' : ''}</td>
+    <td class="td-right" style="font-size:12px;padding:8px 10px">${tPrecio > 0 ? fmtK(tPrecio) : '—'}</td>
+    <td class="td-right" style="font-size:12px;padding:8px 10px;color:var(--green)">${tHonor > 0 ? fmt(tHonor) : '—'}</td>
+    <td></td>
+  </tr>`;
 }
 
 async function cambiarEstadoOp(id, estadoActual) {
