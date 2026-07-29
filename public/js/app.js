@@ -2808,7 +2808,7 @@ async function loadAAFF50() {
         const t = parseInt(m.total)||0;
         const w = Math.round(t/max*100);
         const tasa = parseFloat(m.tasa)||0;
-        const isOtros = m.medio === 'Otros';
+        const isOtros = m.medio === 'OTROS';
         return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
           <span style="width:130px;font-size:11px;color:${isOtros?'var(--muted)':'inherit'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.medio}</span>
           <div style="flex:1;height:10px;background:var(--border);border-radius:3px;overflow:hidden">

@@ -134,14 +134,14 @@ router.get('/stats/medios', async (req, res) => {
     const mediosEstandar = ['EMAIL', 'WHATSAPP', 'CORREO FÍSICO', 'LLAMADA'];
     const { rows } = await pool.query(`
       SELECT
-        CASE WHEN medio = ANY($1) THEN medio ELSE 'Otros' END AS medio,
+        CASE WHEN medio = ANY($1) THEN medio ELSE 'OTROS' END AS medio,
         COUNT(*)              AS total,
         SUM(vecinos_recibido) AS recibidos,
         SUM(vecinos_interes)  AS interes,
         ROUND(SUM(vecinos_interes)*100.0/NULLIF(SUM(vecinos_recibido),0),1) AS tasa
       FROM aaff_comunicaciones
       WHERE medio IS NOT NULL AND medio != ''
-      GROUP BY CASE WHEN medio = ANY($1) THEN medio ELSE 'Otros' END
+      GROUP BY CASE WHEN medio = ANY($1) THEN medio ELSE 'OTROS' END
       ORDER BY total DESC
     `, [mediosEstandar]);
     res.json({ success: true, data: rows });
