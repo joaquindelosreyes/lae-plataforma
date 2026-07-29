@@ -2803,13 +2803,19 @@ async function loadAAFF50() {
     // Por medio
     const medDiv = document.getElementById('a50-medios');
     if (medDiv && medRes.success) {
-      const max = Math.max(...medRes.data.map(m => parseInt(m.total)||0), 1);
-      medDiv.innerHTML = medRes.data.map(m => {
+      const sorted = [...medRes.data].sort((a, b) => {
+        if (a.medio === 'OTROS') return 1;
+        if (b.medio === 'OTROS') return -1;
+        return (parseInt(b.total)||0) - (parseInt(a.total)||0);
+      });
+      const max = Math.max(...sorted.map(m => parseInt(m.total)||0), 1);
+      medDiv.innerHTML = sorted.map((m, i) => {
         const t = parseInt(m.total)||0;
         const w = Math.round(t/max*100);
         const tasa = parseFloat(m.tasa)||0;
         const isOtros = m.medio === 'OTROS';
-        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+        const isLast  = i === sorted.length - 1;
+        return `<div style="display:flex;align-items:center;gap:8px;${isLast?'':'margin-bottom:7px'}${isOtros?';margin-top:8px;padding-top:8px;border-top:1px solid var(--border)':''}">
           <span style="width:130px;font-size:11px;color:${isOtros?'var(--muted)':'inherit'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.medio}</span>
           <div style="flex:1;height:10px;background:var(--border);border-radius:3px;overflow:hidden">
             <div style="width:${w}%;height:100%;background:${isOtros?'var(--border-dark,#ccc)':'var(--navy)'};border-radius:3px"></div>
