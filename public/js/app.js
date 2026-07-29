@@ -187,11 +187,12 @@ function recargarVistaActiva() {
   if (id === 'ingresos-resumen') loadIngresosResumen();
   if (id === 'captaciones')      loadCaptaciones();
   if (id === 'cap-oficinas')     loadCaptacionesPorOficina();
-  if (id === 'demandas')       loadDemandas();
+  if (id === 'demandas')         loadDemandas();
   if (id === 'palancas')         loadPalancas();
-  if (id === 'compromisos') loadCompromisosPendientes();
-  if (id === 'actas')       loadActas();
-  if (!['dashboard','operaciones','ingresos-resumen','captaciones','cap-oficinas','palancas','compromisos','actas'].includes(id)) loadDashboard();
+  if (id === 'compromisos')      loadCompromisosPendientes();
+  if (id === 'actas')            loadActas();
+  if (id === 'aaff50')           loadAAFF50();
+  if (!['dashboard','operaciones','ingresos-resumen','captaciones','cap-oficinas','palancas','compromisos','actas','aaff50'].includes(id)) loadDashboard();
 }
 
 function getDateRange() {
@@ -2614,8 +2615,7 @@ const fmtEur = v => Number(v||0).toLocaleString('es-ES', { minimumFractionDigits
 
 async function loadAAFF50() {
   try {
-    const desde = document.getElementById('fecha-desde')?.value || '';
-    const hasta = document.getElementById('fecha-hasta')?.value || '';
+    const { desde, hasta } = getDateRange();
     const ofQs = new URLSearchParams({ ...(desde && {desde}), ...(hasta && {hasta}) }).toString();
 
     const [sumRes, listRes, ofRes, medRes, filRes] = await Promise.all([
