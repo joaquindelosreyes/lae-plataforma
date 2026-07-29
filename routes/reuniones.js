@@ -11,11 +11,11 @@ router.get('/', async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// GET /api/reuniones/compromisos-abiertos?desde=&hasta=
+// GET /api/reuniones/compromisos-abiertos?desde=&hasta=&oficina_id=
 router.get('/compromisos-abiertos', async (req, res) => {
   try {
-    const { desde, hasta } = req.query;
-    const data = await Reunion.compromisosAbiertos({ desde, hasta });
+    const { desde, hasta, oficina_id } = req.query;
+    const data = await Reunion.compromisosAbiertos({ desde, hasta, oficina_id });
     res.json({ success: true, data });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -63,6 +63,15 @@ router.get('/actas', async (req, res) => {
       ORDER BY r.fecha DESC LIMIT 100
     `, params);
     res.json({ success: true, data: rows });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// GET /api/reuniones/:id/dossier
+router.get('/:id/dossier', async (req, res) => {
+  try {
+    const data = await Reunion.dossierOficina(req.params.id);
+    if (!data) return res.json({ success: false, error: 'Sin oficina asociada' });
+    res.json({ success: true, data });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 

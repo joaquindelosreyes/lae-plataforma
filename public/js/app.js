@@ -1693,6 +1693,7 @@ async function loadCaptacionesPorOficina() {
 let _calAño = new Date().getFullYear();
 let _calMes  = new Date().getMonth() + 1;
 let _reunionActivaId = null;
+let _compAllData = [];
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 function navMes(delta) {
@@ -1731,9 +1732,12 @@ async function guardarReunion() {
 async function abrirReunion(id) {
   _reunionActivaId = id;
   try {
-    const res = await fetch(`${API}/api/reuniones/${id}`).then(r => r.json());
-    if (!res.success) return;
-    const r = res.data;
+    const [resReu, resDos] = await Promise.all([
+      fetch(`${API}/api/reuniones/${id}`).then(r => r.json()),
+      fetch(`${API}/api/reuniones/${id}/dossier`).then(r => r.json()).catch(() => null),
+    ]);
+    if (!resReu.success) return;
+    const r = resReu.data;
     const det = document.getElementById('reunion-detalle');
     if (det) det.style.display = 'block';
     const tit = document.getElementById('reunion-detalle-titulo');
@@ -1743,8 +1747,59 @@ async function abrirReunion(id) {
     const conc = document.getElementById('reu-conclusiones');
     if (conc) conc.value = r.conclusiones || '';
     renderCompromisos(r.compromisos || []);
+    renderDossier(resDos?.success ? resDos.data : null);
     det?.scrollIntoView({ behavior:'smooth', block:'nearest' });
   } catch(e) { console.warn(e); }
+}
+
+function renderDossier(data) {
+  const el = document.getElementById('reunion-dossier');
+  if (!el) return;
+  if (!data) { el.style.display = 'none'; return; }
+  const { captaciones: cap, operaciones: ops, objetivo_anual, aaff_activos, reunion_anterior, oficina_nombre } = data;
+  const fmtE = v => '€' + Math.round(parseFloat(v) || 0).toLocaleString('es-ES');
+  const pct = objetivo_anual > 0 ? Math.round((parseFloat(ops.cobrado_año) || 0) * 100 / objetivo_anual) : 0;
+
+  const kd = (label, val, sub = '') => `<div style="background:var(--cream);border-radius:6px;padding:10px 12px">
+    <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${label}</div>
+    <div style="font-size:16px;font-weight:600;color:var(--navy)">${val}</div>
+    ${sub ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">${sub}</div>` : ''}
+  </div>`;
+
+  let anteriorHtml = '';
+  if (reunion_anterior) {
+    const ra = reunion_anterior;
+    const raFecha = new Date(ra.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+    const comps = Array.isArray(ra.compromisos) ? ra.compromisos : [];
+    const abiertos = comps.filter(c => !c.completado);
+    anteriorHtml = `<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Reunión anterior · ${raFecha}</div>
+      ${ra.conclusiones ? `<div style="font-size:12px;color:var(--text);background:var(--cream);border-radius:6px;padding:10px;margin-bottom:10px;line-height:1.5">${ra.conclusiones.replace(/\n/g, '<br>')}</div>` : '<div style="font-size:12px;color:var(--muted);margin-bottom:8px">Sin conclusiones registradas</div>'}
+      ${comps.length ? `<div style="font-size:11px;color:var(--muted);margin-bottom:6px">${abiertos.length} compromisos pendientes · ${comps.length - abiertos.length} completados</div>
+        ${abiertos.map(c => `<div style="font-size:12px;padding:5px 0;border-bottom:1px solid var(--border)">
+          <span style="color:var(--gold)">○</span> ${c.descripcion}${c.responsable ? ` <span style="color:var(--muted);font-size:11px">· ${c.responsable}</span>` : ''}
+          ${c.plazo ? `<span style="color:var(--muted);font-size:10px;margin-left:4px">· ${new Date(c.plazo).toLocaleDateString('es-ES')}</span>` : ''}
+        </div>`).join('')}` : '<div style="font-size:12px;color:var(--muted)">Sin compromisos registrados</div>'}
+    </div>`;
+  }
+
+  el.innerHTML = `<div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Dossier · ${oficina_nombre}</span>
+      <span style="font-size:11px;color:var(--muted)">${aaff_activos} despachos AAFF activos</span>
+    </div>
+    <div class="panel-body">
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+        ${kd('Captaciones activas', parseInt(cap.total) || 0, `${parseInt(cap.exclusivas) || 0} exclusivas`)}
+        ${kd('Hon. potenciales excl.', fmtE(cap.hon_pot_excl))}
+        ${kd('Pipeline', `${parseInt(ops.pipeline_count) || 0} ops`, fmtE(ops.pipeline_lae))}
+        ${kd('Arras / Pte. escritura', `${parseInt(ops.arras_count) || 0} ops`, fmtE(ops.arras_lae))}
+        ${kd('Cobrado ' + new Date().getFullYear(), fmtE(ops.cobrado_año), objetivo_anual ? `${pct}% de ${fmtE(objetivo_anual)}` : 'Sin objetivo')}
+      </div>
+      ${anteriorHtml}
+    </div>
+  </div>`;
+  el.style.display = 'block';
 }
 
 function renderCompromisos(compromisos) {
@@ -1805,30 +1860,74 @@ async function eliminarComp(id) {
 async function loadCompromisosPendientes() {
   const list = document.getElementById('compromisos-pendientes');
   if (!list) return;
+  list.innerHTML = '<div class="loading">Cargando...</div>';
   try {
     const { desde, hasta } = getDateRange();
     const res = await fetch(`${API}/api/reuniones/compromisos-abiertos?desde=${desde}&hasta=${hasta}`).then(r => r.json());
-    const data = res.data || res;
-    if (!Array.isArray(data) || !data.length) {
-      list.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon">✓</div><h3>Sin compromisos pendientes</h3></div>';
-      return;
+    _compAllData = Array.isArray(res.data) ? res.data : [];
+
+    // Poblar filtro de oficinas desde los datos
+    const sel = document.getElementById('comp-fil-oficina');
+    if (sel && sel.options.length <= 1) {
+      const ofMap = new Map();
+      _compAllData.forEach(c => { if (c.oficina_id) ofMap.set(String(c.oficina_id), c.oficina_nombre); });
+      [...ofMap.entries()].sort((a, b) => a[1].localeCompare(b[1])).forEach(([id, nombre]) => {
+        const o = document.createElement('option');
+        o.value = id; o.textContent = nombre;
+        sel.appendChild(o);
+      });
     }
-    list.innerHTML = data.map(c => {
+
+    filtrarCompromisos();
+  } catch(e) { list.innerHTML = ''; }
+}
+
+function filtrarCompromisos() {
+  const list = document.getElementById('compromisos-pendientes');
+  if (!list) return;
+  const selVal = document.getElementById('comp-fil-oficina')?.value;
+  const data = selVal ? _compAllData.filter(c => String(c.oficina_id) === selVal) : _compAllData;
+
+  const cnt = document.getElementById('compromisos-cnt');
+  if (cnt) cnt.textContent = data.length ? data.length + ' pendientes' : '';
+
+  if (!data.length) {
+    list.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon">✓</div><h3>Sin compromisos pendientes</h3></div>';
+    return;
+  }
+
+  // Agrupar por oficina
+  const groups = {};
+  data.forEach(c => {
+    const key = c.oficina_nombre || 'General';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(c);
+  });
+  const multiGroup = Object.keys(groups).length > 1;
+
+  list.innerHTML = Object.entries(groups).map(([ofNombre, comps]) => `
+    ${multiGroup ? `<div style="font-size:11px;font-weight:600;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;padding:12px 0 5px;border-bottom:2px solid var(--navy);margin-bottom:2px">${ofNombre} <span style="font-weight:400;color:var(--muted)">(${comps.length})</span></div>` : ''}
+    ${comps.map(c => {
       const vencido = c.plazo && new Date(c.plazo) < new Date();
+      const reuFecha = c.reunion_fecha ? new Date(c.reunion_fecha).toLocaleDateString('es-ES') : '—';
       return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
         <div onclick="toggleCompGlobal(${c.id})" style="width:18px;height:18px;border-radius:3px;border:2px solid var(--border);cursor:pointer;flex-shrink:0;margin-top:1px"></div>
         <div style="flex:1">
           <div style="font-size:12px;font-weight:500;color:var(--text)">${c.descripcion}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px">${c.oficina_nombre||'General'} · ${c.responsable||'—'}</div>
-          <div style="font-size:11px;color:${vencido?'var(--red)':'var(--muted)'};margin-top:1px">
-            ${c.plazo ? (vencido?'⚠ Vencido: ':'Plazo: ') + new Date(c.plazo).toLocaleDateString('es-ES') : 'Sin plazo'}
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${c.responsable || '—'} · Reunión: ${reuFecha}</div>
+          <div style="font-size:11px;color:${vencido ? 'var(--red)' : 'var(--muted)'};margin-top:1px">
+            ${c.plazo ? (vencido ? '⚠ Vencido: ' : 'Plazo: ') + new Date(c.plazo).toLocaleDateString('es-ES') : 'Sin plazo'}
           </div>
         </div>
+        <button onclick="irAReunion(${c.reunion_id_real})" style="background:none;border:1px solid var(--border);border-radius:3px;cursor:pointer;color:var(--muted);font-size:10px;padding:2px 6px;white-space:nowrap">Ver reu.</button>
       </div>`;
-    }).join('');
-    const cnt = document.getElementById('compromisos-cnt');
-    if (cnt) cnt.textContent = data.length + ' pendientes';
-  } catch(e) {}
+    }).join('')}
+  `).join('');
+}
+
+function irAReunion(reunionId) {
+  nav('reuniones');
+  setTimeout(() => { loadReuniones(); setTimeout(() => abrirReunion(reunionId), 300); }, 100);
 }
 
 async function toggleCompGlobal(id) {
