@@ -999,16 +999,11 @@
     <!-- ═══ ACTIVIDAD COMERCIAL ═══ -->
     <div class="view" id="view-actividad">
 
-      <div class="kpi-grid" style="grid-template-columns:repeat(9,1fr);margin-bottom:16px">
-        <div class="kpi-card highlight"><div class="kpi-label">Total visitas</div><div class="kpi-value" id="act-total">—</div></div>
-        <div class="kpi-card"><div class="kpi-label">1ª Visita venta</div><div class="kpi-value" style="color:#1E40AF" id="act-venta">—</div></div>
-        <div class="kpi-card"><div class="kpi-label">1ª Visita alquiler</div><div class="kpi-value" style="color:#7C3AED" id="act-alquiler">—</div></div>
-        <div class="kpi-card"><div class="kpi-label">Evaluación/captac.</div><div class="kpi-value gold" id="act-eval">—</div></div>
-        <div class="kpi-card"><div class="kpi-label">Visitas adicionales</div><div class="kpi-value" id="act-adicionales">—</div></div>
-        <div class="kpi-card"><div class="kpi-label">Canceladas</div><div class="kpi-value red" id="act-canceladas">—</div></div>
-        <div class="kpi-card"><div class="kpi-label">Ratio cancelación</div><div class="kpi-value amber" id="act-ratio">—</div></div>
-        <div class="kpi-card"><div class="kpi-label">Comerciales activos</div><div class="kpi-value green" id="act-comerciales">—</div></div>
-        <div class="kpi-card"><div class="kpi-label">Propiedades con visita</div><div class="kpi-value" id="act-propiedades">—</div></div>
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+        <div class="kpi-card highlight"><div class="kpi-label">Visitas totales</div><div class="kpi-value" id="act-total">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Evaluación</div><div class="kpi-value gold" id="act-eval">—</div><div class="kpi-sub">1ª eval + adic. eval + captación</div></div>
+        <div class="kpi-card"><div class="kpi-label">Primeras visitas</div><div class="kpi-value" style="color:#1E40AF" id="act-primeras">—</div><div class="kpi-sub">venta + alquiler + evaluación</div></div>
+        <div class="kpi-card"><div class="kpi-label">Visitas adicionales</div><div class="kpi-value" id="act-adicionales">—</div><div class="kpi-sub">venta + alquiler + evaluación</div></div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
@@ -1017,20 +1012,22 @@
           <div class="panel-header"><span class="panel-title">Distribución por tipo de visita</span></div>
           <div class="panel-body" id="act-tipos"><div class="loading">Cargando...</div></div>
         </div>
-        <!-- Propiedades más visitadas -->
+        <!-- Por oficina -->
         <div class="panel">
-          <div class="panel-header"><span class="panel-title">Propiedades más visitadas</span></div>
+          <div class="panel-header"><span class="panel-title">Actividad por oficina</span></div>
           <div class="table-wrap">
             <table>
               <thead><tr>
-                <th onclick="sortActProps('ref')" style="cursor:pointer;user-select:none">Ref. <span id="prop-sort-ref"></span></th>
-                <th onclick="sortActProps('oficina')" style="cursor:pointer;user-select:none">Oficina <span id="prop-sort-oficina"></span></th>
-                <th class="nr" onclick="sortActProps('total_visitas')" style="cursor:pointer;user-select:none">Total <span id="prop-sort-total_visitas"></span></th>
-                <th class="nr" onclick="sortActProps('primeras_visitas')" style="cursor:pointer;user-select:none">1ªs visitas <span id="prop-sort-primeras_visitas"></span></th>
-                <th class="nr" style="color:var(--red);cursor:pointer;user-select:none" onclick="sortActProps('canceladas')">Canceladas <span id="prop-sort-canceladas"></span></th>
-                <th onclick="sortActProps('ultima_visita')" style="cursor:pointer;user-select:none">Última visita <span id="prop-sort-ultima_visita"></span></th>
+                <th onclick="sortActOf('oficina')" style="cursor:pointer;user-select:none">Oficina <span id="actof-sort-oficina"></span></th>
+                <th class="nr" onclick="sortActOf('total')" style="cursor:pointer;user-select:none">Total <span id="actof-sort-total"></span></th>
+                <th class="nr" style="color:#1E40AF;cursor:pointer;user-select:none" onclick="sortActOf('primera_venta')">1ª Venta <span id="actof-sort-primera_venta"></span></th>
+                <th class="nr" style="color:#7C3AED;cursor:pointer;user-select:none" onclick="sortActOf('primera_alquiler')">1ª Alq. <span id="actof-sort-primera_alquiler"></span></th>
+                <th class="nr" style="color:var(--gold);cursor:pointer;user-select:none" onclick="sortActOf('primera_evaluacion')">1ª Eval. <span id="actof-sort-primera_evaluacion"></span></th>
+                <th class="nr" onclick="sortActOf('adicional_venta')" style="cursor:pointer;user-select:none">Ad. Venta <span id="actof-sort-adicional_venta"></span></th>
+                <th class="nr" onclick="sortActOf('adicional_alquiler')" style="cursor:pointer;user-select:none">Ad. Alq. <span id="actof-sort-adicional_alquiler"></span></th>
+                <th class="nr" onclick="sortActOf('adicional_evaluacion')" style="cursor:pointer;user-select:none">Ad. Eval. <span id="actof-sort-adicional_evaluacion"></span></th>
               </tr></thead>
-              <tbody id="act-props-tbody"><tr><td colspan="6" class="loading">Cargando...</td></tr></tbody>
+              <tbody id="act-oficinas-tbody"><tr><td colspan="8" class="loading">Cargando...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -1039,8 +1036,10 @@
       <!-- Ranking comerciales -->
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-title">Ranking de actividad por comercial</span>
-          <span style="font-size:11px;color:var(--muted)">Total visitas · ratio cancelación</span>
+          <span class="panel-title">Actividad por comercial</span>
+          <select id="act-fil-oficina" class="form-select" style="height:28px;font-size:11px;padding:0 6px" onchange="filtrarActComerciales()">
+            <option value="">Todas las oficinas</option>
+          </select>
         </div>
         <div class="table-wrap">
           <table>
@@ -1048,12 +1047,12 @@
               <th onclick="sortActividad('comercial')" style="cursor:pointer;user-select:none">Comercial <span id="act-sort-comercial"></span></th>
               <th onclick="sortActividad('oficina')" style="cursor:pointer;user-select:none">Oficina <span id="act-sort-oficina"></span></th>
               <th class="nr" onclick="sortActividad('total')" style="cursor:pointer;user-select:none">Total <span id="act-sort-total"></span></th>
-              <th class="nr" style="color:#1E40AF;cursor:pointer;user-select:none" onclick="sortActividad('venta')">Venta <span id="act-sort-venta"></span></th>
-              <th class="nr" style="color:#7C3AED;cursor:pointer;user-select:none" onclick="sortActividad('alquiler')">Alquiler <span id="act-sort-alquiler"></span></th>
-              <th class="nr" onclick="sortActividad('adicionales')" style="cursor:pointer;user-select:none">Adicionales <span id="act-sort-adicionales"></span></th>
-              <th class="nr" style="color:var(--red);cursor:pointer;user-select:none" onclick="sortActividad('canceladas')">Canceladas <span id="act-sort-canceladas"></span></th>
-              <th class="nr" onclick="sortActividad('ratio')" style="cursor:pointer;user-select:none">% Cancel. <span id="act-sort-ratio"></span></th>
-              <th style="min-width:100px">Actividad</th>
+              <th class="nr" style="color:#1E40AF;cursor:pointer;user-select:none" onclick="sortActividad('primera_venta')">1ª Venta <span id="act-sort-primera_venta"></span></th>
+              <th class="nr" style="color:#7C3AED;cursor:pointer;user-select:none" onclick="sortActividad('primera_alquiler')">1ª Alq. <span id="act-sort-primera_alquiler"></span></th>
+              <th class="nr" style="color:var(--gold);cursor:pointer;user-select:none" onclick="sortActividad('primera_evaluacion')">1ª Eval. <span id="act-sort-primera_evaluacion"></span></th>
+              <th class="nr" onclick="sortActividad('adicional_venta')" style="cursor:pointer;user-select:none">Ad. Venta <span id="act-sort-adicional_venta"></span></th>
+              <th class="nr" onclick="sortActividad('adicional_alquiler')" style="cursor:pointer;user-select:none">Ad. Alq. <span id="act-sort-adicional_alquiler"></span></th>
+              <th class="nr" onclick="sortActividad('adicional_evaluacion')" style="cursor:pointer;user-select:none">Ad. Eval. <span id="act-sort-adicional_evaluacion"></span></th>
             </tr></thead>
             <tbody id="act-comerciales-tbody"><tr><td colspan="9" class="loading">Cargando...</td></tr></tbody>
           </table>

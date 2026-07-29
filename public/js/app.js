@@ -2823,31 +2823,28 @@ async function guardarComunicacion() {
 
 // ── ACTIVIDAD COMERCIAL ───────────────────────────────
 let _actData = [], _actSortCol = 'total', _actSortAsc = false;
+let _actAllData = [];
+let _actOfData = [], _actOfSortCol = 'total', _actOfSortAsc = false;
 
 async function loadActividad() {
   try {
-    const [sumRes, comRes, tipoRes, propRes] = await Promise.all([
+    const [sumRes, comRes, tipoRes, ofRes] = await Promise.all([
       fetch(`${API}/api/actividad/resumen`).then(r => r.json()),
       fetch(`${API}/api/actividad/por-comercial`).then(r => r.json()),
       fetch(`${API}/api/actividad/por-tipo`).then(r => r.json()),
-      fetch(`${API}/api/actividad/propiedades-activas`).then(r => r.json()),
+      fetch(`${API}/api/actividad/por-oficina`).then(r => r.json()),
     ]);
 
     // KPIs
     if (sumRes.success) {
       const s = sumRes.data;
       set('act-total',       (parseInt(s.total_visitas)||0).toLocaleString('es-ES'));
-      set('act-venta',       s.visitas_venta||0);
-      set('act-alquiler',    s.visitas_alquiler||0);
-      set('act-eval',        s.visitas_evaluacion||0);
-      set('act-adicionales', s.visitas_adicionales||0);
-      set('act-canceladas',  s.visitas_canceladas||0);
-      set('act-ratio',       (s.ratio_cancelacion||0) + '%');
-      set('act-comerciales', s.comerciales_activos||0);
-      set('act-propiedades', s.propiedades_visitadas||0);
+      set('act-eval',        (parseInt(s.evaluacion)||0).toLocaleString('es-ES'));
+      set('act-primeras',    (parseInt(s.primeras_visitas)||0).toLocaleString('es-ES'));
+      set('act-adicionales', (parseInt(s.visitas_adicionales)||0).toLocaleString('es-ES'));
     }
 
-    // Tipos de visita
+    // Tipos de visita (agrupados)
     const tipoDiv = document.getElementById('act-tipos');
     if (tipoDiv && tipoRes.success) {
       const lista = tipoRes.data;
@@ -2855,31 +2852,45 @@ async function loadActividad() {
       tipoDiv.innerHTML = lista.map(t => {
         const v = parseInt(t.total)||0;
         const w = Math.round(v/max*100);
-        const esCancel = t.tipo_seguimiento.includes('Cancelada');
-        const color = esCancel ? 'var(--red)' : t.tipo_seguimiento.includes('Venta') ? '#1E40AF' :
-                      t.tipo_seguimiento.includes('Alquiler') ? '#7C3AED' : 'var(--navy)';
-        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-          <span style="width:200px;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.tipo_seguimiento}</span>
+        const color = t.tipo_seguimiento.includes('Venta') ? '#1E40AF' :
+                      t.tipo_seguimiento.includes('Alquiler') ? '#7C3AED' :
+                      t.tipo_seguimiento.includes('Evaluaci') ? 'var(--gold)' : 'var(--navy)';
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+          <span style="width:190px;font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.tipo_seguimiento}</span>
           <div style="flex:1;height:10px;background:var(--border);border-radius:3px;overflow:hidden">
             <div style="width:${w}%;height:100%;background:${color};border-radius:3px"></div>
           </div>
-          <span style="font-size:11px;font-weight:600;color:${color};width:32px;text-align:right">${v}</span>
+          <span style="font-size:12px;font-weight:600;color:${color};width:36px;text-align:right">${v}</span>
         </div>`;
       }).join('');
     }
 
-    // Propiedades más visitadas
-    _propData = propRes.data || [];
-    renderActProps();
+    // Por oficina
+    _actOfData = ofRes.success ? ofRes.data : [];
+    renderActOficinas();
+
+    // Poblar filtro de oficina en tabla comerciales
+    const selOf = document.getElementById('act-fil-oficina');
+    if (selOf && ofRes.success) {
+      const prev = selOf.value;
+      selOf.innerHTML = '<option value="">Todas las oficinas</option>' +
+        ofRes.data.map(o => `<option value="${o.oficina}"${o.oficina===prev?' selected':''}>${o.oficina}</option>`).join('');
+    }
 
     // Comerciales
-    _actData = comRes.data || [];
-    renderActComerciales();
+    _actAllData = comRes.success ? comRes.data : [];
+    filtrarActComerciales();
 
   } catch(e) { console.warn('Error actividad:', e.message); }
 }
 
-const ACT_COLS = ['comercial','oficina','total','venta','alquiler','adicionales','canceladas','ratio'];
+function filtrarActComerciales() {
+  const ofVal = document.getElementById('act-fil-oficina')?.value || '';
+  _actData = ofVal ? _actAllData.filter(c => c.oficina === ofVal) : _actAllData;
+  renderActComerciales();
+}
+
+const ACT_COLS = ['comercial','oficina','total','primera_venta','primera_alquiler','primera_evaluacion','adicional_venta','adicional_alquiler','adicional_evaluacion'];
 
 function sortActividad(col) {
   if (_actSortCol === col) { _actSortAsc = !_actSortAsc; }
@@ -2896,82 +2907,104 @@ function renderActComerciales() {
   if (!tbody) return;
   if (!_actData.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px">Sin datos</td></tr>'; return; }
   const getVal = (c, col) => {
-    switch(col) {
-      case 'comercial':   return c.comercial || '';
-      case 'oficina':     return c.oficina || '';
-      case 'venta':       return parseInt(c.venta) || 0;
-      case 'alquiler':    return parseInt(c.alquiler) || 0;
-      case 'adicionales': return parseInt(c.adicionales) || 0;
-      case 'canceladas':  return parseInt(c.canceladas) || 0;
-      case 'ratio':       return parseFloat(c.ratio_cancel) || 0;
-      default:            return parseInt(c.total) || 0;
-    }
+    if (col === 'comercial') return c.comercial || '';
+    if (col === 'oficina')   return c.oficina || '';
+    return parseInt(c[col]) || 0;
   };
   const sorted = [..._actData].sort((a,b) => {
     const va = getVal(a, _actSortCol), vb = getVal(b, _actSortCol);
     if (typeof va==='string') return _actSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     return _actSortAsc ? va-vb : vb-va;
   });
-  const max = Math.max(...sorted.map(c => parseInt(c.total)||0), 1);
-  tbody.innerHTML = sorted.map(c => {
-    const t = parseInt(c.total)||0;
-    const rc = parseFloat(c.ratio_cancel)||0;
-    const w = Math.round(t/max*100);
+  let tTot=0, tPV=0, tPA=0, tPE=0, tAV=0, tAA=0, tAE=0;
+  const filas = sorted.map(c => {
+    const t  = parseInt(c.total)||0;
+    const pv = parseInt(c.primera_venta)||0;
+    const pa = parseInt(c.primera_alquiler)||0;
+    const pe = parseInt(c.primera_evaluacion)||0;
+    const av = parseInt(c.adicional_venta)||0;
+    const aa = parseInt(c.adicional_alquiler)||0;
+    const ae = parseInt(c.adicional_evaluacion)||0;
+    tTot+=t; tPV+=pv; tPA+=pa; tPE+=pe; tAV+=av; tAA+=aa; tAE+=ae;
     return `<tr>
       <td style="font-weight:500">${c.comercial||'—'}</td>
       <td><span class="badge badge-gray" style="font-size:9px">${c.oficina||'—'}</span></td>
       <td class="td-right" style="font-weight:700">${t}</td>
-      <td class="td-right" style="color:#1E40AF">${c.venta||0}</td>
-      <td class="td-right" style="color:#7C3AED">${c.alquiler||0}</td>
-      <td class="td-right">${c.adicionales||0}</td>
-      <td class="td-right" style="color:var(--red)">${c.canceladas||0}</td>
-      <td class="td-right"><span class="${rc>12?'pct-red':rc>8?'pct-amber':'pct-green'}">${rc}%</span></td>
-      <td><div style="height:5px;background:var(--border);border-radius:2px"><div style="width:${w}%;height:100%;background:var(--navy);border-radius:2px"></div></div></td>
+      <td class="td-right" style="color:#1E40AF">${pv||'—'}</td>
+      <td class="td-right" style="color:#7C3AED">${pa||'—'}</td>
+      <td class="td-right" style="color:var(--gold)">${pe||'—'}</td>
+      <td class="td-right">${av||'—'}</td>
+      <td class="td-right">${aa||'—'}</td>
+      <td class="td-right">${ae||'—'}</td>
     </tr>`;
   }).join('');
+  tbody.innerHTML = filas + `<tr style="background:var(--cream);border-top:2px solid var(--border)">
+    <td style="font-weight:700">TOTAL (${sorted.length})</td>
+    <td></td>
+    <td class="td-right" style="font-weight:700">${tTot}</td>
+    <td class="td-right" style="font-weight:700;color:#1E40AF">${tPV}</td>
+    <td class="td-right" style="font-weight:700;color:#7C3AED">${tPA}</td>
+    <td class="td-right" style="font-weight:700;color:var(--gold)">${tPE}</td>
+    <td class="td-right" style="font-weight:700">${tAV}</td>
+    <td class="td-right" style="font-weight:700">${tAA}</td>
+    <td class="td-right" style="font-weight:700">${tAE}</td>
+  </tr>`;
 }
 
-// ── ACTIVIDAD — PROPIEDADES MÁS VISITADAS SORT ────────
-let _propData = [], _propSortCol = 'total_visitas', _propSortAsc = false;
-const PROP_COLS = ['ref','oficina','total_visitas','primeras_visitas','canceladas','ultima_visita'];
+// ── ACTIVIDAD — POR OFICINA SORT ──────────────────────
+const ACTOF_COLS = ['oficina','total','primera_venta','primera_alquiler','primera_evaluacion','adicional_venta','adicional_alquiler','adicional_evaluacion'];
 
-function sortActProps(col) {
-  if (_propSortCol === col) { _propSortAsc = !_propSortAsc; }
-  else { _propSortCol = col; _propSortAsc = col === 'ref' || col === 'oficina'; }
-  PROP_COLS.forEach(c => {
-    const el = document.getElementById('prop-sort-' + c);
-    if (el) el.textContent = c === col ? (_propSortAsc ? ' ↑' : ' ↓') : '';
+function sortActOf(col) {
+  if (_actOfSortCol === col) { _actOfSortAsc = !_actOfSortAsc; }
+  else { _actOfSortCol = col; _actOfSortAsc = col === 'oficina'; }
+  ACTOF_COLS.forEach(c => {
+    const el = document.getElementById('actof-sort-' + c);
+    if (el) el.textContent = c === col ? (_actOfSortAsc ? ' ↑' : ' ↓') : '';
   });
-  renderActProps();
+  renderActOficinas();
 }
 
-function renderActProps() {
-  const tbody = document.getElementById('act-props-tbody');
+function renderActOficinas() {
+  const tbody = document.getElementById('act-oficinas-tbody');
   if (!tbody) return;
-  if (!_propData.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px">Sin datos</td></tr>'; return; }
-  const getVal = (p, col) => {
-    switch(col) {
-      case 'ref':              return p.ref || '';
-      case 'oficina':           return p.oficina || '';
-      case 'primeras_visitas':  return parseInt(p.primeras_visitas) || 0;
-      case 'canceladas':        return parseInt(p.canceladas) || 0;
-      case 'ultima_visita':     return p.ultima_visita || '';
-      default:                  return parseInt(p.total_visitas) || 0;
-    }
-  };
-  const sorted = [..._propData].sort((a,b) => {
-    const va = getVal(a, _propSortCol), vb = getVal(b, _propSortCol);
-    if (typeof va==='string') return _propSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
-    return _propSortAsc ? va-vb : vb-va;
+  if (!_actOfData.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:24px">Sin datos</td></tr>'; return; }
+  const getVal = (o, col) => col === 'oficina' ? (o.oficina||'') : (parseInt(o[col])||0);
+  const sorted = [..._actOfData].sort((a,b) => {
+    const va = getVal(a, _actOfSortCol), vb = getVal(b, _actOfSortCol);
+    if (typeof va==='string') return _actOfSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _actOfSortAsc ? va-vb : vb-va;
   });
-  tbody.innerHTML = sorted.map(p => `<tr>
-    <td style="font-family:monospace;font-size:10px;font-weight:600;color:var(--navy)">${p.ref}</td>
-    <td><span class="badge badge-gray" style="font-size:9px">${p.oficina||'—'}</span></td>
-    <td class="td-right" style="font-weight:700">${p.total_visitas}</td>
-    <td class="td-right" style="color:#1E40AF">${p.primeras_visitas}</td>
-    <td class="td-right" style="color:var(--red)">${p.canceladas}</td>
-    <td style="font-size:11px;color:var(--muted)">${p.ultima_visita?fmtFecha(p.ultima_visita):'—'}</td>
-  </tr>`).join('');
+  let tTot=0, tPV=0, tPA=0, tPE=0, tAV=0, tAA=0, tAE=0;
+  const filas = sorted.map(o => {
+    const t  = parseInt(o.total)||0;
+    const pv = parseInt(o.primera_venta)||0;
+    const pa = parseInt(o.primera_alquiler)||0;
+    const pe = parseInt(o.primera_evaluacion)||0;
+    const av = parseInt(o.adicional_venta)||0;
+    const aa = parseInt(o.adicional_alquiler)||0;
+    const ae = parseInt(o.adicional_evaluacion)||0;
+    tTot+=t; tPV+=pv; tPA+=pa; tPE+=pe; tAV+=av; tAA+=aa; tAE+=ae;
+    return `<tr>
+      <td style="font-weight:500">${o.oficina||'—'}</td>
+      <td class="td-right" style="font-weight:700">${t}</td>
+      <td class="td-right" style="color:#1E40AF">${pv||'—'}</td>
+      <td class="td-right" style="color:#7C3AED">${pa||'—'}</td>
+      <td class="td-right" style="color:var(--gold)">${pe||'—'}</td>
+      <td class="td-right">${av||'—'}</td>
+      <td class="td-right">${aa||'—'}</td>
+      <td class="td-right">${ae||'—'}</td>
+    </tr>`;
+  }).join('');
+  tbody.innerHTML = filas + `<tr style="background:var(--cream);border-top:2px solid var(--border)">
+    <td style="font-weight:700">TOTAL</td>
+    <td class="td-right" style="font-weight:700">${tTot}</td>
+    <td class="td-right" style="font-weight:700;color:#1E40AF">${tPV}</td>
+    <td class="td-right" style="font-weight:700;color:#7C3AED">${tPA}</td>
+    <td class="td-right" style="font-weight:700;color:var(--gold)">${tPE}</td>
+    <td class="td-right" style="font-weight:700">${tAV}</td>
+    <td class="td-right" style="font-weight:700">${tAA}</td>
+    <td class="td-right" style="font-weight:700">${tAE}</td>
+  </tr>`;
 }
 
 // ── AAFF 50-50 SORT ───────────────────────────────────
