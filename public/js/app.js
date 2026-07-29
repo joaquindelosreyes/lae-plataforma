@@ -2614,10 +2614,14 @@ const fmtEur = v => Number(v||0).toLocaleString('es-ES', { minimumFractionDigits
 
 async function loadAAFF50() {
   try {
+    const desde = document.getElementById('fecha-desde')?.value || '';
+    const hasta = document.getElementById('fecha-hasta')?.value || '';
+    const ofQs = new URLSearchParams({ ...(desde && {desde}), ...(hasta && {hasta}) }).toString();
+
     const [sumRes, listRes, ofRes, medRes, filRes] = await Promise.all([
       fetch(`${API}/api/aaff50/resumen`).then(r => r.json()),
       fetch(`${API}/api/aaff50`).then(r => r.json()),
-      fetch(`${API}/api/aaff50/stats/oficinas`).then(r => r.json()),
+      fetch(`${API}/api/aaff50/stats/oficinas${ofQs ? '?' + ofQs : ''}`).then(r => r.json()),
       fetch(`${API}/api/aaff50/stats/medios`).then(r => r.json()),
       fetch(`${API}/api/aaff50/filtros`).then(r => r.json()),
     ]);
@@ -2631,9 +2635,9 @@ async function loadAAFF50() {
       set('a50-com-comp',    s.comunidades_compartidas||0);
       set('a50-vec-comp',    (s.vecinos_compartidos||0).toLocaleString('es-ES'));
       set('a50-captaciones', s.captaciones_totales||0);
+      set('a50-aaff-capt',   s.aaff_con_captaciones||0);
       set('a50-ventas',      s.ventas_totales||0);
-      set('a50-impactados',  (s.vecinos_impactados||0).toLocaleString('es-ES'));
-      set('a50-tasa',        (s.tasa_interes||0) + '%');
+      set('a50-aaff-ventas', s.aaff_con_ventas||0);
     }
 
     // Poblar filtros
@@ -2655,14 +2659,33 @@ async function loadAAFF50() {
     // Por oficina
     const tOficinas = document.getElementById('a50-oficinas-tbody');
     if (tOficinas && ofRes.success) {
-      tOficinas.innerHTML = ofRes.data.map(o => `<tr>
-        <td><strong>${o.nombre||'—'}</strong></td>
-        <td class="td-right">${o.despachos||0}</td>
-        <td class="td-right" style="color:#1E40AF">${o.comunidades||0}</td>
-        <td class="td-right" style="color:#1E40AF">${(o.vecinos||0).toLocaleString('es-ES')}</td>
-        <td class="td-right" style="color:var(--green);font-weight:600">${o.captaciones||0}</td>
-        <td class="td-right" style="color:var(--green);font-weight:600">${o.ventas||0}</td>
-      </tr>`).join('');
+      let totDesp=0, totCom=0, totVec=0, totCap=0, totVen=0, totEmail=0;
+      const filas = ofRes.data.map(o => {
+        totDesp  += parseInt(o.despachos)||0;
+        totCom   += parseInt(o.comunidades)||0;
+        totVec   += parseInt(o.vecinos)||0;
+        totCap   += parseInt(o.captaciones)||0;
+        totVen   += parseInt(o.ventas)||0;
+        totEmail += parseInt(o.emails_enviados)||0;
+        return `<tr>
+          <td><strong>${o.nombre||'—'}</strong></td>
+          <td class="td-right">${o.despachos||0}</td>
+          <td class="td-right" style="color:#1E40AF">${o.comunidades||0}</td>
+          <td class="td-right" style="color:#1E40AF">${(parseInt(o.vecinos)||0).toLocaleString('es-ES')}</td>
+          <td class="td-right" style="color:var(--green);font-weight:600">${o.captaciones||0}</td>
+          <td class="td-right" style="color:var(--green);font-weight:600">${o.ventas||0}</td>
+          <td class="td-right">${o.emails_enviados||0}</td>
+        </tr>`;
+      }).join('');
+      tOficinas.innerHTML = filas + `<tr style="background:var(--cream);border-top:2px solid var(--border)">
+        <td style="font-weight:700">TOTAL (${ofRes.data.length})</td>
+        <td class="td-right" style="font-weight:700">${totDesp}</td>
+        <td class="td-right" style="font-weight:700;color:#1E40AF">${totCom}</td>
+        <td class="td-right" style="font-weight:700;color:#1E40AF">${totVec.toLocaleString('es-ES')}</td>
+        <td class="td-right" style="font-weight:700;color:var(--green)">${totCap}</td>
+        <td class="td-right" style="font-weight:700;color:var(--green)">${totVen}</td>
+        <td class="td-right" style="font-weight:700">${totEmail}</td>
+      </tr>`;
     }
 
     // Por medio
@@ -2716,23 +2739,26 @@ async function abrirDespacho50(id) {
     if (d) {
       set('a50-det-nombre', d.nombre);
       const info = document.getElementById('a50-det-info');
-      if (info) info.innerHTML = `
-        <div class="mini"><span class="ml2">Ciudad</span><span class="mv2">${d.ciudad||'—'}</span></div>
-        <div class="mini"><span class="ml2">Oficina LAE</span><span class="mv2">${d.oficina_nombre||'—'}</span></div>
-        <div class="mini"><span class="ml2">Responsable</span><span class="mv2">${d.responsable_nombre||'—'}</span></div>
-        <div class="mini"><span class="ml2">DNI/CIF</span><span class="mv2">${d.dni||d.cif||'—'}</span></div>
-        <div class="mini"><span class="ml2">Comunidades totales</span><span class="mv2">${d.comunidades_totales||0}</span></div>
-        <div class="mini"><span class="ml2">Administrados</span><span class="mv2">${(d.administrados||0).toLocaleString('es-ES')}</span></div>
-        <div class="mini"><span class="ml2">Com. compartidas</span><span class="mv2" style="color:#1E40AF">${d.comunidades_compartidas||0}</span></div>
-        <div class="mini"><span class="ml2">Vecinos compartidos</span><span class="mv2" style="color:#1E40AF">${(d.vecinos_compartidos||0).toLocaleString('es-ES')}</span></div>
-        <div class="mini"><span class="ml2">Captaciones (Inmovilla)</span><span class="mv2" style="color:var(--green)">${d.captaciones_inmovilla||0}</span></div>
-        <div class="mini"><span class="ml2">Cierres (Inmovilla)</span><span class="mv2" style="color:var(--green)">${d.cierres_inmovilla||0}</span></div>
-        <div class="mini"><span class="ml2">Generado</span><span class="mv2" style="color:var(--amber)">${fmtEur(d.generado)}</span></div>
-        <div class="mini"><span class="ml2">Cobrado</span><span class="mv2" style="color:var(--green)">${fmtEur(d.cobrado)}</span></div>
-        <div class="mini"><span class="ml2">Comisión AAFF</span><span class="mv2">${fmtEur(d.comision_aaff)}</span></div>
-        <div class="mini"><span class="ml2">Plan MKT</span><span class="mv2">${d.plan_mkt?'✓ Sí':'No'}</span></div>
-        <div class="mini"><span class="ml2">Firma contrato</span><span class="mv2">${d.fecha_firma?fmtFecha(d.fecha_firma):'—'}</span></div>
-      `;
+      const kv = (label, val, color='') =>
+        `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:11px;color:var(--muted)">${label}</span>
+          <span style="font-size:12px;font-weight:500${color?';color:'+color:''}">${val}</span>
+        </div>`;
+      if (info) info.innerHTML =
+        kv('Ciudad', d.ciudad||'—') +
+        kv('Oficina LAE', d.oficina_nombre||'—') +
+        kv('Responsable', d.responsable_nombre||'—') +
+        kv('DNI/CIF', d.dni||d.cif||'—') +
+        kv('Comunidades totales', d.comunidades_totales||0) +
+        kv('Vecinos totales', (d.administrados||0).toLocaleString('es-ES')) +
+        kv('Com. compartidas', d.comunidades_compartidas||0, '#1E40AF') +
+        kv('Vecinos compartidos', (d.vecinos_compartidos||0).toLocaleString('es-ES'), '#1E40AF') +
+        kv('Captaciones', d.captaciones_inmovilla||0, 'var(--green)') +
+        kv('Operaciones cerradas', d.cierres_inmovilla||0, 'var(--green)') +
+        kv('Cobrado bruto / LAE', fmtEur(parseFloat(d.cobrado_bruto)||0) + ' / ' + fmtEur(parseFloat(d.cobrado)||0), 'var(--green)') +
+        kv('Comisión AAFF', fmtEur(d.comision_aaff)) +
+        kv('Plan MKT', d.plan_mkt?'✓ Sí':'No') +
+        kv('Firma contrato', d.fecha_firma?fmtFecha(d.fecha_firma):'—');
     }
 
     const tCom = document.getElementById('a50-com-tbody');
@@ -2949,9 +2975,9 @@ function renderActProps() {
 }
 
 // ── AAFF 50-50 SORT ───────────────────────────────────
-let _a50SortCol = 'nombre', _a50SortAsc = true, _a50Data = [];
+let _a50SortCol = 'nombre', _a50SortAsc = true, _a50Data = [], _a50Filtered = [];
 
-const A50_COLS = ['nombre','oficina','resp','com_total','com_comp','vecinos','vec_comp','captaciones','ventas','generado','cobrado','comision','msgs','interes','dias','mkt'];
+const A50_COLS = ['nombre','oficina','resp','com_total','com_comp','vecinos','vec_comp','captaciones','ventas','cobrado','comision','msgs','interes','dias','mkt'];
 
 function sortAAFF50(col) {
   if (_a50SortCol === col) { _a50SortAsc = !_a50SortAsc; }
@@ -2960,11 +2986,12 @@ function sortAAFF50(col) {
     const el = document.getElementById('s50-' + c);
     if (el) el.textContent = c === col ? (_a50SortAsc ? ' ↑' : ' ↓') : '';
   });
-  if (_a50Data.length) renderA50Tabla(_a50Data, true);
+  if (_a50Filtered.length) renderA50Tabla(_a50Filtered, true);
 }
 
 function renderA50Tabla(lista, skipSave) {
   if (!skipSave) _a50Data = lista;
+  _a50Filtered = lista;
   const tbody = document.getElementById('a50-tbody');
   const cnt   = document.getElementById('a50-count');
   if (!tbody) return;
@@ -2981,7 +3008,6 @@ function renderA50Tabla(lista, skipSave) {
     else if (_a50SortCol === 'vec_comp')   { va = parseInt(a.vecinos_compartidos)||0;     vb = parseInt(b.vecinos_compartidos)||0; }
     else if (_a50SortCol === 'captaciones'){ va = parseInt(a.captaciones_inmovilla)||0;   vb = parseInt(b.captaciones_inmovilla)||0; }
     else if (_a50SortCol === 'ventas')     { va = parseInt(a.cierres_inmovilla)||0;       vb = parseInt(b.cierres_inmovilla)||0; }
-    else if (_a50SortCol === 'generado')   { va = parseFloat(a.generado)||0;              vb = parseFloat(b.generado)||0; }
     else if (_a50SortCol === 'cobrado')    { va = parseFloat(a.cobrado)||0;               vb = parseFloat(b.cobrado)||0; }
     else if (_a50SortCol === 'comision')   { va = parseFloat(a.comision_aaff)||0;         vb = parseFloat(b.comision_aaff)||0; }
     else if (_a50SortCol === 'msgs')       { va = parseInt(a.total_comunicaciones)||0;    vb = parseInt(b.total_comunicaciones)||0; }
@@ -2992,14 +3018,25 @@ function renderA50Tabla(lista, skipSave) {
     return _a50SortAsc ? va - vb : vb - va;
   });
 
-  tbody.innerHTML = sorted.map(d => {
+  let totCom=0, totComComp=0, totVec=0, totVecComp=0, totCap=0, totVen=0, totCobB=0, totCob=0, totCom2=0, totMsgs=0;
+  const filas = sorted.map(d => {
     const dias    = d.dias_ultimo_contacto;
     const diasCol = dias == null ? 'var(--muted)' : dias > 30 ? 'var(--red)' : dias > 14 ? 'var(--amber)' : 'var(--green)';
     const diasTxt = dias == null ? 'Sin contacto' : dias === 0 ? 'Hoy' : dias + 'd';
     const tasa    = parseFloat(d.tasa_interes)||0;
-    const gen     = parseFloat(d.generado)||0;
     const cob     = parseFloat(d.cobrado)||0;
+    const cobB    = parseFloat(d.cobrado_bruto)||0;
     const com     = parseFloat(d.comision_aaff)||0;
+    totCom     += parseInt(d.comunidades_totales)||0;
+    totComComp += parseInt(d.comunidades_compartidas)||0;
+    totVec     += parseInt(d.administrados)||0;
+    totVecComp += parseInt(d.vecinos_compartidos)||0;
+    totCap     += parseInt(d.captaciones_inmovilla)||0;
+    totVen     += parseInt(d.cierres_inmovilla)||0;
+    totCobB    += cobB;
+    totCob     += cob;
+    totCom2    += com;
+    totMsgs    += parseInt(d.total_comunicaciones)||0;
     return `<tr style="cursor:pointer" onclick="abrirDespacho50(${d.id})">
       <td><strong>${d.nombre}</strong><div style="font-size:10px;color:var(--muted)">${d.ciudad||'—'} · ${d.dni||d.cif||'—'}</div></td>
       <td><span class="badge badge-gray">${d.oficina_nombre||'—'}</span></td>
@@ -3010,8 +3047,7 @@ function renderA50Tabla(lista, skipSave) {
       <td class="td-right" style="color:#1E40AF">${(d.vecinos_compartidos||0).toLocaleString('es-ES')}</td>
       <td class="td-right" style="color:var(--green);font-weight:600">${d.captaciones_inmovilla||0}</td>
       <td class="td-right" style="color:var(--green);font-weight:600">${d.cierres_inmovilla||0}</td>
-      <td class="td-right" style="color:var(--amber);font-weight:600">${gen>0?fmtEur(gen):'—'}</td>
-      <td class="td-right" style="color:var(--green);font-weight:600">${cob>0?fmtEur(cob):'—'}</td>
+      <td class="td-right" style="color:var(--green);font-weight:600">${cobB>0||cob>0?fmtEur(cobB)+' / '+fmtEur(cob):'—'}</td>
       <td class="td-right">${com>0?fmtEur(com):'—'}</td>
       <td class="td-right">${d.total_comunicaciones||0}</td>
       <td class="td-right"><span style="color:${tasa>=5?'var(--green)':tasa>=2?'var(--amber)':'var(--red)'};font-weight:600">${tasa}%</span></td>
@@ -3019,4 +3055,19 @@ function renderA50Tabla(lista, skipSave) {
       <td>${d.plan_mkt?'<span class="badge badge-green">✓ Sí</span>':'<span class="badge badge-gray">No</span>'}</td>
     </tr>`;
   }).join('');
+
+  tbody.innerHTML = filas + `<tr style="background:var(--cream);border-top:2px solid var(--border)">
+    <td style="font-weight:700">TOTAL (${sorted.length})</td>
+    <td></td><td></td>
+    <td class="td-right" style="font-weight:700">${totCom}</td>
+    <td class="td-right" style="font-weight:700;color:#1E40AF">${totComComp}</td>
+    <td class="td-right" style="font-weight:700">${totVec.toLocaleString('es-ES')}</td>
+    <td class="td-right" style="font-weight:700;color:#1E40AF">${totVecComp.toLocaleString('es-ES')}</td>
+    <td class="td-right" style="font-weight:700;color:var(--green)">${totCap}</td>
+    <td class="td-right" style="font-weight:700;color:var(--green)">${totVen}</td>
+    <td class="td-right" style="font-weight:700;color:var(--green)">${fmtEur(totCobB)} / ${fmtEur(totCob)}</td>
+    <td class="td-right" style="font-weight:700">${fmtEur(totCom2)}</td>
+    <td class="td-right" style="font-weight:700">${totMsgs}</td>
+    <td></td><td></td><td></td>
+  </tr>`;
 }

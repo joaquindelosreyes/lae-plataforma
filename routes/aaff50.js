@@ -66,6 +66,7 @@ router.get('/', async (req, res) => {
           COUNT(*) FILTER (WHERE estado = 'cobrada')                    AS cierres_inmovilla,
           COALESCE(SUM(honorarios_lae) FILTER (WHERE estado IN ('pipeline','cobrada')), 0) AS generado,
           COALESCE(SUM(honorarios_lae) FILTER (WHERE estado = 'cobrada'), 0)               AS cobrado,
+          COALESCE(SUM(comision_bruta) FILTER (WHERE estado = 'cobrada'), 0)               AS cobrado_bruto,
           COALESCE(SUM(importe_aaff), 0)                                AS comision_aaff
         FROM operaciones
         WHERE aaff_id IS NOT NULL
@@ -102,8 +103,12 @@ router.get('/resumen', async (req, res) => {
           ROUND(SUM(c.vecinos_interes)*100.0/NULLIF(SUM(c.vecinos_recibido),0),1) AS tasa_interes,
           (SELECT COUNT(*) FROM captaciones WHERE aaff_id IN
             (SELECT id FROM aaff_despachos WHERE modalidad='50-50'))   AS captaciones_totales,
+          (SELECT COUNT(DISTINCT aaff_id) FROM captaciones WHERE aaff_id IN
+            (SELECT id FROM aaff_despachos WHERE modalidad='50-50'))   AS aaff_con_captaciones,
           (SELECT COUNT(*) FROM operaciones WHERE aaff_id IN
-            (SELECT id FROM aaff_despachos WHERE modalidad='50-50') AND estado='cobrada') AS ventas_totales
+            (SELECT id FROM aaff_despachos WHERE modalidad='50-50') AND estado='cobrada') AS ventas_totales,
+          (SELECT COUNT(DISTINCT aaff_id) FROM operaciones WHERE aaff_id IN
+            (SELECT id FROM aaff_despachos WHERE modalidad='50-50') AND estado='cobrada') AS aaff_con_ventas
         FROM aaff_comunicaciones c
         JOIN aaff_despachos d ON d.id = c.aaff_id AND d.modalidad = '50-50'
       `),
@@ -146,6 +151,12 @@ router.get('/stats/medios', async (req, res) => {
 // ── GET /api/aaff50/stats/oficinas ───────────────────
 router.get('/stats/oficinas', async (req, res) => {
   try {
+    const { desde, hasta } = req.query;
+    const params = [];
+    let emailFilter = `c.medio = 'EMAIL'`;
+    if (desde) { params.push(desde); emailFilter += ` AND c.fecha >= $${params.length}`; }
+    if (hasta) { params.push(hasta); emailFilter += ` AND c.fecha <= $${params.length}`; }
+
     const { rows } = await pool.query(`
       SELECT
         o.nombre,
@@ -153,7 +164,8 @@ router.get('/stats/oficinas', async (req, res) => {
         SUM(d.comunidades_compartidas) AS comunidades,
         SUM(d.vecinos_compartidos)     AS vecinos,
         COALESCE(SUM(cap.cnt), 0)      AS captaciones,
-        COALESCE(SUM(op.cnt),  0)      AS ventas
+        COALESCE(SUM(op.cnt),  0)      AS ventas,
+        COALESCE(SUM(em.cnt),  0)      AS emails_enviados
       FROM aaff_despachos d
       LEFT JOIN oficinas o ON o.id = d.oficina_id
       LEFT JOIN (
@@ -162,10 +174,13 @@ router.get('/stats/oficinas', async (req, res) => {
       LEFT JOIN (
         SELECT aaff_id, COUNT(*) AS cnt FROM operaciones WHERE aaff_id IS NOT NULL AND estado='cobrada' GROUP BY aaff_id
       ) op ON op.aaff_id = d.id
+      LEFT JOIN (
+        SELECT aaff_id, COUNT(*) AS cnt FROM aaff_comunicaciones c WHERE ${emailFilter} GROUP BY aaff_id
+      ) em ON em.aaff_id = d.id
       WHERE d.modalidad = '50-50'
       GROUP BY o.id, o.nombre
       ORDER BY despachos DESC
-    `);
+    `, params);
     res.json({ success: true, data: rows });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });

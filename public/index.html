@@ -1146,17 +1146,20 @@
     <!-- ═══ AAFF 50-50 ═══ -->
     <div class="view" id="view-aaff50">
 
-      <!-- KPIs globales -->
-      <div class="kpi-grid" style="grid-template-columns:repeat(9,1fr);margin-bottom:16px">
-        <div class="kpi-card highlight"><div class="kpi-label">Despachos activos</div><div class="kpi-value" id="a50-total">—</div></div>
-        <div class="kpi-card"><div class="kpi-label">Comunidades totales</div><div class="kpi-value" id="a50-comunidades">—</div></div>
-        <div class="kpi-card"><div class="kpi-label">Administrados</div><div class="kpi-value" id="a50-admin">—</div></div>
+      <!-- KPIs globales — fila 1 -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:8px">
+        <div class="kpi-card highlight"><div class="kpi-label">Despachos colaboradores</div><div class="kpi-value" id="a50-total">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Com. totales</div><div class="kpi-value" id="a50-comunidades">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Vecinos totales</div><div class="kpi-value" id="a50-admin">—</div></div>
         <div class="kpi-card"><div class="kpi-label">Com. compartidas</div><div class="kpi-value" style="color:#1E40AF" id="a50-com-comp">—</div></div>
         <div class="kpi-card"><div class="kpi-label">Vecinos compartidos</div><div class="kpi-value" style="color:#1E40AF" id="a50-vec-comp">—</div></div>
-        <div class="kpi-card"><div class="kpi-label">Captaciones cerradas</div><div class="kpi-value green" id="a50-captaciones">—</div></div>
-        <div class="kpi-card"><div class="kpi-label">Ventas cerradas</div><div class="kpi-value green" id="a50-ventas">—</div></div>
-        <div class="kpi-card"><div class="kpi-label">Vecinos impactados</div><div class="kpi-value gold" id="a50-impactados">—</div></div>
-        <div class="kpi-card"><div class="kpi-label">Tasa interés</div><div class="kpi-value amber" id="a50-tasa">—</div><div class="kpi-sub">vecinos interesados</div></div>
+      </div>
+      <!-- KPIs globales — fila 2 -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+        <div class="kpi-card"><div class="kpi-label">Captaciones</div><div class="kpi-value green" id="a50-captaciones">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">AAFF con captaciones</div><div class="kpi-value green" id="a50-aaff-capt">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">Operaciones cerradas</div><div class="kpi-value green" id="a50-ventas">—</div></div>
+        <div class="kpi-card"><div class="kpi-label">AAFF con ventas</div><div class="kpi-value green" id="a50-aaff-ventas">—</div></div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
@@ -1172,8 +1175,9 @@
                 <th class="nr">Vecinos</th>
                 <th class="nr" style="color:var(--green)">Captaciones</th>
                 <th class="nr" style="color:var(--green)">Ventas</th>
+                <th class="nr">Emails enviados</th>
               </tr></thead>
-              <tbody id="a50-oficinas-tbody"><tr><td colspan="6" class="loading">Cargando...</td></tr></tbody>
+              <tbody id="a50-oficinas-tbody"><tr><td colspan="7" class="loading">Cargando...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -1210,15 +1214,14 @@
               <th class="nr" onclick="sortAAFF50('vec_comp')"    style="cursor:pointer;user-select:none;color:#1E40AF">Vecinos comp. <span id="s50-vec_comp"></span></th>
               <th class="nr" onclick="sortAAFF50('captaciones')" style="cursor:pointer;user-select:none;color:var(--green)">Captaciones <span id="s50-captaciones"></span></th>
               <th class="nr" onclick="sortAAFF50('ventas')"      style="cursor:pointer;user-select:none;color:var(--green)">Ventas <span id="s50-ventas"></span></th>
-              <th class="nr" onclick="sortAAFF50('generado')"    style="cursor:pointer;user-select:none;color:var(--amber)">Generado <span id="s50-generado"></span></th>
-              <th class="nr" onclick="sortAAFF50('cobrado')"     style="cursor:pointer;user-select:none;color:var(--green)">Cobrado <span id="s50-cobrado"></span></th>
+              <th class="nr" onclick="sortAAFF50('cobrado')"     style="cursor:pointer;user-select:none;color:var(--green)">Cobrado bruto / LAE <span id="s50-cobrado"></span></th>
               <th class="nr" onclick="sortAAFF50('comision')"    style="cursor:pointer;user-select:none">Comisión <span id="s50-comision"></span></th>
               <th class="nr" onclick="sortAAFF50('msgs')"        style="cursor:pointer;user-select:none">Msjs enviados <span id="s50-msgs"></span></th>
               <th class="nr" onclick="sortAAFF50('interes')"     style="cursor:pointer;user-select:none;color:var(--amber)">% Interés <span id="s50-interes"></span></th>
               <th onclick="sortAAFF50('dias')"        style="cursor:pointer;user-select:none">Último contacto <span id="s50-dias"></span></th>
               <th onclick="sortAAFF50('mkt')"         style="cursor:pointer;user-select:none">Plan MKT <span id="s50-mkt"></span></th>
             </tr></thead>
-            <tbody id="a50-tbody"><tr><td colspan="16" class="loading">Cargando...</td></tr></tbody>
+            <tbody id="a50-tbody"><tr><td colspan="15" class="loading">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>
