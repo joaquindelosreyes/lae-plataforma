@@ -187,12 +187,13 @@ function recargarVistaActiva() {
   if (id === 'ingresos-resumen') loadIngresosResumen();
   if (id === 'captaciones')      loadCaptaciones();
   if (id === 'cap-oficinas')     loadCaptacionesPorOficina();
+  if (id === 'cap-matriz')       loadCaptacionesMatriz();
   if (id === 'demandas')         loadDemandas();
   if (id === 'palancas')         loadPalancas();
   if (id === 'compromisos')      loadCompromisosPendientes();
   if (id === 'actas')            loadActas();
   if (id === 'aaff50')           loadAAFF50();
-  if (!['dashboard','operaciones','ingresos-resumen','captaciones','cap-oficinas','palancas','compromisos','actas','aaff50'].includes(id)) loadDashboard();
+  // nueva-op, aaff, gastos, reuniones, actividad, importar, recursos → no usan filtro de fecha global
 }
 
 function getDateRange() {
