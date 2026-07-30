@@ -987,7 +987,7 @@ function aplicarFiltrosCap() {
   const activas = filtrado.filter(c => (c.estado || 'activa') === 'activa');
   actualizarKpisCap(activas);
   renderCap(filtrado);
-  renderCartera(activas);
+  renderCartera(filtrado);
 }
 
 function actualizarKpisCap(activas) {
@@ -2114,7 +2114,7 @@ function makeSorter(dataKey, colMap, renderFn, sortPrefix, defaultCol, defaultAs
 
 // ── CAPTACIONES SORTABLE ──────────────────────────────
 let _capData = [], _capSortCol = 'fecha', _capSortAsc = false;
-let _carteraData = [], _carteraSortCol = 'meses', _carteraSortAsc = false;
+let _carteraData = [], _carteraSortCol = 'fecha', _carteraSortAsc = false;
 
 function sortCap(col) {
   if (_capSortCol === col) { _capSortAsc = !_capSortAsc; }
@@ -2173,8 +2173,8 @@ function renderCap(data) {
 
 function sortCartera(col) {
   if (_carteraSortCol === col) { _carteraSortAsc = !_carteraSortAsc; }
-  else { _carteraSortCol = col; _carteraSortAsc = ['ref','oficina','consultor','mandato','canal','tipologia'].includes(col); }
-  ['ref','oficina','consultor','mandato','canal','tipologia','precio','honor','meses','visitas'].forEach(c => {
+  else { _carteraSortCol = col; _carteraSortAsc = ['ref','oficina','consultor','mandato','canal','tipologia','estado'].includes(col); }
+  ['ref','oficina','consultor','mandato','canal','tipologia','precio','honor','fecha','estado'].forEach(c => {
     const el = document.getElementById('cart-sort-' + c);
     if (el) el.textContent = c === _carteraSortCol ? (_carteraSortAsc ? ' ↑' : ' ↓') : '';
   });
@@ -2186,7 +2186,7 @@ function renderCartera(data) {
   const tbody = document.getElementById('cartera-tbody');
   if (!tbody) return;
   if (!_carteraData.length) {
-    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state" style="padding:20px"><h3>Sin cartera activa</h3></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state" style="padding:20px"><h3>Sin captaciones</h3></div></td></tr>';
     return;
   }
   const sorted = [..._carteraData].sort((a, b) => {
@@ -2199,19 +2199,20 @@ function renderCartera(data) {
     else if (_carteraSortCol === 'tipologia') { va = a.tipologia||''; vb = b.tipologia||''; }
     else if (_carteraSortCol === 'precio')    { va = parseFloat(a.precio_captacion)||0; vb = parseFloat(b.precio_captacion)||0; }
     else if (_carteraSortCol === 'honor')     { va = parseFloat(a.honorarios_potenciales)||0; vb = parseFloat(b.honorarios_potenciales)||0; }
-    else if (_carteraSortCol === 'meses')     { va = parseFloat(a.meses_activa)||0; vb = parseFloat(b.meses_activa)||0; }
-    else if (_carteraSortCol === 'visitas')   { va = parseInt(a.visitas)||0; vb = parseInt(b.visitas)||0; }
+    else if (_carteraSortCol === 'fecha')     { va = a.fecha_captacion||a.created_at||''; vb = b.fecha_captacion||b.created_at||''; }
+    else if (_carteraSortCol === 'estado')    { va = a.estado||''; vb = b.estado||''; }
     if (typeof va === 'string') return _carteraSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     return _carteraSortAsc ? va - vb : vb - va;
   });
+  const estadoColors = { activa:'var(--green)', vendida:'var(--navy)', retirada:'var(--red)', caducada:'var(--muted)' };
   let totPrecio = 0, totHonor = 0;
   const filas = sorted.map(c => {
-    const meses  = Math.round(parseFloat(c.meses_activa)||0);
-    const mCol   = meses >= 7 ? 'var(--red)' : meses >= 5 ? 'var(--amber)' : 'var(--green)';
     const mandTag = c.mandato === 'exclusiva'
       ? '<span class="badge badge-blue">Excl.</span>'
       : '<span class="badge badge-gray">NE</span>';
-    const canal  = c.canal_captacion || '—';
+    const canal   = c.canal_captacion || '—';
+    const fecha   = (c.fecha_captacion || c.created_at || '').substring(0, 10);
+    const estado  = c.estado || 'activa';
     totPrecio += parseFloat(c.precio_captacion) || 0;
     totHonor  += parseFloat(c.honorarios_potenciales) || 0;
     return `<tr>
@@ -2223,8 +2224,8 @@ function renderCartera(data) {
       <td><span class="badge badge-gray">${c.tipologia||'—'}</span></td>
       <td class="td-right">${parseFloat(c.precio_captacion)>0?fmtK(c.precio_captacion):'—'}</td>
       <td class="td-right" style="color:var(--green)">${parseFloat(c.honorarios_potenciales)>0?fmt(c.honorarios_potenciales):'—'}</td>
-      <td class="td-right" style="color:${mCol};font-weight:600">${meses}m</td>
-      <td class="td-right">${parseInt(c.visitas)||0 > 0 ? parseInt(c.visitas) : '—'}</td>
+      <td style="font-size:11px">${fecha||'—'}</td>
+      <td><span style="font-size:11px;font-weight:600;color:${estadoColors[estado]||'var(--text)'}">${estado}</span></td>
     </tr>`;
   }).join('');
   tbody.innerHTML = filas + `<tr style="background:var(--cream);border-top:2px solid var(--border)">
@@ -2234,7 +2235,7 @@ function renderCartera(data) {
     <td></td><td></td>
   </tr>`;
   const cnt = document.getElementById('cartera-count');
-  if (cnt) cnt.textContent = _carteraData.length + ' inmuebles activos';
+  if (cnt) cnt.textContent = _carteraData.length + ' captaciones';
 }
 
 // ── AAFF SORTABLE ─────────────────────────────────────

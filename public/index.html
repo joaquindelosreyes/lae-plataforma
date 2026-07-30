@@ -622,10 +622,10 @@
         </div>
       </div>
 
-      <!-- Panel 2: Cartera (stock activo) -->
+      <!-- Panel 2: Histórico de captaciones -->
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-title">Cartera activa</span>
+          <span class="panel-title">Histórico de captaciones</span>
           <span id="cartera-count" style="font-size:11px;color:var(--muted)"></span>
         </div>
         <div class="table-wrap">
@@ -640,8 +640,8 @@
                 <th onclick="sortCartera('tipologia')" style="cursor:pointer;user-select:none">Tipo <span id="cart-sort-tipologia"></span></th>
                 <th class="nr" onclick="sortCartera('precio')"   style="cursor:pointer;user-select:none">Precio <span id="cart-sort-precio"></span></th>
                 <th class="nr" onclick="sortCartera('honor')"    style="cursor:pointer;user-select:none">Honor. pot. <span id="cart-sort-honor"></span></th>
-                <th class="nr" onclick="sortCartera('meses')"    style="cursor:pointer;user-select:none">Antigüedad <span id="cart-sort-meses"></span></th>
-                <th class="nr" onclick="sortCartera('visitas')"  style="cursor:pointer;user-select:none">Visitas <span id="cart-sort-visitas"></span></th>
+                <th onclick="sortCartera('fecha')"     style="cursor:pointer;user-select:none">Fecha captación <span id="cart-sort-fecha"></span></th>
+                <th onclick="sortCartera('estado')"    style="cursor:pointer;user-select:none">Estado <span id="cart-sort-estado"></span></th>
               </tr>
             </thead>
             <tbody id="cartera-tbody">
