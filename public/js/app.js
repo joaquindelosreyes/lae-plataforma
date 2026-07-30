@@ -3223,3 +3223,62 @@ function renderA50Tabla(lista, skipSave) {
     <td></td><td></td><td></td>
   </tr>`;
 }
+
+// ── HISTÓRICO MENSUAL ────────────────────────────────
+async function loadHistorico() {
+  const tbody = document.getElementById('hist-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="9" class="loading">Cargando...</td></tr>';
+  try {
+    const res = await fetch(`${API}/api/snapshots`).then(r => r.json());
+    const data = res.data || [];
+    if (!data.length) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state" style="padding:32px">
+        <div class="empty-state-icon">📸</div>
+        <h3>Sin fotografías todavía</h3>
+        <p>Haz clic en "Generar foto hoy" para crear la primera.</p>
+      </div></td></tr>`;
+      return;
+    }
+    const fmtK = v => { const n = Math.round(parseFloat(v)||0); return n >= 1000 ? '€' + (n/1000).toFixed(0) + 'K' : '€' + n; };
+    const MESES_ES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    tbody.innerHTML = data.map((s, i) => {
+      const d    = new Date(s.fecha + 'T12:00:00');
+      const mes  = MESES_ES[d.getMonth()] + ' ' + d.getFullYear();
+      const prev = data[i + 1];
+      const delta = (key, good = 1) => {
+        if (!prev) return '';
+        const diff = (parseInt(s[key]) || 0) - (parseInt(prev[key]) || 0);
+        if (diff === 0) return '';
+        const color = (diff > 0 ? good : -good) > 0 ? 'var(--green)' : 'var(--red)';
+        return ` <span style="font-size:10px;color:${color}">${diff > 0 ? '+' : ''}${diff}</span>`;
+      };
+      return `<tr>
+        <td style="font-weight:600;white-space:nowrap">${mes}</td>
+        <td class="td-right">${parseInt(s.cap_activas)||0}${delta('cap_activas')}</td>
+        <td class="td-right">${parseInt(s.cap_exclusivas)||0}${delta('cap_exclusivas')}</td>
+        <td class="td-right">${parseInt(s.cap_nota_encargo)||0}${delta('cap_nota_encargo')}</td>
+        <td class="td-right">${parseInt(s.cap_viviendas_excl)||0}${delta('cap_viviendas_excl')}</td>
+        <td class="td-right">${fmtK(s.valor_cartera)}</td>
+        <td class="td-right" style="color:var(--green)">${fmtK(s.honorarios_potenciales)}</td>
+        <td class="td-right">${parseInt(s.ops_pipeline_count)||0} · ${fmtK(s.ops_pipeline_lae)}</td>
+        <td class="td-right">${parseInt(s.ops_arras_count)||0} · ${fmtK(s.ops_arras_lae)}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="9" style="color:var(--red);padding:16px">Error al cargar</td></tr>'; }
+}
+
+async function generarFotoHoy() {
+  const btn = document.querySelector('[onclick="generarFotoHoy()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Generando...'; }
+  try {
+    const res = await fetch(`${API}/api/snapshots/generar`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' }).then(r => r.json());
+    if (res.success) {
+      showAlert('hist-alert', `✓ Fotografía guardada — ${res.fecha}`, 'success');
+      loadHistorico();
+    } else {
+      showAlert('hist-alert', 'Error: ' + res.error, 'error');
+    }
+  } catch(e) { showAlert('hist-alert', 'Error de red', 'error'); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = 'Generar foto hoy'; } }
+}

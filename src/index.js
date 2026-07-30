@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
+const cors    = require('cors');
+const cron    = require('node-cron');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +26,16 @@ app.use('/api/demandas',    require('../routes/demandas'));
 app.use('/api/aaff50',      require('../routes/aaff50'));
 app.use('/api/actividad',   require('../routes/actividad'));
 app.use('/api/import',      require('../routes/import'));
+const { router: snapshotsRouter, generarSnapshot } = require('../routes/snapshots');
+app.use('/api/snapshots',   snapshotsRouter);
+
+// Cron: foto mensual el día 1 de cada mes a las 02:00
+cron.schedule('0 2 1 * *', () => {
+  const hoy = new Date().toISOString().slice(0, 10);
+  generarSnapshot(hoy)
+    .then(f => console.log(`[CRON] Snapshot mensual generado: ${f}`))
+    .catch(e => console.error('[CRON] Error snapshot:', e.message));
+}, { timezone: 'Europe/Madrid' });
 
 // Mantener compatibilidad con endpoints legacy del dashboard
 const pool = require('../db/pool');
