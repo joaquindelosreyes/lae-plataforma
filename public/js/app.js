@@ -193,7 +193,8 @@ function recargarVistaActiva() {
   if (id === 'compromisos')      loadCompromisosPendientes();
   if (id === 'actas')            loadActas();
   if (id === 'aaff50')           loadAAFF50();
-  // nueva-op, aaff, gastos, reuniones, actividad, importar, recursos → no usan filtro de fecha global
+  if (id === 'gastos')           loadGastosAnalisis();
+  // nueva-op, aaff, reuniones, actividad, importar, recursos → no usan filtro de fecha global
 }
 
 function getDateRange() {
@@ -1149,10 +1150,11 @@ async function loadGastos() {
     const lista = listRes.data || listRes;
     if (!Array.isArray(lista) || !lista.length) {
       tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">💰</div><h3>Sin gastos registrados</h3><p>Añade el primer gasto con el formulario de abajo.</p></div></td></tr>`;
-      return;
+    } else {
+      renderGastosTabla(lista);
     }
-    renderGastosTabla(lista);
-  } catch(e) { tbody.innerHTML = `<tr><td colspan="8" class="loading">Error: ${e.message}</td></tr>`; }
+  } catch(e) { tbody.innerHTML = `<tr><td colspan="9" class="loading">Error: ${e.message}</td></tr>`; }
+  loadGastosAnalisis();
 }
 
 async function guardarGasto() {
@@ -2328,6 +2330,17 @@ function renderAaffTabla(data) {
 
 // ── GASTOS SORTABLE ───────────────────────────────────
 let _gastosData = [], _gastosSortCol = 'fecha', _gastosSortAsc = false;
+let _gastosTab = 'registro';
+let _gastosAnalisisAllData = [], _gastosAData = [], _gastosASortCol = 'oficina', _gastosASortAsc = true;
+
+function setGastosTab(tab) {
+  _gastosTab = tab;
+  document.getElementById('tab-gastos-registro')?.classList.toggle('active', tab === 'registro');
+  document.getElementById('tab-gastos-analisis')?.classList.toggle('active', tab === 'analisis');
+  document.getElementById('gastos-tab-registro').style.display  = tab === 'registro' ? '' : 'none';
+  document.getElementById('gastos-tab-analisis').style.display  = tab === 'analisis' ? '' : 'none';
+  if (tab === 'analisis') loadGastosAnalisis();
+}
 
 function sortGastos(col) {
   if (_gastosSortCol === col) { _gastosSortAsc = !_gastosSortAsc; }
@@ -2375,6 +2388,159 @@ function renderGastosTabla(data) {
       <td><button class="btn btn-danger btn-sm" onclick="eliminarGasto(${g.id})">✕</button></td>
     </tr>`;
   }).join('');
+}
+
+// ── GASTOS ANÁLISIS ───────────────────────────────────
+
+async function loadGastosAnalisis() {
+  const tbody = document.getElementById('ga-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="9" class="loading">Cargando...</td></tr>`;
+  try {
+    const { desde, hasta } = getDateRange();
+    const qs = new URLSearchParams({ ...(desde && {desde}), ...(hasta && {hasta}) }).toString();
+    const res = await fetch(`${API}/api/gastos${qs ? '?' + qs : ''}`).then(r => r.json());
+    _gastosAnalisisAllData = res.data || res || [];
+    _poblarFiltrosGastosA();
+    aplicarFiltrosGastosA();
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="9" class="loading">Error: ${e.message}</td></tr>`;
+  }
+}
+
+function _poblarFiltrosGastosA() {
+  const tipSel  = document.getElementById('ga-fil-tipologia');
+  const ofSel   = document.getElementById('ga-fil-oficina');
+  if (!tipSel || !ofSel) return;
+  const prevTip = tipSel.value;
+  const prevOf  = ofSel.value;
+
+  // Oficinas: parsear el campo oficinas (string "A, B" o "Central")
+  const ofSet = new Set();
+  _gastosAnalisisAllData.forEach(g => {
+    (g.oficinas || 'Central').split(', ').forEach(o => ofSet.add(o.trim()));
+  });
+  ofSel.innerHTML = '<option value="">Todas las oficinas</option>' +
+    [...ofSet].sort().map(o => `<option value="${o}"${o===prevOf?' selected':''}>${o}</option>`).join('');
+
+  // Repopulate concepto based on current tipología
+  tipSel.value = prevTip;
+  _poblarConceptosGastosA(prevTip);
+}
+
+function _poblarConceptosGastosA(tipologia) {
+  const sel  = document.getElementById('ga-fil-concepto');
+  if (!sel) return;
+  const prev = sel.value;
+  const fuente = tipologia
+    ? _gastosAnalisisAllData.filter(g => g.categoria === tipologia)
+    : _gastosAnalisisAllData;
+  const conceptos = [...new Set(fuente.map(g => g.concepto).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">Todos los conceptos</option>' +
+    conceptos.map(c => `<option value="${c}"${c===prev?' selected':''}>${c}</option>`).join('');
+}
+
+function onGaFilTipologiaChange() {
+  _poblarConceptosGastosA(document.getElementById('ga-fil-tipologia')?.value || '');
+  aplicarFiltrosGastosA();
+}
+
+function limpiarFiltrosGastosA() {
+  ['ga-fil-tipologia','ga-fil-concepto','ga-fil-oficina'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  _poblarConceptosGastosA('');
+  aplicarFiltrosGastosA();
+}
+
+function aplicarFiltrosGastosA() {
+  const filTip     = document.getElementById('ga-fil-tipologia')?.value || '';
+  const filConc    = document.getElementById('ga-fil-concepto')?.value  || '';
+  const filOficina = document.getElementById('ga-fil-oficina')?.value   || '';
+  _gastosAData = _gastosAnalisisAllData.filter(g => {
+    if (filTip     && g.categoria !== filTip)                                 return false;
+    if (filConc    && g.concepto  !== filConc)                                return false;
+    if (filOficina && !(g.oficinas||'Central').split(', ').map(o=>o.trim()).includes(filOficina)) return false;
+    return true;
+  });
+  renderGastosAnalisis();
+}
+
+function sortGastosA(col) {
+  if (_gastosASortCol === col) { _gastosASortAsc = !_gastosASortAsc; }
+  else { _gastosASortCol = col; _gastosASortAsc = ['oficina','tipologia','concepto','fechafin'].includes(col); }
+  ['oficina','tipologia','concepto','base','total','fechafin'].forEach(c => {
+    const el = document.getElementById('ga-sort-' + c);
+    if (el) el.textContent = c === _gastosASortCol ? (_gastosASortAsc ? ' ↑' : ' ↓') : '';
+  });
+  renderGastosAnalisis();
+}
+
+function renderGastosAnalisis() {
+  const tbody = document.getElementById('ga-tbody');
+  const tfoot = document.getElementById('ga-tfoot');
+  if (!tbody) return;
+  if (!_gastosAData.length) {
+    tbody.innerHTML = `<tr><td colspan="9" class="empty-state" style="text-align:center;padding:24px;color:var(--muted)">Sin registros para los filtros seleccionados</td></tr>`;
+    if (tfoot) tfoot.innerHTML = '';
+    return;
+  }
+  const sorted = [..._gastosAData].sort((a, b) => {
+    let va, vb;
+    if      (_gastosASortCol === 'oficina')   { va = a.oficinas||'Central'; vb = b.oficinas||'Central'; }
+    else if (_gastosASortCol === 'tipologia') { va = a.categoria||''; vb = b.categoria||''; }
+    else if (_gastosASortCol === 'concepto')  { va = a.concepto||''; vb = b.concepto||''; }
+    else if (_gastosASortCol === 'base')      { va = parseFloat(a.base_imponible)||0; vb = parseFloat(b.base_imponible)||0; }
+    else if (_gastosASortCol === 'total')     { va = parseFloat(a.total)||0; vb = parseFloat(b.total)||0; }
+    else if (_gastosASortCol === 'fechafin')  { va = a.fecha_vencimiento_contrato||'9999'; vb = b.fecha_vencimiento_contrato||'9999'; }
+    if (typeof va === 'string') return _gastosASortAsc ? va.localeCompare(vb,'es') : vb.localeCompare(va,'es');
+    return _gastosASortAsc ? va - vb : vb - va;
+  });
+
+  let totBase=0, totImp1=0, totImp2=0, totTotal=0;
+  tbody.innerHTML = sorted.map(g => {
+    const base  = parseFloat(g.base_imponible)||0;
+    const pct1  = parseFloat(g.pct_impuesto)||0;
+    const pct2  = parseFloat(g.pct_impuesto2)||0;
+    const imp1  = base * pct1 / 100;
+    const imp2  = pct2 > 0 ? base * pct2 / 100 * (g.signo_impuesto2 === 'suma' ? 1 : -1) : 0;
+    const total = parseFloat(g.total)||0;
+    totBase  += base;
+    totImp1  += imp1;
+    totImp2  += imp2;
+    totTotal += total;
+    const venc = g.fecha_vencimiento_contrato
+      ? (new Date(g.fecha_vencimiento_contrato) - new Date() < 60*86400000
+        ? `<span style="color:var(--amber);font-weight:500">${fmtFecha(g.fecha_vencimiento_contrato)} ⚠</span>`
+        : fmtFecha(g.fecha_vencimiento_contrato))
+      : '—';
+    const imp2Cell = pct2 > 0
+      ? `<div style="font-weight:600">${imp2<0?'−':'+'} ${fmt(Math.abs(imp2))}</div><div style="font-size:9px;color:var(--muted)">${g.tipo_impuesto2_desc||''}</div>`
+      : '<span style="color:var(--muted)">—</span>';
+    return `<tr>
+      <td><strong>${g.oficinas||'Central'}</strong></td>
+      <td><span class="badge badge-gray">${g.categoria||'—'}</span></td>
+      <td>${g.concepto||'—'}</td>
+      <td class="td-right">${fmt(base)}</td>
+      <td class="td-right"><div style="font-weight:600">${fmt(imp1)}</div><div style="font-size:9px;color:var(--muted)">${g.tipo_impuesto_desc||''}</div></td>
+      <td class="td-right">${imp2Cell}</td>
+      <td class="td-right"><strong>${fmt(total)}</strong></td>
+      <td>${venc}</td>
+      <td style="font-size:11px;color:var(--muted)">${g.nota||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  if (tfoot) {
+    const imp2Sign = totImp2 < 0 ? '−' : '+';
+    tfoot.innerHTML = `<tr style="background:var(--cream);font-weight:600;border-top:2px solid var(--border)">
+      <td colspan="3" style="font-weight:700;padding:8px 12px">TOTAL (${sorted.length} registros)</td>
+      <td class="td-right">${fmt(totBase)}</td>
+      <td class="td-right">${fmt(totImp1)}</td>
+      <td class="td-right">${totImp2 !== 0 ? imp2Sign + ' ' + fmt(Math.abs(totImp2)) : '—'}</td>
+      <td class="td-right" style="color:var(--red)">${fmt(totTotal)}</td>
+      <td colspan="2"></td>
+    </tr>`;
+  }
 }
 
 // ── CAPTACIONES POR OFICINA SORTABLE ──────────────────

@@ -775,147 +775,204 @@
 
     <!-- ═══ GASTOS ═══ -->
     <div class="view" id="view-gastos">
-      <div class="kpi-grid kpi-grid-4">
-        <div class="kpi-card highlight">
-          <div class="kpi-label">Total gastos registrados</div>
-          <div class="kpi-value red" id="gastos-total">—</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Gastos periódicos</div>
-          <div class="kpi-value" id="gastos-periodicos">—</div>
-        </div>
-        <div class="kpi-card">
-          <div class="kpi-label">Nº registros</div>
-          <div class="kpi-value" id="gastos-num">—</div>
-        </div>
-        <div class="kpi-card" style="display:flex;align-items:center">
-          <button class="btn btn-primary" onclick="document.getElementById('form-gasto-wrap').style.display=document.getElementById('form-gasto-wrap').style.display==='none'?'block':'none'">+ Nuevo gasto</button>
-        </div>
+      <!-- TABS -->
+      <div style="display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:16px;padding-left:4px">
+        <button id="tab-gastos-registro" class="tab-btn active" onclick="setGastosTab('registro')">Registro</button>
+        <button id="tab-gastos-analisis" class="tab-btn" onclick="setGastosTab('analisis')">Análisis</button>
       </div>
 
-      <div id="form-gasto-wrap" style="display:none;margin-bottom:16px" class="panel">
-        <div class="panel-header"><span class="panel-title">Nuevo gasto</span></div>
-        <div class="panel-body">
-          <div id="gastos-alert" class="alert" style="display:none"></div>
-          <form id="form-gasto" onsubmit="event.preventDefault();guardarGasto()">
-            <div class="form-grid form-4" style="margin-bottom:12px">
-              <div class="form-group">
-                <label class="form-label">Categoría *</label>
-                <select id="g-categoria" class="form-select" required>
-                  <option value="Portales">Portales</option>
-                  <option value="Tecnología">Tecnología</option>
-                  <option value="Instalaciones">Instalaciones</option>
-                  <option value="Marketing">Marketing</option>
-                  <option value="Personal">Personal</option>
-                  <option value="Formación">Formación</option>
-                  <option value="AAFF">AAFF</option>
-                  <option value="Otros">Otros</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-grid form-4">
-              <div class="form-group" style="grid-column:1/3">
-                <label class="form-label">Concepto *</label>
-                <input type="text" id="g-concepto" class="form-input" placeholder="Fotocasa Premium, alquiler oficina BCN..." required>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Oficina (opcional)</label>
-                <select id="g-oficina" class="form-select"><option value="">Central (todas)</option></select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Periodicidad</label>
-                <select id="g-periodicidad" class="form-select">
-                  <option value="puntual">Puntual</option>
-                  <option value="mensual">Mensual</option>
-                  <option value="trimestral">Trimestral</option>
-                  <option value="anual">Anual</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-grid form-4">
-              <div class="form-group">
-                <label class="form-label">Fecha</label>
-                <input type="date" id="g-fecha" class="form-input">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Base imponible €</label>
-                <input type="text" id="g-base" class="form-input" placeholder="1.000">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Tipo impuesto</label>
-                <input type="text" id="g-imp-desc" class="form-input" value="IVA 21%">
-              </div>
-              <div class="form-group">
-                <label class="form-label">% impuesto</label>
-                <input type="number" id="g-pct" class="form-input" value="21">
-              </div>
-            </div>
-
-            <div class="form-group" style="margin:10px 0">
-              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer">
-                <input type="checkbox" id="g-imp2-toggle" onchange="document.getElementById('g-imp2-wrap').style.display=this.checked?'grid':'none'">
-                Aplicar segundo impuesto (ej. retención IRPF en facturas de profesionales)
-              </label>
-            </div>
-            <div id="g-imp2-wrap" class="form-grid form-4" style="display:none;margin-bottom:12px">
-              <div class="form-group">
-                <label class="form-label">Tipo 2º impuesto</label>
-                <input type="text" id="g-imp2-desc" class="form-input" value="Retención IRPF 15%">
-              </div>
-              <div class="form-group">
-                <label class="form-label">% 2º impuesto</label>
-                <input type="number" id="g-pct2" class="form-input" value="15">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Efecto sobre el total</label>
-                <select id="g-signo2" class="form-select">
-                  <option value="resta">Resta (retención)</option>
-                  <option value="suma">Suma (impuesto adicional)</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-grid form-2" style="margin-bottom:16px">
-              <div class="form-group">
-                <label class="form-label">Vencimiento contrato (opcional)</label>
-                <input type="date" id="g-vencimiento" class="form-input">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Nota</label>
-                <input type="text" id="g-nota" class="form-input" placeholder="Descripción adicional...">
-              </div>
-            </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-gold">Guardar gasto</button>
-              <button type="button" class="btn btn-outline" onclick="document.getElementById('form-gasto-wrap').style.display='none'">Cancelar</button>
-            </div>
-          </form>
+      <!-- ══ TAB REGISTRO ══ -->
+      <div id="gastos-tab-registro">
+        <div class="kpi-grid kpi-grid-4">
+          <div class="kpi-card highlight">
+            <div class="kpi-label">Total gastos registrados</div>
+            <div class="kpi-value red" id="gastos-total">—</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Gastos periódicos</div>
+            <div class="kpi-value" id="gastos-periodicos">—</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Nº registros</div>
+            <div class="kpi-value" id="gastos-num">—</div>
+          </div>
+          <div class="kpi-card" style="display:flex;align-items:center">
+            <button class="btn btn-primary" onclick="document.getElementById('form-gasto-wrap').style.display=document.getElementById('form-gasto-wrap').style.display==='none'?'block':'none'">+ Nuevo gasto</button>
+          </div>
         </div>
-      </div>
 
-      <div class="panel">
-        <div class="panel-header"><span class="panel-title">Gastos registrados</span></div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th onclick="sortGastos('fecha')"     style="cursor:pointer;user-select:none">Fecha <span id="g-sort-fecha"></span></th>
-                <th onclick="sortGastos('concepto')"  style="cursor:pointer;user-select:none">Concepto <span id="g-sort-concepto"></span></th>
-                <th onclick="sortGastos('categoria')" style="cursor:pointer;user-select:none">Categoría <span id="g-sort-categoria"></span></th>
-                <th onclick="sortGastos('oficina')"   style="cursor:pointer;user-select:none">Oficina <span id="g-sort-oficina"></span></th>
-                <th onclick="sortGastos('periodo')"   style="cursor:pointer;user-select:none">Periodicidad <span id="g-sort-periodo"></span></th>
-                <th class="nr" onclick="sortGastos('base')"      style="cursor:pointer;user-select:none">Base <span id="g-sort-base"></span></th>
-                <th class="nr" onclick="sortGastos('total')"     style="cursor:pointer;user-select:none">Total <span id="g-sort-total"></span></th>
-                <th onclick="sortGastos('vencimiento')" style="cursor:pointer;user-select:none">Vencimiento <span id="g-sort-vencimiento"></span></th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="gastos-tbody">
-              <tr><td colspan="9" class="loading">Cargando...</td></tr>
-            </tbody>
-          </table>
+        <div id="form-gasto-wrap" style="display:none;margin-bottom:16px" class="panel">
+          <div class="panel-header"><span class="panel-title">Nuevo gasto</span></div>
+          <div class="panel-body">
+            <div id="gastos-alert" class="alert" style="display:none"></div>
+            <form id="form-gasto" onsubmit="event.preventDefault();guardarGasto()">
+              <div class="form-grid form-4" style="margin-bottom:12px">
+                <div class="form-group">
+                  <label class="form-label">Categoría *</label>
+                  <select id="g-categoria" class="form-select" required>
+                    <option value="Portales">Portales</option>
+                    <option value="Tecnología">Tecnología</option>
+                    <option value="Instalaciones">Instalaciones</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Personal">Personal</option>
+                    <option value="Formación">Formación</option>
+                    <option value="AAFF">AAFF</option>
+                    <option value="Otros">Otros</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-grid form-4">
+                <div class="form-group" style="grid-column:1/3">
+                  <label class="form-label">Concepto *</label>
+                  <input type="text" id="g-concepto" class="form-input" placeholder="Fotocasa Premium, alquiler oficina BCN..." required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Oficina (opcional)</label>
+                  <select id="g-oficina" class="form-select"><option value="">Central (todas)</option></select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Periodicidad</label>
+                  <select id="g-periodicidad" class="form-select">
+                    <option value="puntual">Puntual</option>
+                    <option value="mensual">Mensual</option>
+                    <option value="trimestral">Trimestral</option>
+                    <option value="anual">Anual</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-grid form-4">
+                <div class="form-group">
+                  <label class="form-label">Fecha</label>
+                  <input type="date" id="g-fecha" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Base imponible €</label>
+                  <input type="text" id="g-base" class="form-input" placeholder="1.000">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Tipo impuesto</label>
+                  <input type="text" id="g-imp-desc" class="form-input" value="IVA 21%">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">% impuesto</label>
+                  <input type="number" id="g-pct" class="form-input" value="21">
+                </div>
+              </div>
+
+              <div class="form-group" style="margin:10px 0">
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer">
+                  <input type="checkbox" id="g-imp2-toggle" onchange="document.getElementById('g-imp2-wrap').style.display=this.checked?'grid':'none'">
+                  Aplicar segundo impuesto (ej. retención IRPF en facturas de profesionales)
+                </label>
+              </div>
+              <div id="g-imp2-wrap" class="form-grid form-4" style="display:none;margin-bottom:12px">
+                <div class="form-group">
+                  <label class="form-label">Tipo 2º impuesto</label>
+                  <input type="text" id="g-imp2-desc" class="form-input" value="Retención IRPF 15%">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">% 2º impuesto</label>
+                  <input type="number" id="g-pct2" class="form-input" value="15">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Efecto sobre el total</label>
+                  <select id="g-signo2" class="form-select">
+                    <option value="resta">Resta (retención)</option>
+                    <option value="suma">Suma (impuesto adicional)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-grid form-2" style="margin-bottom:16px">
+                <div class="form-group">
+                  <label class="form-label">Vencimiento contrato (opcional)</label>
+                  <input type="date" id="g-vencimiento" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Nota</label>
+                  <input type="text" id="g-nota" class="form-input" placeholder="Descripción adicional...">
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-gold">Guardar gasto</button>
+                <button type="button" class="btn btn-outline" onclick="document.getElementById('form-gasto-wrap').style.display='none'">Cancelar</button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
+
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Gastos registrados</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th onclick="sortGastos('fecha')"     style="cursor:pointer;user-select:none">Fecha <span id="g-sort-fecha"></span></th>
+                  <th onclick="sortGastos('concepto')"  style="cursor:pointer;user-select:none">Concepto <span id="g-sort-concepto"></span></th>
+                  <th onclick="sortGastos('categoria')" style="cursor:pointer;user-select:none">Categoría <span id="g-sort-categoria"></span></th>
+                  <th onclick="sortGastos('oficina')"   style="cursor:pointer;user-select:none">Oficina <span id="g-sort-oficina"></span></th>
+                  <th onclick="sortGastos('periodo')"   style="cursor:pointer;user-select:none">Periodicidad <span id="g-sort-periodo"></span></th>
+                  <th class="nr" onclick="sortGastos('base')"      style="cursor:pointer;user-select:none">Base <span id="g-sort-base"></span></th>
+                  <th class="nr" onclick="sortGastos('total')"     style="cursor:pointer;user-select:none">Total <span id="g-sort-total"></span></th>
+                  <th onclick="sortGastos('vencimiento')" style="cursor:pointer;user-select:none">Vencimiento <span id="g-sort-vencimiento"></span></th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="gastos-tbody">
+                <tr><td colspan="9" class="loading">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div><!-- /gastos-tab-registro -->
+
+      <!-- ══ TAB ANÁLISIS ══ -->
+      <div id="gastos-tab-analisis" style="display:none">
+        <!-- Filtros -->
+        <div class="panel" style="margin-bottom:12px">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 16px">
+            <select id="ga-fil-tipologia" class="form-select" style="height:28px;font-size:11px;padding:0 8px" onchange="onGaFilTipologiaChange()">
+              <option value="">Todas las tipologías</option>
+              <option>Portales</option>
+              <option>Tecnología</option>
+              <option>Instalaciones</option>
+              <option>Marketing</option>
+              <option>Personal</option>
+              <option>Formación</option>
+              <option>AAFF</option>
+              <option>Otros</option>
+            </select>
+            <select id="ga-fil-concepto" class="form-select" style="height:28px;font-size:11px;padding:0 8px" onchange="aplicarFiltrosGastosA()">
+              <option value="">Todos los conceptos</option>
+            </select>
+            <select id="ga-fil-oficina" class="form-select" style="height:28px;font-size:11px;padding:0 8px" onchange="aplicarFiltrosGastosA()">
+              <option value="">Todas las oficinas</option>
+            </select>
+            <button class="btn btn-outline" style="height:28px;font-size:11px;padding:0 10px" onclick="limpiarFiltrosGastosA()">Limpiar</button>
+          </div>
+        </div>
+        <!-- Tabla detalle -->
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">Gastos por oficina</span></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th onclick="sortGastosA('oficina')"   style="cursor:pointer;user-select:none">Oficina <span id="ga-sort-oficina"></span></th>
+                <th onclick="sortGastosA('tipologia')" style="cursor:pointer;user-select:none">Tipología <span id="ga-sort-tipologia"></span></th>
+                <th onclick="sortGastosA('concepto')"  style="cursor:pointer;user-select:none">Concepto <span id="ga-sort-concepto"></span></th>
+                <th class="nr" onclick="sortGastosA('base')"   style="cursor:pointer;user-select:none">Base Imponible <span id="ga-sort-base"></span></th>
+                <th class="nr">Impuesto 1</th>
+                <th class="nr">Impuesto 2</th>
+                <th class="nr" onclick="sortGastosA('total')"    style="cursor:pointer;user-select:none">Total <span id="ga-sort-total"></span></th>
+                <th onclick="sortGastosA('fechafin')"  style="cursor:pointer;user-select:none">Fecha fin <span id="ga-sort-fechafin"></span></th>
+                <th>Comentarios</th>
+              </tr></thead>
+              <tbody id="ga-tbody"><tr><td colspan="9" class="loading">Cargando...</td></tr></tbody>
+              <tfoot id="ga-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+      </div><!-- /gastos-tab-analisis -->
     </div>
 
     <!-- ═══ REUNIONES CALENDARIO ═══ -->
