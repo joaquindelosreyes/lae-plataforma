@@ -1701,67 +1701,79 @@ async function loadCaptacionesMatriz() {
   } catch(e) { tbody.innerHTML = `<tr><td colspan="7" class="loading">Error: ${e.message}</td></tr>`; console.warn('Error matriz:', e); }
 }
 
-function limpiarFiltrosCof() {
-  ['cof-fil-tipologia','cof-fil-tipo-op','cof-fil-mandato'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
+function limpiarFiltrosCof1() {
+  ['cof1-fil-tipologia','cof1-fil-tipo-op','cof1-fil-mandato'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
   });
-  loadCaptacionesPorOficina();
+  loadCapOfPanel1();
+}
+
+function limpiarFiltrosCof2() {
+  ['cof2-fil-tipo-op','cof2-fil-mandato'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  loadCapOfPanel2();
 }
 
 // ── CAPTACIONES POR OFICINA ───────────────────────────
 async function loadCaptacionesPorOficina() {
+  await Promise.all([loadCapOfPanel1(), loadCapOfPanel2()]);
+}
+
+async function loadCapOfPanel1() {
   try {
     const { desde, hasta } = getDateRange();
-    const tipologia   = document.getElementById('cof-fil-tipologia')?.value || '';
-    const tipo_op     = document.getElementById('cof-fil-tipo-op')?.value   || '';
-    const mandato     = document.getElementById('cof-fil-mandato')?.value   || '';
+    const tipologia = document.getElementById('cof1-fil-tipologia')?.value || '';
+    const tipo_op   = document.getElementById('cof1-fil-tipo-op')?.value   || '';
+    const mandato   = document.getElementById('cof1-fil-mandato')?.value   || '';
     const qs = new URLSearchParams({ desde, hasta, ...(tipologia && {tipologia}), ...(tipo_op && {tipo_operacion: tipo_op}), ...(mandato && {mandato}) }).toString();
-    const qsViv = new URLSearchParams({ desde, hasta, ...(tipo_op && {tipo_operacion: tipo_op}), ...(mandato && {mandato}) }).toString();
-    const [res, resViv] = await Promise.all([
-      fetch(`${API}/api/captaciones/por-oficina?${qs}`).then(r => r.json()),
-      fetch(`${API}/api/captaciones/vivienda-excl-por-oficina?${qsViv}`).then(r => r.json())
-    ]);
+    const res = await fetch(`${API}/api/captaciones/por-oficina?${qs}`).then(r => r.json());
     const lista = res.data || res;
-    if (!Array.isArray(lista)) return;
-    renderCapOf(lista);
+    if (Array.isArray(lista)) renderCapOf(lista);
+  } catch(e) {}
+}
 
-    // Segundo panel: viviendas exclusiva
-    const listaViv = resViv.data || resViv;
+async function loadCapOfPanel2() {
+  try {
+    const { desde, hasta } = getDateRange();
+    const tipo_op = document.getElementById('cof2-fil-tipo-op')?.value || '';
+    const mandato = document.getElementById('cof2-fil-mandato')?.value  || '';
+    const qs = new URLSearchParams({ desde, hasta, ...(tipo_op && {tipo_operacion: tipo_op}), ...(mandato && {mandato}) }).toString();
+    const res = await fetch(`${API}/api/captaciones/vivienda-excl-por-oficina?${qs}`).then(r => r.json());
+    const listaViv = res.data || res;
     const tbodyViv = document.getElementById('cap-viv-excl-tbody');
-    if (tbodyViv && Array.isArray(listaViv)) {
-      const vivFiltrado = listaViv.filter(o => (parseInt(o.total)||0) > 0);
-      const maxExcl = Math.max(...vivFiltrado.map(o => parseInt(o.exclusivas)||0), 1);
-      let vTotExcl = 0, vTotNe = 0, vTotTotal = 0, vTotHonor = 0;
-      const vivFilas = vivFiltrado.map(o => {
-        const excl  = parseInt(o.exclusivas)||0;
-        const ne    = parseInt(o.notas_encargo)||0;
-        const total = parseInt(o.total)||0;
-        const honor = parseFloat(o.honorarios_excl)||0;
-        vTotExcl += excl; vTotNe += ne; vTotTotal += total; vTotHonor += honor;
-        const w = Math.round(excl / maxExcl * 100);
-        return `<tr>
-          <td><strong>${o.nombre}</strong></td>
-          <td class="td-right" style="color:#1E40AF;font-weight:600">${excl}</td>
-          <td class="td-right" style="color:#7C3AED">${ne}</td>
-          <td class="td-right"><strong>${total}</strong></td>
-          <td class="td-right" style="color:var(--green);font-weight:600">${fmtK(honor)}</td>
-          <td style="width:120px">
-            <div style="height:5px;background:var(--border);border-radius:2px">
-              <div style="width:${w}%;height:100%;background:#1E40AF;border-radius:2px"></div>
-            </div>
-          </td>
-        </tr>`;
-      }).join('');
-      tbodyViv.innerHTML = vivFilas + `<tr style="background:var(--cream);border-top:2px solid var(--border)">
-        <td style="font-weight:700">TOTAL (${vivFiltrado.length})</td>
-        <td class="td-right" style="font-weight:700;color:#1E40AF">${vTotExcl}</td>
-        <td class="td-right" style="font-weight:700;color:#7C3AED">${vTotNe}</td>
-        <td class="td-right" style="font-weight:700">${vTotTotal}</td>
-        <td class="td-right" style="font-weight:700;color:var(--green)">${fmtK(vTotHonor)}</td>
-        <td></td>
+    if (!tbodyViv || !Array.isArray(listaViv)) return;
+    const vivFiltrado = listaViv.filter(o => (parseInt(o.total)||0) > 0);
+    const maxExcl = Math.max(...vivFiltrado.map(o => parseInt(o.exclusivas)||0), 1);
+    let vTotExcl = 0, vTotNe = 0, vTotTotal = 0, vTotHonor = 0;
+    const vivFilas = vivFiltrado.map(o => {
+      const excl  = parseInt(o.exclusivas)||0;
+      const ne    = parseInt(o.notas_encargo)||0;
+      const total = parseInt(o.total)||0;
+      const honor = parseFloat(o.honorarios_excl)||0;
+      vTotExcl += excl; vTotNe += ne; vTotTotal += total; vTotHonor += honor;
+      const w = Math.round(excl / maxExcl * 100);
+      return `<tr>
+        <td><strong>${o.nombre}</strong></td>
+        <td class="td-right" style="color:#1E40AF;font-weight:600">${excl}</td>
+        <td class="td-right" style="color:#7C3AED">${ne}</td>
+        <td class="td-right"><strong>${total}</strong></td>
+        <td class="td-right" style="color:var(--green);font-weight:600">${fmtK(honor)}</td>
+        <td style="width:120px">
+          <div style="height:5px;background:var(--border);border-radius:2px">
+            <div style="width:${w}%;height:100%;background:#1E40AF;border-radius:2px"></div>
+          </div>
+        </td>
       </tr>`;
-    }
+    }).join('');
+    tbodyViv.innerHTML = vivFilas + `<tr style="background:var(--cream);border-top:2px solid var(--border)">
+      <td style="font-weight:700">TOTAL (${vivFiltrado.length})</td>
+      <td class="td-right" style="font-weight:700;color:#1E40AF">${vTotExcl}</td>
+      <td class="td-right" style="font-weight:700;color:#7C3AED">${vTotNe}</td>
+      <td class="td-right" style="font-weight:700">${vTotTotal}</td>
+      <td class="td-right" style="font-weight:700;color:var(--green)">${fmtK(vTotHonor)}</td>
+      <td></td>
+    </tr>`;
   } catch(e) {}
 }
 
