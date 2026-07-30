@@ -1197,7 +1197,12 @@
       <div class="panel">
         <div class="panel-header">
           <span class="panel-title">Leads por consultor</span>
-          <span style="font-size:11px;color:var(--muted)">Top 30</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="demcons-fil-oficina" class="form-select" style="width:160px;font-size:12px;padding:4px 8px" onchange="aplicarFiltrosDemCons()">
+              <option value="">Oficina</option>
+            </select>
+            <button class="btn btn-outline" style="font-size:11px;padding:4px 10px" onclick="limpiarFiltrosDemCons()">Limpiar</button>
+          </div>
         </div>
         <div class="table-wrap">
           <table>
@@ -1214,6 +1219,7 @@
             <tbody id="dem-consultores-tbody">
               <tr><td colspan="6" class="loading">Cargando...</td></tr>
             </tbody>
+            <tfoot id="demcons-tfoot"></tfoot>
           </table>
         </div>
       </div>

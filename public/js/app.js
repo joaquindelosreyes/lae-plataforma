@@ -2712,8 +2712,11 @@ async function loadDemandas() {
     renderDemOficinas();
 
     // Por consultor
-    _demConsData = consRes.data || [];
-    renderDemConsultores();
+    _demConsAllData = consRes.data || [];
+    const oficinasConsultores = [...new Set(_demConsAllData.map(c => c.oficina).filter(Boolean))].sort();
+    const selOf = document.getElementById('demcons-fil-oficina');
+    if (selOf) selOf.innerHTML = '<option value="">Oficina</option>' + oficinasConsultores.map(o => `<option value="${o}">${o}</option>`).join('');
+    aplicarFiltrosDemCons();
 
   } catch(e) { console.warn('Error demandas:', e.message); }
 }
@@ -2786,8 +2789,20 @@ function renderDemOficinas() {
 }
 
 // ── DEMANDAS — POR CONSULTOR SORT ─────────────────────
-let _demConsData = [], _demConsSortCol = 'total', _demConsSortAsc = false;
+let _demConsAllData = [], _demConsData = [], _demConsSortCol = 'total', _demConsSortAsc = false;
 const DEMCONS_COLS = ['consultor','oficina','total','buscando','convertidos','tasa'];
+
+function aplicarFiltrosDemCons() {
+  const filOf = document.getElementById('demcons-fil-oficina')?.value || '';
+  _demConsData = filOf ? _demConsAllData.filter(c => c.oficina === filOf) : _demConsAllData;
+  renderDemConsultores();
+}
+
+function limpiarFiltrosDemCons() {
+  const el = document.getElementById('demcons-fil-oficina');
+  if (el) el.value = '';
+  aplicarFiltrosDemCons();
+}
 
 function sortDemConsultores(col) {
   if (_demConsSortCol === col) { _demConsSortAsc = !_demConsSortAsc; }
@@ -2818,14 +2833,29 @@ function renderDemConsultores() {
     if (typeof va==='string') return _demConsSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     return _demConsSortAsc ? va-vb : vb-va;
   });
-  tbody.innerHTML = sorted.map(c => `<tr>
-    <td>${c.consultor||'—'}</td>
-    <td><span class="badge badge-gray">${c.oficina||'—'}</span></td>
-    <td class="td-right">${c.total||0}</td>
-    <td class="td-right" style="color:var(--green);font-weight:500">${c.buscando||0}</td>
-    <td class="td-right" style="color:#1E40AF;font-weight:500">${c.convertidos||0}</td>
-    <td class="td-right"><span class="${(c.tasa_conversion||0)>=5?'pct-green':(c.tasa_conversion||0)>=2?'pct-amber':'pct-red'}">${c.tasa_conversion||0}%</span></td>
-  </tr>`).join('');
+  let tTotal = 0, tBuscando = 0, tConvertidos = 0;
+  tbody.innerHTML = sorted.map(c => {
+    tTotal      += parseInt(c.total)      || 0;
+    tBuscando   += parseInt(c.buscando)   || 0;
+    tConvertidos += parseInt(c.convertidos) || 0;
+    return `<tr>
+      <td>${c.consultor||'—'}</td>
+      <td><span class="badge badge-gray">${c.oficina||'—'}</span></td>
+      <td class="td-right">${c.total||0}</td>
+      <td class="td-right" style="color:var(--green);font-weight:500">${c.buscando||0}</td>
+      <td class="td-right" style="color:#1E40AF;font-weight:500">${c.convertidos||0}</td>
+      <td class="td-right"><span class="${(c.tasa_conversion||0)>=5?'pct-green':(c.tasa_conversion||0)>=2?'pct-amber':'pct-red'}">${c.tasa_conversion||0}%</span></td>
+    </tr>`;
+  }).join('');
+  const tasa = tTotal > 0 ? Math.round(tConvertidos / tTotal * 1000) / 10 : 0;
+  const tfoot = document.getElementById('demcons-tfoot');
+  if (tfoot) tfoot.innerHTML = `<tr style="background:var(--cream);font-weight:600;border-top:2px solid var(--border)">
+    <td colspan="2" style="font-size:12px;padding:8px 10px">TOTAL (${sorted.length} consultores)</td>
+    <td class="td-right" style="padding:8px 10px">${tTotal}</td>
+    <td class="td-right" style="padding:8px 10px;color:var(--green)">${tBuscando}</td>
+    <td class="td-right" style="padding:8px 10px;color:#1E40AF">${tConvertidos}</td>
+    <td class="td-right" style="padding:8px 10px"><span class="${tasa>=5?'pct-green':tasa>=2?'pct-amber':'pct-red'}">${tasa}%</span></td>
+  </tr>`;
 }
 
 // ── AAFF 50-50 ────────────────────────────────────────
