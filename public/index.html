@@ -628,6 +628,31 @@
           <span class="panel-title">Histórico de captaciones</span>
           <span id="cartera-count" style="font-size:11px;color:var(--muted)"></span>
         </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--cream)">
+          <select id="cart-fil-oficina" class="form-select" style="width:140px;font-size:12px;padding:4px 8px" onchange="aplicarFiltrosCartera()"><option value="">Oficina</option></select>
+          <select id="cart-fil-consultor" class="form-select" style="width:140px;font-size:12px;padding:4px 8px" onchange="aplicarFiltrosCartera()"><option value="">Consultor</option></select>
+          <select id="cart-fil-estado" class="form-select" style="width:130px;font-size:12px;padding:4px 8px" onchange="aplicarFiltrosCartera()">
+            <option value="">Estado</option>
+            <option value="activa">Activa</option>
+            <option value="vendida">Vendida</option>
+            <option value="retirada">Retirada</option>
+            <option value="caducada">Caducada</option>
+          </select>
+          <select id="cart-fil-mandato" class="form-select" style="width:150px;font-size:12px;padding:4px 8px" onchange="aplicarFiltrosCartera()">
+            <option value="">Exclusiva / NE</option>
+            <option value="exclusiva">Exclusiva</option>
+            <option value="nota_encargo">Nota de encargo</option>
+          </select>
+          <select id="cart-fil-tipo" class="form-select" style="width:130px;font-size:12px;padding:4px 8px" onchange="aplicarFiltrosCartera()">
+            <option value="">Tipología</option>
+            <option value="vivienda">Vivienda</option>
+            <option value="local">Local</option>
+            <option value="oficina">Oficina</option>
+            <option value="garaje">Garaje</option>
+            <option value="solar">Solar</option>
+          </select>
+          <button class="btn btn-outline" style="font-size:11px;padding:4px 10px" onclick="limpiarFiltrosCartera()">Limpiar</button>
+        </div>
         <div class="table-wrap">
           <table>
             <thead>

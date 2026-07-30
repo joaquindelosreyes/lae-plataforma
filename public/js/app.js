@@ -945,8 +945,15 @@ async function loadCaptaciones() {
     if (filOficina) {
       filOficina.innerHTML = '<option value="">Oficina</option>' + oficinas.map(n => `<option value="${n}">${n}</option>`).join('');
     }
+    // Poblar selects del filtro de Histórico
+    const cartFilOf = document.getElementById('cart-fil-oficina');
+    if (cartFilOf) cartFilOf.innerHTML = '<option value="">Oficina</option>' + oficinas.map(n => `<option value="${n}">${n}</option>`).join('');
+    const consultores = [...new Set(lista.map(c => c.consultor_nombre).filter(Boolean))].sort();
+    const cartFilCons = document.getElementById('cart-fil-consultor');
+    if (cartFilCons) cartFilCons.innerHTML = '<option value="">Consultor</option>' + consultores.map(n => `<option value="${n}">${n}</option>`).join('');
     poblarFiltroConsultorCap();
     aplicarFiltrosCap();
+    aplicarFiltrosCartera();
   } catch(e) {
     if (tbody) tbody.innerHTML = `<tr><td colspan="10" class="loading">Error: ${e.message}</td></tr>`;
   }
@@ -987,7 +994,7 @@ function aplicarFiltrosCap() {
   const activas = filtrado.filter(c => (c.estado || 'activa') === 'activa');
   actualizarKpisCap(activas);
   renderCap(filtrado);
-  renderCartera(filtrado);
+  // Panel 2 tiene su propio filtro independiente — no se toca aquí
 }
 
 function actualizarKpisCap(activas) {
@@ -1022,6 +1029,31 @@ function limpiarFiltrosCap() {
   });
   poblarFiltroConsultorCap();
   aplicarFiltrosCap();
+}
+
+function aplicarFiltrosCartera() {
+  const filOficina   = document.getElementById('cart-fil-oficina')?.value   || '';
+  const filConsultor = document.getElementById('cart-fil-consultor')?.value || '';
+  const filEstado    = document.getElementById('cart-fil-estado')?.value    || '';
+  const filMandato   = document.getElementById('cart-fil-mandato')?.value   || '';
+  const filTipo      = document.getElementById('cart-fil-tipo')?.value      || '';
+  const filtrado = _capAllData.filter(c => {
+    if (filOficina   && c.oficina_nombre !== filOficina) return false;
+    if (filConsultor && c.consultor_nombre !== filConsultor) return false;
+    if (filEstado    && (c.estado || '') !== filEstado) return false;
+    if (filMandato   && (c.mandato || '') !== filMandato) return false;
+    if (filTipo      && (c.tipologia || '') !== filTipo) return false;
+    return true;
+  });
+  renderCartera(filtrado);
+}
+
+function limpiarFiltrosCartera() {
+  ['cart-fil-oficina','cart-fil-consultor','cart-fil-estado','cart-fil-mandato','cart-fil-tipo'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  aplicarFiltrosCartera();
 }
 
 // ── AAFF ─────────────────────────────────────────────
