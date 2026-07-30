@@ -352,13 +352,13 @@ function set(id, val) {
 
 // ── OPERACIONES ──────────────────────────────────────
 let _opsData = [], _opsSortCol = 'fecha', _opsSortAsc = false;
-
 let _opsFiltrados = [];
+let _opsTab = 'inmobiliarias';
 
 async function loadOperaciones() {
   const tbody = document.getElementById('ops-tbody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="8" class="loading">Cargando...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="9" class="loading">Cargando...</td></tr>';
   try {
     const { desde, hasta } = getDateRange();
     const [res, ofRes] = await Promise.all([
@@ -373,7 +373,14 @@ async function loadOperaciones() {
     _opsData = res.data || res;
     if (!Array.isArray(_opsData)) _opsData = [];
     aplicarFiltrosOps();
-  } catch(e) { tbody.innerHTML = `<tr><td colspan="8" class="loading">Error: ${e.message}</td></tr>`; }
+  } catch(e) { tbody.innerHTML = `<tr><td colspan="9" class="loading">Error: ${e.message}</td></tr>`; }
+}
+
+function setOpsTab(tab) {
+  _opsTab = tab;
+  document.getElementById('tab-ops-inmob')?.classList.toggle('active', tab === 'inmobiliarias');
+  document.getElementById('tab-ops-atip')?.classList.toggle('active', tab === 'atipico');
+  aplicarFiltrosOps();
 }
 
 function aplicarFiltrosOps() {
@@ -383,24 +390,26 @@ function aplicarFiltrosOps() {
   const filTipo    = document.getElementById('op-fil-tipo')?.value    || '';
 
   _opsFiltrados = _opsData.filter(op => {
+    // Tab principal: inmobiliarias vs atípicos (mutuamente excluyentes)
+    if (_opsTab === 'atipico') {
+      if (op.tipo_ingreso !== 'atipico') return false;
+    } else {
+      if (op.tipo_ingreso === 'atipico') return false;
+    }
     const fecha = (op.fecha || '').slice(0, 10);
     if (filDesde && fecha < filDesde) return false;
     if (filHasta && fecha > filHasta) return false;
     if (filOficina && String(op.oficina_id) !== filOficina) return false;
-    if (filTipo) {
-      if (filTipo === 'atipico') {
-        if (op.tipo_ingreso !== 'atipico') return false;
-      } else {
-        const t = (op.tipo_operacion || '').toLowerCase();
-        if (filTipo === 'cv' && !['cv','compra-venta','compraventa'].includes(t)) return false;
-        if (filTipo !== 'cv' && t !== filTipo) return false;
-      }
+    if (filTipo && _opsTab !== 'atipico') {
+      const t = (op.tipo_operacion || '').toLowerCase();
+      if (filTipo === 'cv' && !['cv','compra-venta','compraventa'].includes(t)) return false;
+      if (filTipo !== 'cv' && t !== filTipo) return false;
     }
     return true;
   });
 
   const counter = document.getElementById('ops-count');
-  if (counter) counter.textContent = _opsFiltrados.length + ' operaciones';
+  if (counter) counter.textContent = _opsFiltrados.length + (_opsTab === 'atipico' ? ' atípicos' : ' operaciones');
   renderOps();
 }
 
@@ -409,6 +418,7 @@ function limpiarFiltrosOps() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  // No resetear el tab — mantener inmobiliarias o atípicos según esté
   aplicarFiltrosOps();
 }
 
@@ -419,7 +429,7 @@ function sortOps(col) {
     _opsSortCol = col;
     _opsSortAsc = ['ref','oficina','direccion','tipo','estado'].includes(col);
   }
-  ['ref','fecha','oficina','direccion','tipo','precio','honor','estado'].forEach(c => {
+  ['ref','fecha','oficina','direccion','tipo','precio','bruto','honor','estado'].forEach(c => {
     const el = document.getElementById('ops-sort-' + c);
     if (el) el.textContent = c === col ? (_opsSortAsc ? ' ↑' : ' ↓') : '';
   });
@@ -467,7 +477,7 @@ function renderOps() {
       <td>${fmtFecha(op.fecha)}</td>
       <td>${op.oficina_nombre||'—'}</td>
       <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${op.direccion||'—'}</td>
-      <td><span class="badge badge-gray">${op.tipo_operacion==='cv'?'C-V':op.tipo_operacion||'—'}</span></td>
+      <td><span class="badge badge-gray">${op.tipo_ingreso==='atipico'?(op.tipo_atipico||'Atípico'):(op.tipo_operacion==='cv'?'C-V':op.tipo_operacion||'—')}</span></td>
       <td class="td-right">${precio}</td>
       <td class="td-right" style="color:var(--muted)">${bruto}</td>
       <td class="td-right" style="color:var(--green);font-weight:500">${honor}</td>
@@ -697,6 +707,29 @@ function calcNuevaOp() {
 function onTipoIngresoChange() {
   const esAtipico = document.querySelector('[name="tipo-ingreso"]:checked')?.value === 'atipico';
 
+  // Limpiar campos del tipo contrario para evitar contaminación cruzada
+  if (esAtipico) {
+    // Venimos de inmobiliaria → limpiar sus campos
+    ['nop-precio','nop-agencia','nop-direccion','nop-ref-inmovilla'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    const pct = document.getElementById('nop-pct'); if (pct) pct.value = '5';
+    const comp = document.getElementById('nop-compartida'); if (comp) comp.checked = false;
+    const presc = document.getElementById('nop-tiene-prescriptor'); if (presc) presc.checked = false;
+    const bruta = document.getElementById('nop-bruta'); if (bruta) bruta.value = '';
+    const lae = document.getElementById('nop-lae'); if (lae) lae.value = '';
+  } else {
+    // Venimos de atípico → limpiar sus campos
+    ['nop-base-imponible','nop-imp1-desc','nop-imp1-pct','nop-imp2-desc','nop-imp2-pct'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    ['nop-imp1-importe','nop-imp2-importe'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    const total = document.getElementById('nop-atipico-total'); if (total) total.textContent = '—';
+    const tipoAtip = document.getElementById('nop-tipo-atipico'); if (tipoAtip) tipoAtip.value = '';
+  }
+
   const show = (id, vis) => { const el = document.getElementById(id); if (el) el.style.display = vis; };
 
   // Elementos que se muestran/ocultan según tipo
@@ -754,6 +787,33 @@ function calcAtipico() {
   if (el2) el2.value = pct2 ? fmt(imp2) : '';
   if (elT) elT.textContent = base ? fmt(total) : '—';
   calcNuevaOp();
+}
+
+function resetNuevaOp() {
+  const form = document.getElementById('form-nueva-op');
+  if (form) form.reset();
+  // Forzar radio a "inmobiliaria" (form.reset puede no reiniciarlo si no tiene default)
+  const radioInmob = document.querySelector('[name="tipo-ingreso"][value="inmobiliaria"]');
+  if (radioInmob) radioInmob.checked = true;
+  // Limpiar campos calculados/readonly que form.reset no toca
+  ['nop-bruta','nop-lae','nop-imp1-importe','nop-imp2-importe'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const netoEl = document.getElementById('nop-neto');
+  if (netoEl) netoEl.textContent = '—';
+  const totalAtip = document.getElementById('nop-atipico-total');
+  if (totalAtip) totalAtip.textContent = '—';
+  const rows = document.getElementById('nop-reparto-rows');
+  if (rows) rows.innerHTML = '';
+  const prev = document.getElementById('nop-reparto-preview');
+  if (prev) prev.style.display = 'none';
+  const alert = document.getElementById('op-alert');
+  if (alert) alert.style.display = 'none';
+  // Restablecer visibilidad según tipo inmobiliaria
+  onTipoIngresoChange();
+  onCanalChange();
+  onPrescriptorToggle();
 }
 
 async function guardarNuevaOp() {
@@ -841,12 +901,9 @@ async function guardarNuevaOp() {
       method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
     }).then(r => r.json());
     if (res.success) {
-      showAlert('op-alert', '✓ Operación guardada correctamente · Ref: ' + res.data.ref, 'success');
-      document.getElementById('form-nueva-op')?.reset();
-      onTipoIngresoChange();
-      onCanalChange();
-      onPrescriptorToggle();
-      calcNuevaOp();
+      const ref = res.data?.ref || '';
+      resetNuevaOp();
+      showAlert('op-alert', '✓ Operación guardada correctamente' + (ref ? ' · Ref: ' + ref : ''), 'success');
     } else {
       showAlert('op-alert', 'Error: ' + res.error, 'error');
     }

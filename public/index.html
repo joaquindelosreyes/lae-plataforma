@@ -243,7 +243,10 @@
     <div class="view" id="view-operaciones">
       <div class="panel">
         <div class="panel-header">
-          <span class="panel-title">Operaciones</span>
+          <div style="display:flex;align-items:center;gap:0">
+            <button id="tab-ops-inmob" class="tab-btn active" onclick="setOpsTab('inmobiliarias')">Inmobiliarias</button>
+            <button id="tab-ops-atip"  class="tab-btn"        onclick="setOpsTab('atipico')">Atípicos</button>
+          </div>
           <div style="display:flex;gap:8px;align-items:center">
             <span id="ops-count" style="font-size:11px;color:var(--muted)"></span>
             <button class="btn btn-primary btn-sm" onclick="nav('nueva-op');initNuevaOp()">+ Nueva operación</button>
@@ -260,7 +263,6 @@
             <option value="cv">Compra-Venta</option>
             <option value="alquiler">Alquiler</option>
             <option value="traspaso">Traspaso</option>
-            <option value="atipico">Atípico</option>
           </select>
           <button class="btn btn-sm btn-outline" onclick="limpiarFiltrosOps()">Limpiar</button>
         </div>
@@ -548,7 +550,7 @@
 
             <div class="form-actions">
               <button type="submit" id="btn-guardar-op" class="btn btn-gold">Guardar operación</button>
-              <button type="button" class="btn btn-outline" onclick="nav('operaciones')">Cancelar</button>
+              <button type="button" class="btn btn-outline" onclick="resetNuevaOp();nav('operaciones')">Cancelar</button>
             </div>
           </form>
         </div>
