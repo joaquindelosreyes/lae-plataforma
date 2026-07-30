@@ -97,7 +97,6 @@ const Demanda = {
       WHERE ${where.join(' AND ')}
       GROUP BY d.consultor_nombre, o.nombre
       ORDER BY total DESC
-      LIMIT 30
     `, params);
     return rows;
   },
