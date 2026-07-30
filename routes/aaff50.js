@@ -160,12 +160,14 @@ router.get('/stats/oficinas', async (req, res) => {
     const { rows } = await pool.query(`
       SELECT
         o.nombre,
-        COUNT(d.id)                    AS despachos,
-        SUM(d.comunidades_compartidas) AS comunidades,
-        SUM(d.vecinos_compartidos)     AS vecinos,
-        COALESCE(SUM(cap.cnt), 0)      AS captaciones,
-        COALESCE(SUM(op.cnt),  0)      AS ventas,
-        COALESCE(SUM(em.cnt),  0)      AS emails_enviados
+        COUNT(d.id)                                                          AS despachos,
+        SUM(d.comunidades_compartidas)                                       AS comunidades,
+        SUM(d.vecinos_compartidos)                                           AS vecinos,
+        COALESCE(SUM(cap.cnt), 0)                                            AS captaciones,
+        COUNT(d.id) FILTER (WHERE COALESCE(cap.cnt, 0) > 0)                 AS aaff_con_captaciones,
+        COALESCE(SUM(op.cnt),  0)                                            AS ventas,
+        COUNT(d.id) FILTER (WHERE COALESCE(op.cnt,  0) > 0)                 AS aaff_con_ventas,
+        COALESCE(SUM(em.cnt),  0)                                            AS emails_enviados
       FROM aaff_despachos d
       LEFT JOIN oficinas o ON o.id = d.oficina_id
       LEFT JOIN (

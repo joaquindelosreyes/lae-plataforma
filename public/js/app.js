@@ -2868,11 +2868,10 @@ async function loadAAFF50() {
     const { desde, hasta } = getDateRange();
     const ofQs = new URLSearchParams({ ...(desde && {desde}), ...(hasta && {hasta}) }).toString();
 
-    const [sumRes, listRes, ofRes, medRes, filRes] = await Promise.all([
+    const [sumRes, listRes, ofRes, filRes] = await Promise.all([
       fetch(`${API}/api/aaff50/resumen`).then(r => r.json()),
       fetch(`${API}/api/aaff50`).then(r => r.json()),
       fetch(`${API}/api/aaff50/stats/oficinas${ofQs ? '?' + ofQs : ''}`).then(r => r.json()),
-      fetch(`${API}/api/aaff50/stats/medios`).then(r => r.json()),
       fetch(`${API}/api/aaff50/filtros`).then(r => r.json()),
     ]);
 
@@ -2909,21 +2908,25 @@ async function loadAAFF50() {
     // Por oficina
     const tOficinas = document.getElementById('a50-oficinas-tbody');
     if (tOficinas && ofRes.success) {
-      let totDesp=0, totCom=0, totVec=0, totCap=0, totVen=0, totEmail=0;
+      let totDesp=0, totCom=0, totVec=0, totCap=0, totAaffCap=0, totVen=0, totAaffVen=0, totEmail=0;
       const filas = ofRes.data.map(o => {
-        totDesp  += parseInt(o.despachos)||0;
-        totCom   += parseInt(o.comunidades)||0;
-        totVec   += parseInt(o.vecinos)||0;
-        totCap   += parseInt(o.captaciones)||0;
-        totVen   += parseInt(o.ventas)||0;
-        totEmail += parseInt(o.emails_enviados)||0;
+        totDesp    += parseInt(o.despachos)||0;
+        totCom     += parseInt(o.comunidades)||0;
+        totVec     += parseInt(o.vecinos)||0;
+        totCap     += parseInt(o.captaciones)||0;
+        totAaffCap += parseInt(o.aaff_con_captaciones)||0;
+        totVen     += parseInt(o.ventas)||0;
+        totAaffVen += parseInt(o.aaff_con_ventas)||0;
+        totEmail   += parseInt(o.emails_enviados)||0;
         return `<tr>
           <td><strong>${o.nombre||'—'}</strong></td>
           <td class="td-right">${o.despachos||0}</td>
           <td class="td-right" style="color:#1E40AF">${o.comunidades||0}</td>
           <td class="td-right" style="color:#1E40AF">${(parseInt(o.vecinos)||0).toLocaleString('es-ES')}</td>
           <td class="td-right" style="color:var(--green);font-weight:600">${o.captaciones||0}</td>
+          <td class="td-right" style="color:var(--green)">${o.aaff_con_captaciones||0}</td>
           <td class="td-right" style="color:var(--green);font-weight:600">${o.ventas||0}</td>
+          <td class="td-right" style="color:var(--green)">${o.aaff_con_ventas||0}</td>
           <td class="td-right">${o.emails_enviados||0}</td>
         </tr>`;
       }).join('');
@@ -2933,35 +2936,11 @@ async function loadAAFF50() {
         <td class="td-right" style="font-weight:700;color:#1E40AF">${totCom}</td>
         <td class="td-right" style="font-weight:700;color:#1E40AF">${totVec.toLocaleString('es-ES')}</td>
         <td class="td-right" style="font-weight:700;color:var(--green)">${totCap}</td>
+        <td class="td-right" style="font-weight:700;color:var(--green)">${totAaffCap}</td>
         <td class="td-right" style="font-weight:700;color:var(--green)">${totVen}</td>
+        <td class="td-right" style="font-weight:700;color:var(--green)">${totAaffVen}</td>
         <td class="td-right" style="font-weight:700">${totEmail}</td>
       </tr>`;
-    }
-
-    // Por medio
-    const medDiv = document.getElementById('a50-medios');
-    if (medDiv && medRes.success) {
-      const sorted = [...medRes.data].sort((a, b) => {
-        if (a.medio === 'OTROS') return 1;
-        if (b.medio === 'OTROS') return -1;
-        return (parseInt(b.total)||0) - (parseInt(a.total)||0);
-      });
-      const max = Math.max(...sorted.map(m => parseInt(m.total)||0), 1);
-      medDiv.innerHTML = sorted.map((m, i) => {
-        const t = parseInt(m.total)||0;
-        const w = Math.round(t/max*100);
-        const tasa = parseFloat(m.tasa)||0;
-        const isOtros = m.medio === 'OTROS';
-        const isLast  = i === sorted.length - 1;
-        return `<div style="display:flex;align-items:center;gap:8px;${isLast?'':'margin-bottom:7px'}${isOtros?';margin-top:8px;padding-top:8px;border-top:1px solid var(--border)':''}">
-          <span style="width:130px;font-size:11px;color:${isOtros?'var(--muted)':'inherit'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.medio}</span>
-          <div style="flex:1;height:10px;background:var(--border);border-radius:3px;overflow:hidden">
-            <div style="width:${w}%;height:100%;background:${isOtros?'var(--border-dark,#ccc)':'var(--navy)'};border-radius:3px"></div>
-          </div>
-          <span style="font-size:11px;font-weight:600;width:28px;text-align:right">${t}</span>
-          <span style="font-size:10px;color:var(--amber);width:38px;text-align:right">${tasa}% int.</span>
-        </div>`;
-      }).join('');
     }
 
     // Tabla despachos
