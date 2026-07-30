@@ -1743,7 +1743,7 @@ async function loadCapOfPanel2() {
     const listaViv = res.data || res;
     const tbodyViv = document.getElementById('cap-viv-excl-tbody');
     if (!tbodyViv || !Array.isArray(listaViv)) return;
-    const vivFiltrado = listaViv.filter(o => (parseInt(o.total)||0) > 0);
+    const vivFiltrado = listaViv;
     const maxExcl = Math.max(...vivFiltrado.map(o => parseInt(o.exclusivas)||0), 1);
     let vTotExcl = 0, vTotNe = 0, vTotTotal = 0, vTotHonor = 0;
     const vivFilas = vivFiltrado.map(o => {
