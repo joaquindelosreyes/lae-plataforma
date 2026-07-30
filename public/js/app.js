@@ -430,7 +430,7 @@ function renderOps() {
   const tbody = document.getElementById('ops-tbody');
   if (!tbody) return;
   if (!_opsFiltrados.length) {
-    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-icon">📋</div><h3>Sin operaciones</h3><p>No hay resultados para los filtros aplicados.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-state-icon">📋</div><h3>Sin operaciones</h3><p>No hay resultados para los filtros aplicados.</p></div></td></tr>`;
     return;
   }
 
@@ -442,6 +442,7 @@ function renderOps() {
     else if (_opsSortCol === 'direccion') { va = a.direccion||''; vb = b.direccion||''; }
     else if (_opsSortCol === 'tipo')      { va = a.tipo_operacion||''; vb = b.tipo_operacion||''; }
     else if (_opsSortCol === 'precio')    { va = parseFloat(a.precio_inmueble)||0; vb = parseFloat(b.precio_inmueble)||0; }
+    else if (_opsSortCol === 'bruto')     { va = parseFloat(a.comision_bruta)||0; vb = parseFloat(b.comision_bruta)||0; }
     else if (_opsSortCol === 'honor')     { va = parseFloat(a.honorarios_lae)||0; vb = parseFloat(b.honorarios_lae)||0; }
     else if (_opsSortCol === 'estado')    { va = a.estado||''; vb = b.estado||''; }
     if (typeof va === 'string') return _opsSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
@@ -451,13 +452,15 @@ function renderOps() {
   const estadoBadge = { cobrada:'badge-green', pipeline:'badge-blue', pendiente_escritura:'badge-amber', cancelada:'badge-gray' };
   const estadoLbl   = { cobrada:'Cobrada', pipeline:'Pipeline', pendiente_escritura:'Pend. escritura', cancelada:'Cancelada' };
 
-  let tPrecio = 0, tHonor = 0;
+  let tPrecio = 0, tBruto = 0, tHonor = 0;
   tbody.innerHTML = sorted.map(op => {
     const est   = op.estado || 'pipeline';
     const pv = parseFloat(op.precio_inmueble) || 0;
+    const bv = parseFloat(op.comision_bruta)  || 0;
     const hv = parseFloat(op.honorarios_lae)  || 0;
-    tPrecio += pv; tHonor += hv;
+    tPrecio += pv; tBruto += bv; tHonor += hv;
     const precio = pv > 0 ? fmtK(op.precio_inmueble) : '—';
+    const bruto  = bv > 0 ? fmt(op.comision_bruta)   : '—';
     const honor  = hv > 0 ? fmt(op.honorarios_lae)   : '—';
     return `<tr>
       <td style="font-size:10px;color:var(--muted);font-family:monospace">${op.ref||'—'}</td>
@@ -466,6 +469,7 @@ function renderOps() {
       <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${op.direccion||'—'}</td>
       <td><span class="badge badge-gray">${op.tipo_operacion==='cv'?'C-V':op.tipo_operacion||'—'}</span></td>
       <td class="td-right">${precio}</td>
+      <td class="td-right" style="color:var(--muted)">${bruto}</td>
       <td class="td-right" style="color:var(--green);font-weight:500">${honor}</td>
       <td><span class="badge ${estadoBadge[est]||'badge-gray'}" style="cursor:pointer" onclick="cambiarEstadoOp(${op.id},'${est}')">${estadoLbl[est]||est}</span></td>
     </tr>`;
@@ -475,6 +479,7 @@ function renderOps() {
   if (tfoot) tfoot.innerHTML = `<tr style="background:var(--cream);font-weight:600;border-top:2px solid var(--border)">
     <td colspan="5" style="font-size:12px;padding:8px 10px">${sorted.length} operación${sorted.length !== 1 ? 'es' : ''}</td>
     <td class="td-right" style="font-size:12px;padding:8px 10px">${tPrecio > 0 ? fmtK(tPrecio) : '—'}</td>
+    <td class="td-right" style="font-size:12px;padding:8px 10px;color:var(--muted)">${tBruto > 0 ? fmt(tBruto) : '—'}</td>
     <td class="td-right" style="font-size:12px;padding:8px 10px;color:var(--green)">${tHonor > 0 ? fmt(tHonor) : '—'}</td>
     <td></td>
   </tr>`;

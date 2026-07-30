@@ -274,12 +274,13 @@
                 <th onclick="sortOps('direccion')" style="cursor:pointer;user-select:none">Dirección <span id="ops-sort-direccion"></span></th>
                 <th onclick="sortOps('tipo')"    style="cursor:pointer;user-select:none">Tipo <span id="ops-sort-tipo"></span></th>
                 <th class="nr" onclick="sortOps('precio')"  style="cursor:pointer;user-select:none">Precio <span id="ops-sort-precio"></span></th>
-                <th class="nr" onclick="sortOps('honor')"   style="cursor:pointer;user-select:none">Honor. LAE <span id="ops-sort-honor"></span></th>
+                <th class="nr" onclick="sortOps('bruto')"   style="cursor:pointer;user-select:none">H. Brutos <span id="ops-sort-bruto"></span></th>
+                <th class="nr" onclick="sortOps('honor')"   style="cursor:pointer;user-select:none">H. LAE <span id="ops-sort-honor"></span></th>
                 <th onclick="sortOps('estado')"  style="cursor:pointer;user-select:none">Estado <span id="ops-sort-estado"></span></th>
               </tr>
             </thead>
             <tbody id="ops-tbody">
-              <tr><td colspan="8" class="loading">Cargando...</td></tr>
+              <tr><td colspan="9" class="loading">Cargando...</td></tr>
             </tbody>
             <tfoot id="ops-tfoot"></tfoot>
           </table>
@@ -1514,7 +1515,7 @@
         <div class="kpi-card" style="border-left:3px solid var(--navy)">
           <div class="kpi-label">Nº AAFF</div>
           <div class="kpi-value" style="color:var(--navy)" id="pal-card-aaff">—</div>
-          <div class="kpi-sub">despachos activos · consecuencia de las palancas</div>
+          <div class="kpi-sub">despachos · consecuencia de las palancas</div>
         </div>
       </div>
 
