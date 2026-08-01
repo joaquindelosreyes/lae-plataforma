@@ -2838,7 +2838,7 @@ async function loadDemandas() {
         const conv = parseInt(c.convertidos)||0;
         const w = Math.round(t/maxT*100);
         return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
-          <span style="width:110px;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.canal}</span>
+          <span style="width:180px;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.canal}</span>
           <div style="flex:1;height:12px;background:var(--border);border-radius:3px;overflow:hidden">
             <div style="width:${w}%;height:100%;background:var(--navy);border-radius:3px"></div>
           </div>

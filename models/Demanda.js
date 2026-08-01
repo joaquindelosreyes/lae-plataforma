@@ -63,7 +63,25 @@ const Demanda = {
 
     const { rows } = await pool.query(`
       SELECT
-        COALESCE(NULLIF(medio_contacto,''), 'Sin canal') AS canal,
+        CASE
+          WHEN medio_contacto IS NULL OR medio_contacto = '' THEN 'Sin canal'
+          WHEN medio_contacto ILIKE 'AAFF%'                  THEN 'AAFF'
+          WHEN LOWER(medio_contacto) = 'agencia'             THEN 'AGENCIA'
+          WHEN LOWER(medio_contacto) IN ('amigo','haya','referido')
+                                                             THEN 'CONTACTOS CONSULTOR'
+          WHEN LOWER(medio_contacto) IN ('betterplace','lystos','realadvisors')
+                                                             THEN 'HERRAMIENTAS VALORACIÓN'
+          WHEN LOWER(medio_contacto) IN ('caja','campaña','cartel','facebook','farming','reportaje tv','rrss','web')
+                                                             THEN 'ACCIONES DE MKT'
+          WHEN LOWER(medio_contacto) IN ('cliente antiguo','email oficina','fondo o empresa','teléfono','visita a oficina')
+                                                             THEN 'OFICINA'
+          WHEN LOWER(medio_contacto) IN ('lympye','conserje') THEN 'CONSERJES'
+          WHEN LOWER(medio_contacto) IN ('facilitea','fotocasa','habitaclia','idealista','kyero','listglobally.com','milanuncios','properstar','thinkspain')
+                                                             THEN 'PORTALES'
+          WHEN LOWER(medio_contacto) = 'lae fincas'         THEN 'GRUPO LAE'
+          WHEN LOWER(medio_contacto) = 'omnia hogar'        THEN 'OMNIA HOGAR'
+          ELSE 'OTROS'
+        END AS canal,
         COUNT(*) AS total,
         COUNT(*) FILTER (WHERE situacion IN ('Vendido','Alquilado','Han encontrado','Vendido Mls')) AS convertidos,
         ROUND(COUNT(*) FILTER (WHERE situacion IN ('Vendido','Alquilado','Han encontrado','Vendido Mls')) * 100.0 / NULLIF(COUNT(*),0), 1) AS tasa_conversion
@@ -71,7 +89,6 @@ const Demanda = {
       WHERE ${where.join(' AND ')}
       GROUP BY canal
       ORDER BY total DESC
-      LIMIT 12
     `, params);
     return rows;
   },
