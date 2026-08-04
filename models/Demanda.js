@@ -78,7 +78,7 @@ const Demanda = {
             WHEN LOWER(TRIM(medio_contacto)) IN ('cliente antiguo','email oficina','fondo o empresa','teléfono','visita a oficina')
                                                                             THEN 'OFICINA'
             WHEN LOWER(TRIM(medio_contacto)) IN ('lympye','conserje')      THEN 'CONSERJES'
-            WHEN LOWER(TRIM(medio_contacto)) IN ('facilitea','fotocasa','habitaclia','idealista','kyero','listglobally.com','milanuncios','properstar','thinkspain')
+            WHEN LOWER(TRIM(medio_contacto)) IN ('facilitea','fotocasa','habitaclia','idealista','idealista.com','kyero','listglobally.com','milanuncios','properstar','thinkspain')
                                                                             THEN 'PORTALES'
             WHEN LOWER(TRIM(medio_contacto)) = 'lae fincas'                THEN 'GRUPO LAE'
             WHEN LOWER(TRIM(medio_contacto)) = 'omnia hogar'               THEN 'OMNIA HOGAR'
