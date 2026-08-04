@@ -61,33 +61,49 @@ const Demanda = {
     if (desde) { where.push(`fecha_alta_demanda >= $${i++}`); params.push(desde); }
     if (hasta) { where.push(`fecha_alta_demanda <= $${i++}`); params.push(hasta); }
 
+    const CONV = `situacion IN ('Vendido','Alquilado','Han encontrado','Vendido Mls')`;
     const { rows } = await pool.query(`
+      WITH base AS (
+        SELECT
+          CASE
+            WHEN medio_contacto IS NULL OR medio_contacto = '' THEN 'Sin canal'
+            WHEN medio_contacto ILIKE 'AAFF%'                  THEN 'AAFF'
+            WHEN LOWER(medio_contacto) = 'agencia'             THEN 'AGENCIA'
+            WHEN LOWER(medio_contacto) IN ('amigo','haya','referido')
+                                                               THEN 'CONTACTOS CONSULTOR'
+            WHEN LOWER(medio_contacto) IN ('betterplace','lystos','realadvisors')
+                                                               THEN 'HERRAMIENTAS VALORACIÓN'
+            WHEN LOWER(medio_contacto) IN ('caja','campaña','cartel','facebook','farming','reportaje tv','rrss','web')
+                                                               THEN 'ACCIONES DE MKT'
+            WHEN LOWER(medio_contacto) IN ('cliente antiguo','email oficina','fondo o empresa','teléfono','visita a oficina')
+                                                               THEN 'OFICINA'
+            WHEN LOWER(medio_contacto) IN ('lympye','conserje') THEN 'CONSERJES'
+            WHEN LOWER(medio_contacto) IN ('facilitea','fotocasa','habitaclia','idealista','kyero','listglobally.com','milanuncios','properstar','thinkspain')
+                                                               THEN 'PORTALES'
+            WHEN LOWER(medio_contacto) = 'lae fincas'         THEN 'GRUPO LAE'
+            WHEN LOWER(medio_contacto) = 'omnia hogar'        THEN 'OMNIA HOGAR'
+            ELSE 'OTROS'
+          END AS categoria,
+          COALESCE(NULLIF(medio_contacto,''), 'Sin canal') AS medio,
+          situacion
+        FROM demandas WHERE ${where.join(' AND ')}
+      ),
+      por_medio AS (
+        SELECT
+          categoria, medio,
+          COUNT(*)::int AS cnt,
+          COUNT(*) FILTER (WHERE ${CONV})::int AS conv,
+          ROUND(COUNT(*) FILTER (WHERE ${CONV}) * 100.0 / NULLIF(COUNT(*),0), 1) AS tasa
+        FROM base GROUP BY categoria, medio
+      )
       SELECT
-        CASE
-          WHEN medio_contacto IS NULL OR medio_contacto = '' THEN 'Sin canal'
-          WHEN medio_contacto ILIKE 'AAFF%'                  THEN 'AAFF'
-          WHEN LOWER(medio_contacto) = 'agencia'             THEN 'AGENCIA'
-          WHEN LOWER(medio_contacto) IN ('amigo','haya','referido')
-                                                             THEN 'CONTACTOS CONSULTOR'
-          WHEN LOWER(medio_contacto) IN ('betterplace','lystos','realadvisors')
-                                                             THEN 'HERRAMIENTAS VALORACIÓN'
-          WHEN LOWER(medio_contacto) IN ('caja','campaña','cartel','facebook','farming','reportaje tv','rrss','web')
-                                                             THEN 'ACCIONES DE MKT'
-          WHEN LOWER(medio_contacto) IN ('cliente antiguo','email oficina','fondo o empresa','teléfono','visita a oficina')
-                                                             THEN 'OFICINA'
-          WHEN LOWER(medio_contacto) IN ('lympye','conserje') THEN 'CONSERJES'
-          WHEN LOWER(medio_contacto) IN ('facilitea','fotocasa','habitaclia','idealista','kyero','listglobally.com','milanuncios','properstar','thinkspain')
-                                                             THEN 'PORTALES'
-          WHEN LOWER(medio_contacto) = 'lae fincas'         THEN 'GRUPO LAE'
-          WHEN LOWER(medio_contacto) = 'omnia hogar'        THEN 'OMNIA HOGAR'
-          ELSE 'OTROS'
-        END AS canal,
-        COUNT(*) AS total,
-        COUNT(*) FILTER (WHERE situacion IN ('Vendido','Alquilado','Han encontrado','Vendido Mls')) AS convertidos,
-        ROUND(COUNT(*) FILTER (WHERE situacion IN ('Vendido','Alquilado','Han encontrado','Vendido Mls')) * 100.0 / NULLIF(COUNT(*),0), 1) AS tasa_conversion
-      FROM demandas
-      WHERE ${where.join(' AND ')}
-      GROUP BY canal
+        categoria AS canal,
+        SUM(cnt)::int AS total,
+        SUM(conv)::int AS convertidos,
+        ROUND(SUM(conv)*100.0/NULLIF(SUM(cnt),0),1) AS tasa_conversion,
+        json_agg(json_build_object('medio',medio,'total',cnt,'convertidos',conv,'tasa',tasa) ORDER BY cnt DESC) AS items
+      FROM por_medio
+      GROUP BY categoria
       ORDER BY total DESC
     `, params);
     return rows;

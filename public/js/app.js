@@ -2834,16 +2834,31 @@ async function loadDemandas() {
       const lista = canRes.data;
       const maxT = Math.max(...lista.map(c => parseInt(c.total)||0), 1);
       canalDiv.innerHTML = lista.map(c => {
-        const t = parseInt(c.total)||0;
-        const conv = parseInt(c.convertidos)||0;
-        const w = Math.round(t/maxT*100);
-        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
-          <span style="width:180px;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.canal}</span>
-          <div style="flex:1;height:12px;background:var(--border);border-radius:3px;overflow:hidden">
-            <div style="width:${w}%;height:100%;background:var(--navy);border-radius:3px"></div>
+        const t   = parseInt(c.total)||0;
+        const w   = Math.round(t/maxT*100);
+        const key = encodeURIComponent(c.canal);
+        const hasItems = Array.isArray(c.items) && c.items.length > 1;
+        const subHtml = hasItems ? c.items.map(it => {
+          const iw = Math.round((parseInt(it.total)||0)/maxT*100);
+          return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;padding-left:12px">
+            <span style="width:168px;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">· ${it.medio}</span>
+            <div style="flex:1;height:8px;background:var(--border);border-radius:3px;overflow:hidden">
+              <div style="width:${iw}%;height:100%;background:var(--gold);opacity:.8;border-radius:3px"></div>
+            </div>
+            <span style="font-size:10px;font-weight:600;color:var(--navy);width:36px;text-align:right">${it.total}</span>
+            <span style="font-size:10px;color:var(--green);width:32px;text-align:right">${it.tasa||0}%</span>
+          </div>`;
+        }).join('') : '';
+        return `<div style="margin-bottom:6px">
+          <div style="display:flex;align-items:center;gap:8px;${hasItems?'cursor:pointer':''}" onclick="${hasItems?`toggleCanalDetalle('${key}')`:''}" title="${hasItems?'Clic para desglosar':''}">
+            <span style="width:180px;font-size:11px;${hasItems?'color:var(--navy);font-weight:500':'color:var(--muted)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.canal}${hasItems?' ▾':''}</span>
+            <div style="flex:1;height:12px;background:var(--border);border-radius:3px;overflow:hidden">
+              <div style="width:${w}%;height:100%;background:var(--navy);border-radius:3px"></div>
+            </div>
+            <span style="font-size:11px;font-weight:600;color:var(--navy);width:36px;text-align:right">${t}</span>
+            <span style="font-size:10px;color:var(--green);width:32px;text-align:right">${c.tasa_conversion||0}%</span>
           </div>
-          <span style="font-size:11px;font-weight:600;color:var(--navy);width:36px;text-align:right">${t}</span>
-          <span style="font-size:10px;color:var(--green);width:32px;text-align:right">${c.tasa_conversion||0}%</span>
+          ${hasItems ? `<div id="canal-det-${key}" style="display:none;margin-top:4px">${subHtml}</div>` : ''}
         </div>`;
       }).join('');
     }
@@ -2957,6 +2972,19 @@ function renderDemOficinas() {
 // ── DEMANDAS — POR CONSULTOR SORT ─────────────────────
 let _demConsAllData = [], _demConsData = [], _demConsSortCol = 'total', _demConsSortAsc = false;
 const DEMCONS_COLS = ['consultor','oficina','total','buscando','convertidos','tasa'];
+
+function toggleCanalDetalle(key) {
+  const el = document.getElementById('canal-det-' + key);
+  if (!el) return;
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+  // Rotar la flecha en el título
+  const row = el.previousElementSibling;
+  if (row) {
+    const lbl = row.querySelector('span');
+    if (lbl) lbl.textContent = lbl.textContent.replace(open ? ' ▴' : ' ▾', open ? ' ▾' : ' ▴');
+  }
+}
 
 function aplicarFiltrosDemCons() {
   const filOf = document.getElementById('demcons-fil-oficina')?.value || '';
