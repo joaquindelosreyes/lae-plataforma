@@ -571,12 +571,10 @@
           <option value="portales">Portales</option>
           <option value="referido">Referido</option>
         </select>
-        <select id="cap-fil-estado" class="form-select" style="width:140px;font-size:12px" onchange="aplicarFiltrosCap()">
-          <option value="">Estado</option>
-          <option value="activa">Activa</option>
-          <option value="vendida">Vendida</option>
-          <option value="retirada">Retirada</option>
-          <option value="caducada">Caducada</option>
+        <select id="cap-fil-mandato" class="form-select" style="width:140px;font-size:12px" onchange="aplicarFiltrosCap()">
+          <option value="">Exclusiva / NE</option>
+          <option value="exclusiva">Exclusiva</option>
+          <option value="nota_encargo">NE</option>
         </select>
         <select id="cap-fil-tipo" class="form-select" style="width:140px;font-size:12px" onchange="aplicarFiltrosCap()">
           <option value="">Tipo</option>
@@ -600,7 +598,7 @@
             <thead>
               <tr>
                 <th onclick="sortCap('ref')"      style="cursor:pointer;user-select:none">Ref. <span id="cap-sort-ref"></span></th>
-                <th onclick="sortCap('estado')"   style="cursor:pointer;user-select:none">Estado <span id="cap-sort-estado"></span></th>
+                <th onclick="sortCap('mandato')"  style="cursor:pointer;user-select:none">Mandato <span id="cap-sort-mandato"></span></th>
                 <th onclick="sortCap('fecha')"    style="cursor:pointer;user-select:none">Fecha <span id="cap-sort-fecha"></span></th>
                 <th onclick="sortCap('tipologia')" style="cursor:pointer;user-select:none">Tipo <span id="cap-sort-tipologia"></span></th>
                 <th onclick="sortCap('tipo_op')"  style="cursor:pointer;user-select:none">Op. <span id="cap-sort-tipo_op"></span></th>

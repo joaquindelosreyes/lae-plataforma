@@ -982,13 +982,13 @@ function aplicarFiltrosCap() {
   const filOficina   = document.getElementById('cap-fil-oficina')?.value || '';
   const filConsultor = document.getElementById('cap-fil-consultor')?.value || '';
   const filCanal     = document.getElementById('cap-fil-canal')?.value || '';
-  const filEstado    = document.getElementById('cap-fil-estado')?.value || '';
+  const filMandato   = document.getElementById('cap-fil-mandato')?.value || '';
   const filTipo      = document.getElementById('cap-fil-tipo')?.value || '';
   const filtrado = _capAllData.filter(c => {
     if (filOficina   && c.oficina_nombre !== filOficina) return false;
     if (filConsultor && c.consultor_nombre !== filConsultor) return false;
     if (filCanal     && (c.canal_captacion || '') !== filCanal) return false;
-    if (filEstado    && (c.estado || '') !== filEstado) return false;
+    if (filMandato   && (c.mandato || '') !== filMandato) return false;
     if (filTipo      && (c.tipologia || '') !== filTipo) return false;
     return true;
   });
@@ -1024,7 +1024,7 @@ function actualizarKpisCap(activas) {
 }
 
 function limpiarFiltrosCap() {
-  ['cap-fil-oficina','cap-fil-consultor','cap-fil-canal','cap-fil-estado','cap-fil-tipo'].forEach(id => {
+  ['cap-fil-oficina','cap-fil-consultor','cap-fil-canal','cap-fil-mandato','cap-fil-tipo'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -2164,8 +2164,8 @@ let _carteraData = [], _carteraSortCol = 'fecha', _carteraSortAsc = false;
 
 function sortCap(col) {
   if (_capSortCol === col) { _capSortAsc = !_capSortAsc; }
-  else { _capSortCol = col; _capSortAsc = ['ref','estado','tipologia','tipo_op','oficina','consultor','canal'].includes(col); }
-  ['ref','estado','fecha','tipologia','tipo_op','oficina','consultor','canal','precio','honor'].forEach(c => {
+  else { _capSortCol = col; _capSortAsc = ['ref','mandato','tipologia','tipo_op','oficina','consultor','canal'].includes(col); }
+  ['ref','mandato','fecha','tipologia','tipo_op','oficina','consultor','canal','precio','honor'].forEach(c => {
     const el = document.getElementById('cap-sort-' + c);
     if (el) el.textContent = c === _capSortCol ? (_capSortAsc ? ' ↑' : ' ↓') : '';
   });
@@ -2183,7 +2183,7 @@ function renderCap(data) {
   const sorted = [..._capData].sort((a, b) => {
     let va, vb;
     if      (_capSortCol === 'ref')       { va = a.ref||''; vb = b.ref||''; }
-    else if (_capSortCol === 'estado')    { va = a.estado||''; vb = b.estado||''; }
+    else if (_capSortCol === 'mandato')   { va = a.mandato||''; vb = b.mandato||''; }
     else if (_capSortCol === 'fecha')     { va = a.fecha_captacion||a.created_at||''; vb = b.fecha_captacion||b.created_at||''; }
     else if (_capSortCol === 'tipologia') { va = a.tipologia||''; vb = b.tipologia||''; }
     else if (_capSortCol === 'tipo_op')   { va = a.tipo_operacion||''; vb = b.tipo_operacion||''; }
@@ -2195,14 +2195,15 @@ function renderCap(data) {
     if (typeof va === 'string') return _capSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     return _capSortAsc ? va - vb : vb - va;
   });
-  const estadoColors = { activa:'var(--green)', vendida:'var(--navy)', retirada:'var(--red)', caducada:'var(--muted)' };
   tbody.innerHTML = sorted.map(c => {
-    const estado = c.estado || 'activa';
-    const fecha  = (c.fecha_captacion || c.created_at || '').substring(0,10);
-    const canal  = c.canal_captacion || '—';
+    const fecha    = (c.fecha_captacion || c.created_at || '').substring(0,10);
+    const canal    = c.canal_captacion || '—';
+    const mandTag  = c.mandato === 'exclusiva'
+      ? '<span class="badge badge-blue">Excl.</span>'
+      : '<span class="badge badge-gray">NE</span>';
     return `<tr>
       <td style="font-size:10px;color:var(--muted);font-family:monospace">${c.ref||'—'}</td>
-      <td><span style="font-size:11px;font-weight:600;color:${estadoColors[estado]||'var(--text)'}">${estado}</span></td>
+      <td>${mandTag}</td>
       <td style="font-size:11px">${fecha||'—'}</td>
       <td><span class="badge badge-gray">${c.tipologia||'—'}</span></td>
       <td><span class="badge badge-gray">${c.tipo_operacion==='alquiler'?'Alquiler':'C-V'}</span></td>
