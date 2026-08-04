@@ -2290,7 +2290,7 @@ let _aaffData = [], _aaffSortCol = 'nombre', _aaffSortAsc = true;
 function sortAAFF(col) {
   if (_aaffSortCol === col) { _aaffSortAsc = !_aaffSortAsc; }
   else { _aaffSortCol = col; _aaffSortAsc = ['nombre','oficina','consultor','estado'].includes(col); }
-  ['nombre','oficina','consultor','captac','cierres','honor','dias','estado'].forEach(c => {
+  ['nombre','oficina','consultor','captac','cierres','honor','estado'].forEach(c => {
     const el = document.getElementById('aaff-sort-' + c);
     if (el) el.textContent = c === _aaffSortCol ? (_aaffSortAsc ? ' ↑' : ' ↓') : '';
   });
@@ -2309,7 +2309,6 @@ function renderAaffTabla(data) {
     else if (_aaffSortCol === 'captac')   { va = parseInt(a.total_captaciones)||0; vb = parseInt(b.total_captaciones)||0; }
     else if (_aaffSortCol === 'cierres')  { va = parseInt(a.total_cierres)||0; vb = parseInt(b.total_cierres)||0; }
     else if (_aaffSortCol === 'honor')    { va = parseFloat(a.honorarios_cierres)||0; vb = parseFloat(b.honorarios_cierres)||0; }
-    else if (_aaffSortCol === 'dias')     { va = parseInt(a.dias_sin_actividad)||0; vb = parseInt(b.dias_sin_actividad)||0; }
     else if (_aaffSortCol === 'estado')   { va = a.estado||''; vb = b.estado||''; }
     if (typeof va === 'string') return _aaffSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     return _aaffSortAsc ? va - vb : vb - va;
@@ -2323,7 +2322,6 @@ function renderAaffTabla(data) {
     <td class="td-right">${parseInt(d.total_captaciones)||0}</td>
     <td class="td-right">${parseInt(d.total_cierres)||0}</td>
     <td class="td-right">${parseFloat(d.honorarios_cierres)>0?fmt(d.honorarios_cierres):'—'}</td>
-    <td class="td-right">${d.dias_sin_actividad!=null?d.dias_sin_actividad+'d':'—'}</td>
     <td><span class="badge ${estBadge[d.estado]||'badge-gray'}" style="cursor:pointer" onclick="cambiarEstadoAAFF(${d.id},'${d.estado}')">${estLbl[d.estado]||d.estado}</span></td>
   </tr>`).join('');
 }
