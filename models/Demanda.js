@@ -66,25 +66,25 @@ const Demanda = {
       WITH base AS (
         SELECT
           CASE
-            WHEN medio_contacto IS NULL OR medio_contacto = '' THEN 'Sin canal'
-            WHEN medio_contacto ILIKE 'AAFF%'                  THEN 'AAFF'
-            WHEN LOWER(medio_contacto) = 'agencia'             THEN 'AGENCIA'
-            WHEN LOWER(medio_contacto) IN ('amigo','haya','referido')
-                                                               THEN 'CONTACTOS CONSULTOR'
-            WHEN LOWER(medio_contacto) IN ('betterplace','lystos','realadvisors')
-                                                               THEN 'HERRAMIENTAS VALORACIÓN'
-            WHEN LOWER(medio_contacto) IN ('caja','campaña','cartel','facebook','farming','reportaje tv','rrss','web')
-                                                               THEN 'ACCIONES DE MKT'
-            WHEN LOWER(medio_contacto) IN ('cliente antiguo','email oficina','fondo o empresa','teléfono','visita a oficina')
-                                                               THEN 'OFICINA'
-            WHEN LOWER(medio_contacto) IN ('lympye','conserje') THEN 'CONSERJES'
-            WHEN LOWER(medio_contacto) IN ('facilitea','fotocasa','habitaclia','idealista','kyero','listglobally.com','milanuncios','properstar','thinkspain')
-                                                               THEN 'PORTALES'
-            WHEN LOWER(medio_contacto) = 'lae fincas'         THEN 'GRUPO LAE'
-            WHEN LOWER(medio_contacto) = 'omnia hogar'        THEN 'OMNIA HOGAR'
+            WHEN TRIM(medio_contacto) IS NULL OR TRIM(medio_contacto) = '' THEN 'Sin canal'
+            WHEN TRIM(medio_contacto) ILIKE 'AAFF%'                        THEN 'AAFF'
+            WHEN LOWER(TRIM(medio_contacto)) = 'agencia'                   THEN 'AGENCIA'
+            WHEN LOWER(TRIM(medio_contacto)) IN ('amigo','haya','referido')
+                                                                            THEN 'CONTACTOS CONSULTOR'
+            WHEN LOWER(TRIM(medio_contacto)) IN ('betterplace','lystos','realadvisors')
+                                                                            THEN 'HERRAMIENTAS VALORACIÓN'
+            WHEN LOWER(TRIM(medio_contacto)) IN ('caja','campaña','cartel','facebook','farming','reportaje tv','rrss','web')
+                                                                            THEN 'ACCIONES DE MKT'
+            WHEN LOWER(TRIM(medio_contacto)) IN ('cliente antiguo','email oficina','fondo o empresa','teléfono','visita a oficina')
+                                                                            THEN 'OFICINA'
+            WHEN LOWER(TRIM(medio_contacto)) IN ('lympye','conserje')      THEN 'CONSERJES'
+            WHEN LOWER(TRIM(medio_contacto)) IN ('facilitea','fotocasa','habitaclia','idealista','kyero','listglobally.com','milanuncios','properstar','thinkspain')
+                                                                            THEN 'PORTALES'
+            WHEN LOWER(TRIM(medio_contacto)) = 'lae fincas'                THEN 'GRUPO LAE'
+            WHEN LOWER(TRIM(medio_contacto)) = 'omnia hogar'               THEN 'OMNIA HOGAR'
             ELSE 'OTROS'
           END AS categoria,
-          COALESCE(NULLIF(medio_contacto,''), 'Sin canal') AS medio,
+          COALESCE(NULLIF(TRIM(medio_contacto),''), 'Sin canal') AS medio,
           situacion
         FROM demandas WHERE ${where.join(' AND ')}
       ),
