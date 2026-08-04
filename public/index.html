@@ -51,10 +51,6 @@
   </a>
 
   <div class="sb-section">Análisis</div>
-  <a class="nav-item" data-view="historico" onclick="nav('historico');loadHistorico()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    Histórico mensual
-  </a>
   <a class="nav-item" data-view="actividad" onclick="nav('actividad')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
     Actividad comercial
@@ -1095,41 +1091,6 @@
     </div>
 
     <!-- ═══ HISTÓRICO MENSUAL ═══ -->
-    <div class="view" id="view-historico">
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title">Histórico mensual</span>
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="font-size:11px;color:var(--muted)">Foto automática el día 1 de cada mes · 02:00h</span>
-            <button class="btn btn-sm btn-outline" onclick="generarFotoHoy()">Generar foto hoy</button>
-          </div>
-        </div>
-        <div class="panel-body">
-          <div id="hist-alert" class="alert" style="display:none;margin-bottom:12px"></div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th class="nr">Capt. activas</th>
-                  <th class="nr">Exclusivas</th>
-                  <th class="nr">NE</th>
-                  <th class="nr">Viv. excl.</th>
-                  <th class="nr">Valor cartera</th>
-                  <th class="nr">H. potenciales</th>
-                  <th class="nr">Pipeline</th>
-                  <th class="nr">Arras</th>
-                </tr>
-              </thead>
-              <tbody id="hist-tbody">
-                <tr><td colspan="9" class="loading">Cargando...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- ═══ ACTIVIDAD COMERCIAL ═══ -->
     <div class="view" id="view-actividad">
 
