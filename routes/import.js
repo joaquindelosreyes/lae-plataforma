@@ -108,7 +108,8 @@ router.post('/inmovilla', upload.single('archivo'), async (req, res) => {
         const pctComision = parseFloat((row['Porcentaje'] || '5').replace(',', '.')) || 5;
         const comision    = parseFloat((row['Comisión'] || '0').replace(',', '.')) || 0;
 
-        const captadoPorRaw = (row['Captado por'] || '').trim();
+        const captadoPorRaw = (row['Captado por'] || row['Asesor'] || row['Agente'] || row['Consultor'] || row['Captador'] || row['Comercial'] || '').trim();
+        const canalCaptacion = (row['Canal'] || row['Origen captación'] || row['Origen captacion'] || row['Procedencia'] || row['Medio captación'] || row['Medio captacion'] || '').trim() || null;
         const captadoPor    = captadoPorRaw.toLowerCase();
         let resolvedConsultor = consultorMap[captadoPor] || null;
         if (!resolvedConsultor && captadoPorRaw) {
@@ -137,10 +138,10 @@ router.post('/inmovilla', upload.single('archivo'), async (req, res) => {
           await client.query(`
             INSERT INTO captaciones (ref, fecha_captacion, direccion, oficina_id, consultor_id,
               consultor_nombre_raw, mandato, tipologia, tipo_operacion, precio_captacion, pct_honorarios,
-              honorarios_potenciales, estado, fuente)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'activa','inmovilla')
+              honorarios_potenciales, canal_captacion, estado, fuente)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'activa','inmovilla')
           `, [ref, fechaAlta, direccion, oficina_id, resolvedConsultor,
-              captadoPorRaw || null, mandato, tipologia, tipoOpLAE, precioVenta, pctComision, honorarios]);
+              captadoPorRaw || null, mandato, tipologia, tipoOpLAE, precioVenta, pctComision, honorarios, canalCaptacion]);
           stats.captaciones_nuevas++;
 
         } else if (ESTADOS_CERRADOS.has(estado)) {
@@ -176,6 +177,7 @@ router.post('/inmovilla', upload.single('archivo'), async (req, res) => {
       success: true,
       stats,
       errores_muestra: errores,
+      columnas_csv: rows.length > 0 ? Object.keys(rows[0]) : [],
       mensaje: `Importación completada: ${stats.captaciones_nuevas} captaciones, ${stats.operaciones_nuevas} operaciones`,
     });
 

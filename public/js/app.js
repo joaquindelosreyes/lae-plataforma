@@ -1239,10 +1239,15 @@ async function ejecutarImport(tipo) {
             ${s.insertadas} demandas importadas · ${s.errores||0} errores
             <br><small style="opacity:.8">Ve a Demandas/Leads para ver los datos.</small>`;
         } else {
+          const cols = res.columnas_csv || [];
+          const hasCons = cols.some(c => ['Captado por','Asesor','Agente','Consultor','Captador','Comercial'].includes(c));
+          const hasCan  = cols.some(c => ['Canal','Origen captación','Origen captacion','Procedencia','Medio captación','Medio captacion'].includes(c));
           result.innerHTML = `<strong>✓ Propiedades importadas</strong><br>
             ${s.captaciones_nuevas} captaciones · ${s.operaciones_nuevas} operaciones · ${s.ignoradas} ignoradas
             ${s.errores > 0 ? ' · <span style="color:var(--red)">'+s.errores+' errores</span>' : ''}
-            <br><small style="opacity:.8">El dashboard ya refleja los datos actualizados.</small>`;
+            <br><small style="opacity:.8">Columnas detectadas: ${cols.length ? cols.join(', ') : '—'}</small>
+            ${!hasCons ? '<br><small style="color:var(--red)">⚠ Sin columna de consultor detectada (se esperaba: Captado por / Asesor / Agente)</small>' : ''}
+            ${!hasCan  ? '<br><small style="color:var(--red)">⚠ Sin columna de canal/medio detectada (se esperaba: Canal / Origen captación / Procedencia)</small>' : ''}`;
         }
       } else {
         result.className = 'alert alert-error';
