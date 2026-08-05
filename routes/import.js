@@ -108,8 +108,8 @@ router.post('/inmovilla', upload.single('archivo'), async (req, res) => {
         const pctComision = parseFloat((row['Porcentaje'] || '5').replace(',', '.')) || 5;
         const comision    = parseFloat((row['Comisión'] || '0').replace(',', '.')) || 0;
 
-        const captadoPorRaw = (row['Captado por'] || row['Asesor'] || row['Agente'] || row['Consultor'] || row['Captador'] || row['Comercial'] || '').trim();
-        const canalCaptacion = (row['Canal'] || row['Origen captación'] || row['Origen captacion'] || row['Procedencia'] || row['Medio captación'] || row['Medio captacion'] || '').trim() || null;
+        const captadoPorRaw = (row['Agente captador'] || row['Captado por'] || row['Asesor'] || row['Agente'] || row['Consultor'] || row['Captador'] || row['Comercial'] || '').trim();
+        const canalCaptacion = (row['Medio de contacto'] || row['Canal'] || row['Origen captación'] || row['Origen captacion'] || row['Procedencia'] || row['Medio captación'] || row['Medio captacion'] || '').trim() || null;
         const captadoPor    = captadoPorRaw.toLowerCase();
         let resolvedConsultor = consultorMap[captadoPor] || null;
         if (!resolvedConsultor && captadoPorRaw) {
