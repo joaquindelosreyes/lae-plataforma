@@ -950,6 +950,7 @@
           <div class="table-wrap">
             <table>
               <thead><tr>
+                <th onclick="sortGastosA('fecha')"     style="cursor:pointer;user-select:none">Fecha <span id="ga-sort-fecha"></span></th>
                 <th onclick="sortGastosA('oficina')"   style="cursor:pointer;user-select:none">Oficina <span id="ga-sort-oficina"></span></th>
                 <th onclick="sortGastosA('tipologia')" style="cursor:pointer;user-select:none">Tipología <span id="ga-sort-tipologia"></span></th>
                 <th onclick="sortGastosA('concepto')"  style="cursor:pointer;user-select:none">Concepto <span id="ga-sort-concepto"></span></th>
@@ -960,7 +961,7 @@
                 <th onclick="sortGastosA('fechafin')"  style="cursor:pointer;user-select:none">Fecha fin <span id="ga-sort-fechafin"></span></th>
                 <th>Comentarios</th>
               </tr></thead>
-              <tbody id="ga-tbody"><tr><td colspan="9" class="loading">Cargando...</td></tr></tbody>
+              <tbody id="ga-tbody"><tr><td colspan="10" class="loading">Cargando...</td></tr></tbody>
               <tfoot id="ga-tfoot"></tfoot>
             </table>
           </div>

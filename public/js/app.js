@@ -2471,8 +2471,8 @@ function aplicarFiltrosGastosA() {
 
 function sortGastosA(col) {
   if (_gastosASortCol === col) { _gastosASortAsc = !_gastosASortAsc; }
-  else { _gastosASortCol = col; _gastosASortAsc = ['oficina','tipologia','concepto','fechafin'].includes(col); }
-  ['oficina','tipologia','concepto','base','total','fechafin'].forEach(c => {
+  else { _gastosASortCol = col; _gastosASortAsc = ['fecha','oficina','tipologia','concepto','fechafin'].includes(col); }
+  ['fecha','oficina','tipologia','concepto','base','total','fechafin'].forEach(c => {
     const el = document.getElementById('ga-sort-' + c);
     if (el) el.textContent = c === _gastosASortCol ? (_gastosASortAsc ? ' ↑' : ' ↓') : '';
   });
@@ -2484,13 +2484,14 @@ function renderGastosAnalisis() {
   const tfoot = document.getElementById('ga-tfoot');
   if (!tbody) return;
   if (!_gastosAData.length) {
-    tbody.innerHTML = `<tr><td colspan="9" class="empty-state" style="text-align:center;padding:24px;color:var(--muted)">Sin registros para los filtros seleccionados</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="empty-state" style="text-align:center;padding:24px;color:var(--muted)">Sin registros para los filtros seleccionados</td></tr>`;
     if (tfoot) tfoot.innerHTML = '';
     return;
   }
   const sorted = [..._gastosAData].sort((a, b) => {
     let va, vb;
-    if      (_gastosASortCol === 'oficina')   { va = a.oficinas||'Central'; vb = b.oficinas||'Central'; }
+    if      (_gastosASortCol === 'fecha')     { va = a.fecha||''; vb = b.fecha||''; }
+    else if (_gastosASortCol === 'oficina')   { va = a.oficinas||'Central'; vb = b.oficinas||'Central'; }
     else if (_gastosASortCol === 'tipologia') { va = a.categoria||''; vb = b.categoria||''; }
     else if (_gastosASortCol === 'concepto')  { va = a.concepto||''; vb = b.concepto||''; }
     else if (_gastosASortCol === 'base')      { va = parseFloat(a.base_imponible)||0; vb = parseFloat(b.base_imponible)||0; }
@@ -2521,6 +2522,7 @@ function renderGastosAnalisis() {
       ? `<div style="font-weight:600">${imp2<0?'−':'+'} ${fmt(Math.abs(imp2))}</div><div style="font-size:9px;color:var(--muted)">${g.tipo_impuesto2_desc||''}</div>`
       : '<span style="color:var(--muted)">—</span>';
     return `<tr>
+      <td>${fmtFecha(g.fecha)}</td>
       <td><strong>${g.oficinas||'Central'}</strong></td>
       <td><span class="badge badge-gray">${g.categoria||'—'}</span></td>
       <td>${g.concepto||'—'}</td>
@@ -2536,7 +2538,7 @@ function renderGastosAnalisis() {
   if (tfoot) {
     const imp2Sign = totImp2 < 0 ? '−' : '+';
     tfoot.innerHTML = `<tr style="background:var(--cream);font-weight:600;border-top:2px solid var(--border)">
-      <td colspan="3" style="font-weight:700;padding:8px 12px">TOTAL (${sorted.length} registros)</td>
+      <td colspan="4" style="font-weight:700;padding:8px 12px">TOTAL (${sorted.length} registros)</td>
       <td class="td-right">${fmt(totBase)}</td>
       <td class="td-right">${fmt(totImp1)}</td>
       <td class="td-right">${totImp2 !== 0 ? imp2Sign + ' ' + fmt(Math.abs(totImp2)) : '—'}</td>
