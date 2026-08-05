@@ -1741,7 +1741,7 @@ async function loadCaptacionesMatriz() {
 }
 
 function limpiarFiltrosCof1() {
-  ['cof1-fil-tipologia','cof1-fil-tipo-op','cof1-fil-mandato'].forEach(id => {
+  ['cof1-fil-tipologia','cof1-fil-tipo-op'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   loadCapOfPanel1();
@@ -1764,8 +1764,7 @@ async function loadCapOfPanel1() {
     const { desde, hasta } = getDateRange();
     const tipologia = document.getElementById('cof1-fil-tipologia')?.value || '';
     const tipo_op   = document.getElementById('cof1-fil-tipo-op')?.value   || '';
-    const mandato   = document.getElementById('cof1-fil-mandato')?.value   || '';
-    const qs = new URLSearchParams({ desde, hasta, ...(tipologia && {tipologia}), ...(tipo_op && {tipo_operacion: tipo_op}), ...(mandato && {mandato}) }).toString();
+    const qs = new URLSearchParams({ desde, hasta, ...(tipologia && {tipologia}), ...(tipo_op && {tipo_operacion: tipo_op}) }).toString();
     const res = await fetch(`${API}/api/captaciones/por-oficina?${qs}`).then(r => r.json());
     const lista = res.data || res;
     if (Array.isArray(lista)) renderCapOf(lista);
